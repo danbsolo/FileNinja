@@ -21,6 +21,9 @@ def populateWorkbook(dirAbsolute, workbook, worksheet):
 
         for file in files:
             worksheet.write(row, 1, file)
+
+            # This is typically bad form
+            # However, in this scenario, all it does is skip this row's date. No harm, no foul
             try:
                 worksheet.write(row, 2, time.ctime(os.path.getmtime(dirPath + "\\" + file)))
             except:
