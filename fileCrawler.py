@@ -21,7 +21,11 @@ def populateWorkbook(dirAbsolute, workbook, worksheet):
 
         for file in files:
             worksheet.write(row, 1, file)
-            # worksheet.write(row, 2, time.ctime(os.path.getmtime(dirPath + "\\" + file))) # crashes for long file names, or something
+            try:
+                worksheet.write(row, 2, time.ctime(os.path.getmtime(dirPath + "\\" + file)))
+            except:
+                print(row)
+            
             row += 1
 
 def main():
