@@ -2,6 +2,7 @@ from tkinter import filedialog, messagebox
 import xlsxwriter
 import os
 from typing import List, Tuple
+import string
 
 class WorkbookManager:
 
@@ -13,7 +14,10 @@ class WorkbookManager:
         self.mainSheetRow = 1
         self.mainSheet = self.wb.add_worksheet("MainSheet")
         
-        ## Set formatting
+        ### Extra
+        self.permissibleCharacters = set(string.ascii_letters + string.digits + "-.")
+
+        ## Set formatting 
         # Column indexes
         self.DIR_COL = 0
         self.ITEM_COL = 1
@@ -23,7 +27,7 @@ class WorkbookManager:
         # Column width
         self.mainSheet.set_column(self.DIR_COL, self.DIR_COL, 50)
         self.mainSheet.set_column(self.ITEM_COL, self.RENAME_COL, 30)
-        self.mainSheet.set_column(self.ERROR_COL, self.ERROR_COL+5, 50)
+        self.mainSheet.set_column(self.ERROR_COL, self.ERROR_COL+5, 20)  # +5 for adding more than one error
 
         # Default cell styles
         self.dirColFormat = self.wb.add_format({
@@ -48,10 +52,10 @@ class WorkbookManager:
         self.mainSheet.write(0, self.ERROR_COL, "Errors", self.headerFormat)
         
 
-    def fileCrawl(self, dirItems: List[str]):
+    def fileCrawl(self, dirAbsolute, dirItems: List[str], ):
         # can be used to write down folders as well
         for itemName in dirItems:
-            if (self.pcNamingConventionCheck(itemName)):
+            if (self.pcNamingConventionCheck(dirAbsolute, itemName)):
                 self.mainSheet.write(self.mainSheetRow, self.ITEM_COL, itemName)
             else:
                 self.mainSheet.write(self.mainSheetRow, self.ITEM_COL, itemName, self.fileErrorFormat)
@@ -62,12 +66,42 @@ class WorkbookManager:
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
             self.mainSheet.write(self.mainSheetRow, self.DIR_COL, dirAbsolute, self.dirColFormat)
-            self.fileCrawl(dirFolders + dirFiles)
+            self.fileCrawl(dirAbsolute, dirFolders + dirFiles)
 
 
-    def pcNamingConventionCheck(self, itemName: str) -> bool:
+    def pcNamingConventionCheck(self, dirAbsolute: str, itemName: str) -> bool:
         # If good, return True. If error, write down the error(s) and return False.
-        return True
+        noError = True
+        variableErrorCol = self.ERROR_COL
+
+        # TODO: figure out if 200 is inclusive or exclusive. Safe bet is inclusive
+        if (len(dirAbsolute + "/" + itemName) >= 200):
+            noError = False
+            self.mainSheet.write(self.mainSheetRow, variableErrorCol, "200+")
+            variableErrorCol += 1
+
+        errorChars = set()
+        periodCount = 0
+
+        for char in itemName:
+            if char not in self.permissibleCharacters:
+                noError = False
+                errorChars.add(char)
+            if char == ".":
+                periodCount += 1
+
+        # if this program didn't include folders, then a periodCount of 0 would be bad; no file extension
+        # but alas, the only true error is if two or more periods are present
+        if (periodCount >= 2):
+            errorChars.add(".")
+
+        # if not empty. AKA, some error character has been detected
+        if (errorChars):
+            # Surrounding the set with "||" makes space chars visible while not running a check each loop to change " " (SPC) to something human-readable
+            self.mainSheet.write(self.mainSheetRow, variableErrorCol, 
+            "Bad chars: |{}|".format("".join(errorChars)))
+
+        return noError
     
 
     def close(self):
@@ -76,7 +110,8 @@ class WorkbookManager:
 
 
 def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
-    # if the file already exists, overwrite it
+    # TODO: change workbook name based on whether subfolders are included or not
+    # TODO: workbook name with number appended if name is already taken
     workbookName = dirAbsolute.split("/")[-1] + "FileCrawl" + ".xlsx"
     wbm = WorkbookManager(workbookName)
 
@@ -99,6 +134,7 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
     wbm.close()
 
     # start newly created file for the user
+    print("\nCreating and opening " + workbookName + ".")
     os.startfile(workbookName)
 
 
@@ -126,9 +162,9 @@ def view():
         return
     
 
-    # Rename files or just build excel sheet
-    print("\nInquiring regarding command...")
-    renameFiles = messagebox.askyesnocancel("Yes or no?", "Rename files? An excel sheet will be made regardless.")
+    # Whether to rename files
+    print("\nInquiring regarding renaming of files...")
+    renameFiles = messagebox.askyesnocancel("Yes or no?", "Rename files? An excel sheet will log would-be changes regardless.")
     if (renameFiles):
         print("Renaming files.")
         if (includeSubFolders and not messagebox.askyesnocancel("Are you sure?", "You have chosen to include subfolders AND rename files. This is an IRREVERSIBLE action. Are you sure?")):
