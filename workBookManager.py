@@ -44,6 +44,11 @@ class WorkbookManager:
             "bold": True
         })
 
+        self.renameFormat = self.wb.add_format({
+            "bg_color": "#9999FF", # purplish
+            "bold": True
+        })
+
         self.headerFormat = self.wb.add_format({
             "bg_color": "#C0C0C0", # grayish
             "bold": True
@@ -103,19 +108,27 @@ class WorkbookManager:
             return errorPresent
 
         # TODO: figure out if 200 is inclusive or exclusive. Safe bet is inclusive
-        if (len(dirAbsolute + "/" + itemName) >= 200):
+        absoluteItemLength = len(dirAbsolute + "/" + itemName)
+        if (absoluteItemLength >= 200):
             errorPresent = True
-            self.mainSheet.write(self.mainSheetRow, variableErrorCol, "200+")
-            variableErrorCol += 1
+            self.mainSheet.write(self.mainSheetRow, variableErrorCol, "{} chars >= 200. Terminating checks.".format(absoluteItemLength))
+            # variableErrorCol += 1
+            return errorPresent
 
         errorChars = set()
         periodCount = 0
+        itemNameLength = len(itemName)
 
-        for char in itemName:
-            if char not in self.permissibleCharacters:
+        for i in range(itemNameLength):
+            if itemName[i] not in self.permissibleCharacters:
                 # Not necessary to set errorPresent because we're returning errorChars instead
-                errorChars.add(char)
-            if char == ".":
+                errorChars.add(itemName[i])
+            
+            # double dash error
+            elif itemName[i:i+2] == "--":
+                errorChars.add(itemName[i])
+            
+            if itemName[i] == ".":
                 periodCount += 1
 
         # if this program didn't include folders, then a periodCount of 0 would be bad; no file extension
@@ -142,8 +155,8 @@ class WorkbookManager:
         if (isinstance(result, bool)):
             return result
         
-        ### Change spaces into dashes
-        if (" " in result):
+        ### Change spaces and double dashes into dashes
+        if (not {" ", "-"}.isdisjoint(result)):
             # Replace "-" characters with " " to make the string homogenous for the upcoming split()
             # split() automatically removes leading, trailing, and excess middle whitespace
             newItemName = itemName.replace("-", " ").split()
@@ -158,7 +171,7 @@ class WorkbookManager:
             # Log the new name
             try:
                 os.rename(dirAbsolute + "/" + itemName, dirAbsolute + "/" + newItemName)
-                self.mainSheet.write(self.mainSheetRow, self.RENAME_COL, newItemName)
+                self.mainSheet.write(self.mainSheetRow, self.RENAME_COL, newItemName, self.renameFormat)
             except PermissionError:
                 self.mainSheet.write(self.mainSheetRow, self.RENAME_COL, "FILE LOCKED. RENAME FAILED.", self.fileErrorFormat)
             except OSError:
