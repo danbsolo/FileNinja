@@ -93,7 +93,7 @@ class WorkbookManager:
 
 
 
-    def checkPCPAECNamingConvention(self, dirAbsolute: str, itemName: str) -> Union[Set[int], bool]:
+    def checkPCPAECNamingConvention(self, dirAbsolute: str, itemName: str) -> Union[Set[str], bool]:
         # If errorChars is empty, returns errorPresent, which may be True or False.
         errorPresent = False
         variableErrorCol = self.ERROR_COL
