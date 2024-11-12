@@ -1,1 +1,3 @@
 # FileCrawler
+
+`pip install XlsxWriter`
