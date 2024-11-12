@@ -1,7 +1,7 @@
 from tkinter import filedialog, messagebox
 import os
 from workBookManager import WorkbookManager
-
+import checkMethodsPCPAEC
 
 
 def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
@@ -15,16 +15,15 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
         fileHandler.close()
     except PermissionError:
         return -1
-    
-    wbm = WorkbookManager(workbookName)
 
-    # TODO: Perhaps create a better means of setting the check method
-    if (renameFiles):
-        # wbm.setCheckMethod("PC-PAEC-Rename")
-        wbm.setCheckMethod(wbm.renameItemPCPAEC)
-    else:
-        # wbm.setCheckMethod("PC-PAEC")
-        wbm.setCheckMethod(wbm.showRenamePCPAEC)
+
+    wbm = WorkbookManager(workbookName)
+    wbm.setDefault()
+    checkMethodsPCPAEC.setWorkBookManager(wbm)
+
+    if (renameFiles): wbm.setCheckMethod(checkMethodsPCPAEC.renameItem)
+    else: wbm.setCheckMethod(checkMethodsPCPAEC.showRename)
+
 
     if (includeSubFolders):
         wbm.folderCrawl(os.walk(dirAbsolute))
