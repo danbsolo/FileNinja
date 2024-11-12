@@ -5,18 +5,26 @@ from workBookManager import WorkbookManager
 
 
 def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
-    # TODO: workbook name with number appended if name is already taken
+    # TODO: Perhaps workbook name with number appended if name is already taken
     workbookName = dirAbsolute.split("/")[-1] \
     + "FileCrawlSub" + str(includeSubFolders) + "Rename" + str(renameFiles) + ".xlsx"
     print("\nCreating " + workbookName + "...")
-
+    
+    try:
+        fileHandler = open(workbookName, 'w')
+        fileHandler.close()
+    except PermissionError:
+        return -1
+    
     wbm = WorkbookManager(workbookName)
 
     # TODO: Perhaps create a better means of setting the check method
     if (renameFiles):
-        wbm.setCheckMethod("PC-PAEC-Rename")
+        # wbm.setCheckMethod("PC-PAEC-Rename")
+        wbm.setCheckMethod(wbm.renameItemPCPAEC)
     else:
-        wbm.setCheckMethod("PC-PAEC")
+        # wbm.setCheckMethod("PC-PAEC")
+        wbm.setCheckMethod(wbm.showRenamePCPAEC)
 
     if (includeSubFolders):
         wbm.folderCrawl(os.walk(dirAbsolute))
@@ -34,10 +42,11 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
         wbm.folderCrawl([(dirAbsolute, dirFolders, dirFiles)])
 
 
-    wbm.close()
     # open newly created file for the user
+    wbm.close()
     print("Opening " + workbookName + ".")
     os.startfile(workbookName)
+    return 0
 
 
 def view():
@@ -77,7 +86,9 @@ def view():
         print("Cancel selected. Terminating program.")
 
 
-    control(dirAbsolute, includeSubFolders, renameFiles)
+    exitCode = control(dirAbsolute, includeSubFolders, renameFiles) 
+    if (exitCode == -1):
+        print(f"Could not open file. Close file and try again.")
 
         
 

@@ -45,6 +45,11 @@ class WorkbookManager:
         })
 
         self.renameFormat = self.wb.add_format({
+            "bg_color": "#00FF80", # greenish
+            "bold": True
+        })
+
+        self.showRenameFormat = self.wb.add_format({
             "bg_color": "#9999FF", # purplish
             "bold": True
         })
@@ -84,21 +89,22 @@ class WorkbookManager:
 
 
     def setCheckMethod(self, functionSelection: Callable) -> bool:
-        if (functionSelection == "PC-PAEC"):
-            self.checkMethod = self.checkPCPAECNamingConvention
-        elif (functionSelection == "PC-PAEC-Rename"):
-            # TODO: make the corresponding function for renaming
-            self.checkMethod = self.checkPCPAECNamingConventionRename
+        self.checkMethod = functionSelection
+        # if (functionSelection == "PC-PAEC"):
+        #     self.checkMethod = self.showRenamePCPAEC
+        # elif (functionSelection == "PC-PAEC-Rename"):
+        #     # TODO: make the corresponding function for renaming
+        #     self.checkMethod = self.renameItemPCPAEC
 
-        # Nothing has been selected. Return False to indicate failure.
-        else:
-            return False
+        # # Nothing has been selected. Return False to indicate failure.
+        # else:
+        #     return False
         
-        return True
+        # return True
 
 
 
-    def checkPCPAECNamingConvention(self, dirAbsolute: str, itemName: str) -> Union[Set[str], bool]:
+    def checkNamingConventionPCPAEC(self, dirAbsolute: str, itemName: str) -> Union[Set[str], bool]:
         # If errorChars is empty, returns errorPresent, which may be True or False.
         errorPresent = False
         variableErrorCol = self.ERROR_COL
@@ -149,24 +155,33 @@ class WorkbookManager:
 
 
 
-    def checkPCPAECNamingConventionRename(self, dirAbsolute:str , itemName: str) -> bool:
-        result = self.checkPCPAECNamingConvention(dirAbsolute, itemName)
+    def showRenamePCPAEC(self, dirAbsolute:str , itemName: str) -> bool:
+        result = self.checkNamingConventionPCPAEC(dirAbsolute, itemName)
 
         if (isinstance(result, bool)):
             return result
         
         ### Change spaces and double dashes into dashes
         if (not {" ", "-"}.isdisjoint(result)):
-            # Replace "-" characters with " " to make the string homogenous for the upcoming split()
-            # split() automatically removes leading, trailing, and excess middle whitespace
-            newItemName = itemName.replace("-", " ").split()
-            newItemName = "-".join(newItemName)
+            newItemName = self.produceNewNamePCPAEC(itemName)
 
-            # For if there's a dash to the left of the file extension period
-            lastPeriodIndex = newItemName.rfind(".")
-            # If lastPeriodIndex isn't the very first character and there actually is a period
-            if (lastPeriodIndex > 0 and newItemName[lastPeriodIndex -1] == "-"):
-                newItemName = newItemName[0:lastPeriodIndex-1] + newItemName[lastPeriodIndex:]
+            # Log the new name
+            # Not given RENAME format as this isn't actually renaming anything
+            self.mainSheet.write(self.mainSheetRow, self.RENAME_COL, newItemName, self.showRenameFormat)
+ 
+        return True
+
+
+
+    def renameItemPCPAEC(self, dirAbsolute:str , itemName: str) -> bool:
+        result = self.checkNamingConventionPCPAEC(dirAbsolute, itemName)
+
+        if (isinstance(result, bool)):
+            return result
+        
+        ### Change spaces and double dashes into dashes
+        if (not {" ", "-"}.isdisjoint(result)):
+            newItemName = self.produceNewNamePCPAEC(itemName)
 
             # Log the new name
             try:
@@ -177,9 +192,23 @@ class WorkbookManager:
             except OSError:
                 self.mainSheet.write(self.mainSheetRow, self.RENAME_COL, "OS ERROR. RENAME FAILED.", self.fileErrorFormat)
 
-
         return True
 
+
+
+    def produceNewNamePCPAEC(self, oldItemName: str) -> str:
+        # Replace "-" characters with " " to make the string homogenous for the upcoming split()
+        # split() automatically removes leading, trailing, and excess middle whitespace
+        newItemName = oldItemName.replace("-", " ").split()
+        newItemName = "-".join(newItemName)
+
+        # For if there's a dash to the left of the file extension period
+        lastPeriodIndex = newItemName.rfind(".")
+        # If lastPeriodIndex isn't the very first character and there actually is a period
+        if (lastPeriodIndex > 0 and newItemName[lastPeriodIndex -1] == "-"):
+            newItemName = newItemName[0:lastPeriodIndex-1] + newItemName[lastPeriodIndex:]
+        
+        return newItemName
 
 
     def close(self):
