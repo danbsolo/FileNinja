@@ -11,6 +11,9 @@ class WorkbookManager:
         # TODO: add more worksheets here if/when necessary
         self.mainSheet = self.wb.add_worksheet("MainSheet")
         
+        # Freeze header row
+        self.mainSheet.freeze_panes(1, 0)
+        
         # For if more sheets are used
         self.sheetRow = {}
         self.sheetRow[self.mainSheet] = 1
