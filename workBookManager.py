@@ -95,7 +95,7 @@ class WorkbookManager:
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
             self.mainSheet.write(self.sheetRow[self.mainSheet], self.DIR_COL, dirAbsolute, self.dirColFormat)
-            self.fileCrawl(dirAbsolute, dirFolders + dirFiles)
+            self.fileCrawl(dirAbsolute, dirFiles)
 
 
 

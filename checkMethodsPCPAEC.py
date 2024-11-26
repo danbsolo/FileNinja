@@ -46,8 +46,8 @@ def checkNamingConvention(dirAbsolute:str, itemName:str) -> Union[Set[str], bool
         if itemName[i] == ".":
             periodCount += 1
 
-    # if this program didn't include folders, then a periodCount of 0 would be bad; no file extension
-    # but alas, the only true error is if two or more periods are present
+    # only checks if 2 or more periods are present
+    # TODO: Error if no periods are present (since folder names aren't looked at)
     if (periodCount >= 2):
         errorChars.add(".")
 
