@@ -16,30 +16,30 @@ def setWorkBookManager(newManager: WorkbookManager):
     wbm = newManager
 
 
-def hasSpace(dirAbsolute:str, itemName:str) -> bool:
+def hasSpace(dirAbsolute:str, itemName:str, ws) -> bool:
     if " " in itemName:
-        wbm.writeInCell(wbm.spaceErrorSheet, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        
-        # no need to write in the error column as this i
-
-        wbm.sheetRow[wbm.spaceErrorSheet] += 1
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
+        # no need to write in the error column as there is this very specific
+        wbm.sheetRow[ws] += 1
+        wbm.checkSheetErrorCount[ws] += 1
         return True
     
     return False
 
 
-def overCharacterLimit(dirAbsolute:str, itemName:str) -> bool:
+def overCharacterLimit(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > 200):
-        wbm.writeInCell(wbm.charLimitErrorSheet, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(wbm.charLimitErrorSheet, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength))
-        wbm.sheetRow[wbm.charLimitErrorSheet] += 1
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength))
+        wbm.sheetRow[ws] += 1
+        wbm.checkSheetErrorCount[ws] += 1
         return True
     
     return False
 
 
-def badCharacters(dirAbsolute:str, itemName:str) -> Set[str]:
+def badCharacters(dirAbsolute:str, itemName:str, ws) -> Set[str]:
     badChars = set()
     itemNameLength = len(itemName)
 
@@ -54,9 +54,10 @@ def badCharacters(dirAbsolute:str, itemName:str) -> Set[str]:
 
     # write to own sheet here
     if (badChars):
-        wbm.writeInCell(wbm.badCharErrorSheet, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(wbm.badCharErrorSheet, wbm.ERROR_COL, "".join(badChars))
-        wbm.sheetRow[wbm.badCharErrorSheet] += 1
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars))
+        wbm.sheetRow[ws] += 1
+        wbm.checkSheetErrorCount[ws] += 1
         
     return badChars
 

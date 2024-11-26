@@ -11,7 +11,7 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
     except:
         pass
 
-    # TODO: Perhaps workbook name with number appended if name is already taken    
+    # TODO: Append datetime to file instead   
     workbookPathName = "fileCrawlerResults\\" + dirAbsolute.split("/")[-1] \
     + "FileCrawlSub" + str(includeSubFolders) + "Rename" + str(renameFiles) + ".xlsx"
     print("\nCreating " + workbookPathName + "...")
@@ -26,16 +26,18 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
 
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
-    wbm.setDefault()
     checkMethodsPCPAEC.setWorkBookManager(wbm)
 
     # Set checkMethod function
-    if (renameFiles): 
-        wbm.appendCheckMethod(checkMethodsPCPAEC.renameItem)
-    else: 
-        wbm.appendCheckMethod(checkMethodsPCPAEC.hasSpace)
-        wbm.appendCheckMethod(checkMethodsPCPAEC.overCharacterLimit)
-        wbm.appendCheckMethod(checkMethodsPCPAEC.badCharacters)
+    if (renameFiles):
+        pass
+        # wbm.appendCheckMethod(checkMethodsPCPAEC.renameItem)
+    else:
+        wbm.addCheckSheet("SPC-Error", checkMethodsPCPAEC.hasSpace)
+        wbm.addCheckSheet("CharLimit-Error", checkMethodsPCPAEC.overCharacterLimit)        
+        wbm.addCheckSheet("BadChar-Error", checkMethodsPCPAEC.badCharacters)
+    
+    wbm.setDefaultFormatting()
 
     # Distinguish between the inclusion of exclusion of subfolders
     if (includeSubFolders):
