@@ -5,26 +5,35 @@ import checkMethodsPCPAEC
 
 
 def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
-    # TODO: Perhaps workbook name with number appended if name is already taken
-    workbookName = dirAbsolute.split("/")[-1] \
-    + "FileCrawlSub" + str(includeSubFolders) + "Rename" + str(renameFiles) + ".xlsx"
-    print("\nCreating " + workbookName + "...")
-    
+    # Create fileCrawlerResults if does not exist. If it does, just pass
     try:
-        fileHandler = open(workbookName, 'w')
+        os.mkdir("fileCrawlerResults")
+    except:
+        pass
+
+    # TODO: Perhaps workbook name with number appended if name is already taken    
+    workbookPathName = "fileCrawlerResults\\" + dirAbsolute.split("/")[-1] \
+    + "FileCrawlSub" + str(includeSubFolders) + "Rename" + str(renameFiles) + ".xlsx"
+    print("\nCreating " + workbookPathName + "...")
+
+    # Errors if this file already exists and is currently opened
+    # Also solved by just having more unique file names, such as including the current time of execution    
+    try:
+        fileHandler = open(workbookPathName, 'w')
         fileHandler.close()
     except PermissionError:
         return -1
 
-
-    wbm = WorkbookManager(workbookName)
+    # Initialize objects
+    wbm = WorkbookManager(workbookPathName)
     wbm.setDefault()
     checkMethodsPCPAEC.setWorkBookManager(wbm)
 
+    # Set checkMethod function
     if (renameFiles): wbm.setCheckMethod(checkMethodsPCPAEC.renameItem)
     else: wbm.setCheckMethod(checkMethodsPCPAEC.showRename)
 
-
+    # Distinguish between the inclusion of exclusion of subfolders
     if (includeSubFolders):
         wbm.folderCrawl(os.walk(dirAbsolute))
     else:
@@ -41,10 +50,11 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
         wbm.folderCrawl([(dirAbsolute, dirFolders, dirFiles)])
 
 
-    # open newly created file for the user
+    # close gracefully and open newly created file for the user
     wbm.close()
-    print("Opening " + workbookName + ".")
-    os.startfile(workbookName)
+    print("Opening " + workbookPathName + ".")
+    os.startfile(workbookPathName)
+
     return 0
 
 

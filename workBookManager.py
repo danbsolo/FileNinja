@@ -4,12 +4,13 @@ from time import time
 
 class WorkbookManager:
 
-    def __init__(self, workbookName: str):
-        self.workbookName = workbookName
-        self.wb = xlsxwriter.Workbook(workbookName)
+    def __init__(self, workbookPathName: str):
+        self.workbookPathName = workbookPathName
+        self.wb = xlsxwriter.Workbook(workbookPathName)
         
-        self.summarySheet = self.wb.add_worksheet("Summary")
         self.mainSheet = self.wb.add_worksheet("Main")
+        self.summarySheet = self.wb.add_worksheet("Summary")
+        self.summarySheet.activate()  # view this worksheet on startup
 
         # Freeze header row
         self.mainSheet.freeze_panes(1, 0)
@@ -49,8 +50,7 @@ class WorkbookManager:
         self.mainSheet.set_column(self.ITEM_COL, self.RENAME_COL, 30)
         self.mainSheet.set_column(self.ERROR_COL, self.ERROR_COL+5, 20)  # +5 for adding more than one error
 
-        self.summarySheet.set_column(0, 1, 20)
-
+        # SummarySheet columns are set using autofit() *after* its cells have been populated
 
         # Default cell styles
         self.dirColFormat = self.wb.add_format({
@@ -147,6 +147,7 @@ class WorkbookManager:
         self.summarySheet.write_number(2, 1, round(errorPercentage, 4), self.summaryValueFormat)
         self.summarySheet.write_number(3, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
+        self.summarySheet.autofit()
 
 
     def close(self):
