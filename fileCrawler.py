@@ -1,6 +1,6 @@
 from tkinter import filedialog, messagebox
 import os
-from workBookManager import WorkbookManager
+from workbookManager import WorkbookManager
 import checkMethodsPCPAEC
 
 
@@ -30,8 +30,12 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
     checkMethodsPCPAEC.setWorkBookManager(wbm)
 
     # Set checkMethod function
-    if (renameFiles): wbm.setCheckMethod(checkMethodsPCPAEC.renameItem)
-    else: wbm.setCheckMethod(checkMethodsPCPAEC.showRename)
+    if (renameFiles): 
+        wbm.appendCheckMethod(checkMethodsPCPAEC.renameItem)
+    else: 
+        wbm.appendCheckMethod(checkMethodsPCPAEC.hasSpace)
+        wbm.appendCheckMethod(checkMethodsPCPAEC.overCharacterLimit)
+        wbm.appendCheckMethod(checkMethodsPCPAEC.badCharacters)
 
     # Distinguish between the inclusion of exclusion of subfolders
     if (includeSubFolders):

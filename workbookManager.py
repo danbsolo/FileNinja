@@ -7,26 +7,32 @@ class WorkbookManager:
     def __init__(self, workbookPathName: str):
         self.workbookPathName = workbookPathName
         self.wb = xlsxwriter.Workbook(workbookPathName)
-        
-        self.mainSheet = self.wb.add_worksheet("Main")
+
+        self.spaceErrorSheet = self.wb.add_worksheet("SPC-Error")
+        self.charLimitErrorSheet = self.wb.add_worksheet("CharLimit-Error")
+        self.badCharErrorSheet = self.wb.add_worksheet("BadChar-Error")
         self.summarySheet = self.wb.add_worksheet("Summary")
         self.summarySheet.activate()  # view this worksheet on startup
 
         # Freeze header row
-        self.mainSheet.freeze_panes(1, 0)
+        self.spaceErrorSheet.freeze_panes(1, 0)
+        self.charLimitErrorSheet.freeze_panes(1, 0)
+        self.badCharErrorSheet.freeze_panes(1, 0)
 
         # For if more sheets are used
         self.sheetRow = {}
-        self.sheetRow[self.mainSheet] = 1
+        self.sheetRow[self.spaceErrorSheet] = 1
+        self.sheetRow[self.charLimitErrorSheet] = 1
+        self.sheetRow[self.badCharErrorSheet] = 1
 
         # Summary sheet metrics
         self.filesScannedCount = 0
         self.executionTime = 0
         self.errorCount = 0
 
-        # An empty function by default. Called within fileCrawl()
-        self.checkMethod = lambda: None
-
+        # List of checkMethods to run on the fileName. Called within fileCrawl()
+        self.checkMethods = []
+        # lambda: None <-- empty method
 
 
     def setDefault(self):
@@ -44,14 +50,6 @@ class WorkbookManager:
 
 
     def setDefaultFormatting(self):
-        # TODO: user should have the ability to set most (or all) of the variables hereafter
-        # Column width
-        self.mainSheet.set_column(self.DIR_COL, self.DIR_COL, 50)
-        self.mainSheet.set_column(self.ITEM_COL, self.RENAME_COL, 30)
-        self.mainSheet.set_column(self.ERROR_COL, self.ERROR_COL+5, 20)  # +5 for adding more than one error
-
-        # SummarySheet columns are set using autofit() *after* its cells have been populated
-
         # Default cell styles
         self.dirColFormat = self.wb.add_format({
             "bg_color": "#99CCFF", # blueish
@@ -78,17 +76,25 @@ class WorkbookManager:
             "bold": True
         })
 
-
         self.summaryValueFormat = self.wb.add_format({
             "bold": True
         })
 
 
-        # Write headers
-        self.mainSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
-        self.mainSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
-        self.mainSheet.write(0, self.RENAME_COL, "Rename", self.headerFormat)
-        self.mainSheet.write(0, self.ERROR_COL, "Errors", self.headerFormat)
+        for ws in [self.spaceErrorSheet, self.charLimitErrorSheet, self.badCharErrorSheet]:
+            # Column width
+            ws.set_column(self.DIR_COL, self.DIR_COL, 50)
+            ws.set_column(self.ITEM_COL, self.RENAME_COL, 30)
+            ws.set_column(self.ERROR_COL, self.ERROR_COL, 20)
+
+            # SummarySheet columns are set using autofit() *after* its cells have been populated
+
+            # Write headers
+            ws.write(0, self.DIR_COL, "Directories", self.headerFormat)
+            ws.write(0, self.ITEM_COL, "Items", self.headerFormat)
+            ws.write(0, self.RENAME_COL, "Potential Rename / Renamed", self.headerFormat)
+            ws.write(0, self.ERROR_COL, "Errors", self.headerFormat)
+
 
         self.summarySheet.write(0, 0, "File count", self.headerFormat)
         self.summarySheet.write(1, 0, "Error count", self.headerFormat)
@@ -100,26 +106,26 @@ class WorkbookManager:
     def fileCrawl(self, dirAbsolute, dirItems: List[str]):
         # can be used to write down folders as well, hence "items" and not "files"
         for itemName in dirItems:
+            
+            # If it's just a temporary file via Microsoft, skip file
+            if (itemName[0:2] == "~$"):
+                continue
 
-            # If error present
-            if (self.checkMethod(dirAbsolute, itemName)):
-                self.mainSheet.write(self.sheetRow[self.mainSheet], self.ITEM_COL, itemName, self.fileErrorFormat)
-                
-                self.errorCount += 1
-                self.sheetRow[self.mainSheet] += 1
-            else:
-                pass
-                # self.mainSheet.write(self.sheetRow[self.mainSheet], self.ITEM_COL, itemName)
-
-
-    
+            # Run every selected checkMethod on itemName
+            for cm in self.checkMethods:
+                # If error present
+                if (cm(dirAbsolute, itemName)):
+                    self.errorCount += 1
+                    
 
 
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         start = time()
         
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
-            self.mainSheet.write(self.sheetRow[self.mainSheet], self.DIR_COL, dirAbsolute, self.dirColFormat)
+            for ws in [self.spaceErrorSheet, self.charLimitErrorSheet, self.badCharErrorSheet]:
+                ws.write(self.sheetRow[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
+
             self.fileCrawl(dirAbsolute, dirFiles)
 
             self.filesScannedCount += len(dirFiles)
@@ -129,8 +135,8 @@ class WorkbookManager:
 
 
 
-    def setCheckMethod(self, functionSelection: Callable[[str, str], bool]):
-        self.checkMethod = functionSelection
+    def appendCheckMethod(self, functionSelection: Callable[[str, str], bool]):
+        self.checkMethods.append(functionSelection)
 
 
 
@@ -149,6 +155,7 @@ class WorkbookManager:
         self.summarySheet.write_number(3, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         self.summarySheet.autofit()
+
 
 
     def close(self):

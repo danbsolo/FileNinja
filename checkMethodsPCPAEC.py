@@ -1,17 +1,64 @@
 from typing import Union, Set
 import string
 import os
-from workBookManager import WorkbookManager
+from workbookManager import WorkbookManager
 
 
 # Global variable so it's set in stone
-permissibleCharacters = set(string.ascii_letters + string.digits + "-.")
+# Used by badCharacters()
+# This includes space as a permissibleCharacter as it is checked by a different method instead
+permissibleCharacters = set(string.ascii_letters + string.digits + "-. ")
 
 # Declare a global variable within a function
 # ~ Usually a bad idea, but here, it makes sense
 def setWorkBookManager(newManager: WorkbookManager):
     global wbm
     wbm = newManager
+
+
+def hasSpace(dirAbsolute:str, itemName:str) -> bool:
+    if " " in itemName:
+        wbm.writeInCell(wbm.spaceErrorSheet, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
+        
+        # no need to write in the error column as this i
+
+        wbm.sheetRow[wbm.spaceErrorSheet] += 1
+        return True
+    
+    return False
+
+
+def overCharacterLimit(dirAbsolute:str, itemName:str) -> bool:
+    absoluteItemLength = len(dirAbsolute + "/" + itemName)
+    if (absoluteItemLength > 200):
+        wbm.writeInCell(wbm.charLimitErrorSheet, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
+        wbm.writeInCell(wbm.charLimitErrorSheet, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength))
+        wbm.sheetRow[wbm.charLimitErrorSheet] += 1
+        return True
+    
+    return False
+
+
+def badCharacters(dirAbsolute:str, itemName:str) -> Set[str]:
+    badChars = set()
+    itemNameLength = len(itemName)
+
+    for i in range(itemNameLength):
+        if itemName[i] not in permissibleCharacters:
+            # Not necessary to set errorPresent=True because we're returning non-empty badChars instead
+            badChars.add(itemName[i])
+        
+        # double dash error
+        elif itemName[i:i+2] == "--":
+            badChars.add(itemName[i])
+
+    # write to own sheet here
+    if (badChars):
+        wbm.writeInCell(wbm.badCharErrorSheet, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
+        wbm.writeInCell(wbm.badCharErrorSheet, wbm.ERROR_COL, "".join(badChars))
+        wbm.sheetRow[wbm.badCharErrorSheet] += 1
+        
+    return badChars
 
 
 def checkNamingConvention(dirAbsolute:str, itemName:str) -> Union[Set[str], bool]:
