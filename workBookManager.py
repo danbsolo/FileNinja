@@ -106,11 +106,12 @@ class WorkbookManager:
                 self.mainSheet.write(self.sheetRow[self.mainSheet], self.ITEM_COL, itemName, self.fileErrorFormat)
                 
                 self.errorCount += 1
-
+                self.sheetRow[self.mainSheet] += 1
             else:
-                self.mainSheet.write(self.sheetRow[self.mainSheet], self.ITEM_COL, itemName)
+                pass
+                # self.mainSheet.write(self.sheetRow[self.mainSheet], self.ITEM_COL, itemName)
 
-            self.sheetRow[self.mainSheet] += 1
+
     
 
 
