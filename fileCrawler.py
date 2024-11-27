@@ -1,6 +1,7 @@
 from tkinter import filedialog, messagebox
 import os
 from workbookManager import WorkbookManager
+from datetime import datetime
 import checkMethodsPCPAEC
 
 
@@ -11,9 +12,8 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
     except:
         pass
 
-    # TODO: Append datetime to file instead   
-    workbookPathName = "fileCrawlerResults\\" + dirAbsolute.split("/")[-1] \
-    + "FileCrawlSub" + str(includeSubFolders) + "Rename" + str(renameFiles) + ".xlsx"
+    workbookPathName = "fileCrawlerResults\\" + dirAbsolute.split("/")[-1] + "-" \
+    + datetime.today().strftime("%Y-%m-%d") + ".xlsx"
     print("\nCreating " + workbookPathName + "...")
 
     # Errors if this file already exists and is currently opened
@@ -29,6 +29,7 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
     checkMethodsPCPAEC.setWorkBookManager(wbm)
 
     # Set checkMethod function
+    # TODO: Add renameFile functionality
     if (renameFiles):
         pass
         # wbm.appendCheckMethod(checkMethodsPCPAEC.renameItem)
@@ -37,7 +38,7 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
         wbm.addCheckSheet("CharLimit-Error", checkMethodsPCPAEC.overCharacterLimit)        
         wbm.addCheckSheet("BadChar-Error", checkMethodsPCPAEC.badCharacters)
     
-    wbm.setDefaultFormatting()
+    wbm.setDefaultFormatting(dirAbsolute, includeSubFolders, renameFiles)
 
     # Distinguish between the inclusion of exclusion of subfolders
     if (includeSubFolders):
@@ -56,7 +57,7 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
         wbm.folderCrawl([(dirAbsolute, dirFolders, dirFiles)])
 
 
-    # close gracefully and open newly created file for the user
+    # Close gracefully and open newly created file for the user
     wbm.close()
     print("Opening " + workbookPathName + ".")
     os.startfile(workbookPathName)
@@ -99,9 +100,11 @@ def view():
         print("Not renaming files.")
     else:
         print("Cancel selected. Terminating program.")
+        return
 
 
     exitCode = control(dirAbsolute, includeSubFolders, renameFiles) 
+
     if (exitCode == -1):
         print(f"Could not open file. Close file and try again.")
 

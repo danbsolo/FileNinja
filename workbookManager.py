@@ -15,7 +15,7 @@ class WorkbookManager:
         self.worksheetsList = []
 
         # For summarySheet first 3 rows are used for other stats. Skip a line, then write variable errors.
-        self.sheetRow = {self.summarySheet: 4}
+        self.sheetRow = {self.summarySheet: 7}
         self.checkSheetErrorCount = {}
 
         # Summary sheet metrics
@@ -65,6 +65,8 @@ class WorkbookManager:
 
     def addCheckSheet(self, wsName, functionSelection: Callable[[str, str], bool]):
         """Adds a worksheet and corresponding checkMethod"""
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.worksheetsList), 0, wsName + " count", self.headerFormat)
+
         tmpWsVar = self.wb.add_worksheet(wsName)
         self.worksheetsList.append(tmpWsVar)
         self.sheetRow[tmpWsVar] = 1
@@ -72,12 +74,8 @@ class WorkbookManager:
 
         self.checkMethods.append(functionSelection)
 
-        self.summarySheet.write(self.sheetRow[self.summarySheet], 0, wsName + " count", self.headerFormat)
-        self.sheetRow[self.summarySheet] += 1
 
-
-
-    def setDefaultFormatting(self):
+    def setDefaultFormatting(self, dirAbsolute, includeSubFolders, renamingFiles):
         for ws in self.worksheetsList:
             # Column width
             ws.set_column(self.DIR_COL, self.DIR_COL, 50)
@@ -94,12 +92,20 @@ class WorkbookManager:
             ws.write(0, self.ERROR_COL, "Error", self.headerFormat)
 
 
-        # SummarySheet columns are set using autofit() *after* its cells have been populated. Check populateSummarySheet()
+        self.summarySheet.set_column(0, 0, 20)
+        self.summarySheet.set_column(1, 1, 15)
         
-        self.summarySheet.write(0, 0, "File count", self.headerFormat)
-        self.summarySheet.write(1, 0, "Error count / %", self.headerFormat)
-        self.summarySheet.write(2, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(0, 0, "FilePath", self.headerFormat)
+        self.summarySheet.write(1, 0, "SubFolder inclusion", self.headerFormat)
+        self.summarySheet.write(2, 0, "Renaming", self.headerFormat)
+        self.summarySheet.write(3, 0, "File count", self.headerFormat)
+        self.summarySheet.write(4, 0, "Error count / %", self.headerFormat)
+        self.summarySheet.write(5, 0, "Execution time (s)", self.headerFormat)
 
+        self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
+        self.summarySheet.write(1, 1, str(includeSubFolders), self.summaryValueFormat)
+        self.summarySheet.write(2, 1, str(renamingFiles), self.summaryValueFormat)
+        
 
 
     def fileCrawl(self, dirAbsolute, dirItems: List[str]):
@@ -135,33 +141,40 @@ class WorkbookManager:
             self.fileCrawl(dirAbsolute, dirFiles)
 
             self.filesScannedCount += len(dirFiles)
-        
+
+        # If no erred files are under the last directory, it still gets printed
+        # A fix for that would have to be here, if necessary
+
+
         end = time()
         self.executionTime = end - start
 
 
 
-    def writeInCell(self, sheet, col: str, text: str, format=False):
+    def writeInCell(self, ws, col: str, text: str, format=False, rowIncrement=0, errorIncrement=0):
         # write_string so no equations are accidentally written
-        if (format): sheet.write_string(self.sheetRow[sheet], col, text, format)
-        else: sheet.write_string(self.sheetRow[sheet], col, text)
+        if (format): 
+            ws.write_string(self.sheetRow[ws], col, text, format)
+        else: 
+            ws.write_string(self.sheetRow[ws], col, text)
+
+        self.sheetRow[ws] += rowIncrement
+        self.checkSheetErrorCount[ws] += errorIncrement
 
 
 
     def populateSummarySheet(self):
         errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
 
-        self.summarySheet.write_number(0, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(1, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(1, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(2, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(3, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(4, 1, self.errorCount, self.summaryValueFormat)
+        self.summarySheet.write(4, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(5, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 0
         for ws in self.worksheetsList:
-            self.summarySheet.write(4+i, 1, self.checkSheetErrorCount[ws], self.summaryValueFormat)
+            self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetErrorCount[ws], self.summaryValueFormat)
             i += 1
-
-        self.summarySheet.autofit()
 
 
 

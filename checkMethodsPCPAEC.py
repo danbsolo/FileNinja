@@ -18,10 +18,8 @@ def setWorkBookManager(newManager: WorkbookManager):
 
 def hasSpace(dirAbsolute:str, itemName:str, ws) -> bool:
     if " " in itemName:
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        # no need to write in the error column as there is this very specific
-        wbm.sheetRow[ws] += 1
-        wbm.checkSheetErrorCount[ws] += 1
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat, rowIncrement=1, errorIncrement=1)
+        # no need to write in the error column as this won't vary between errors found
         return True
     
     return False
@@ -31,15 +29,15 @@ def overCharacterLimit(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > 200):
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength))
-        wbm.sheetRow[ws] += 1
-        wbm.checkSheetErrorCount[ws] += 1
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength), rowIncrement=1, errorIncrement=1)
         return True
     
     return False
 
 
 def badCharacters(dirAbsolute:str, itemName:str, ws) -> Set[str]:
+    """Does not check for SPC characters nor extra periods."""
+    
     badChars = set()
     itemNameLength = len(itemName)
 
@@ -55,11 +53,12 @@ def badCharacters(dirAbsolute:str, itemName:str, ws) -> Set[str]:
     # write to own sheet here
     if (badChars):
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars))
-        wbm.sheetRow[ws] += 1
-        wbm.checkSheetErrorCount[ws] += 1
+        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars), rowIncrement=1, errorIncrement=1)
+
         
     return badChars
+
+
 
 
 def checkNamingConvention(dirAbsolute:str, itemName:str) -> Union[Set[str], bool]:
