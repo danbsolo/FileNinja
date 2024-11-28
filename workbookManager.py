@@ -12,7 +12,8 @@ class WorkbookManager:
         self.summarySheet.activate()  # view this worksheet on startup
 
         # Doesn't add summarySheet
-        self.worksheetsList = []
+        self.checkSheetsList = []
+        self.fixSheetsList = []
 
         # For summarySheet first 3 rows are used for other stats. Skip a line, then write variable errors.
         self.sheetRow = {self.summarySheet: 7}
@@ -25,11 +26,12 @@ class WorkbookManager:
 
         # List of checkMethods to run on the fileName. Called within fileCrawl()
         self.checkMethods = []
+        self.fixMethods = []
 
         self.DIR_COL = 0
         self.ITEM_COL = 1
         self.RENAME_COL = 2
-        self.ERROR_COL = 3
+        self.ERROR_COL = 2
 
         # Default cell styles
         self.dirColFormat = self.wb.add_format({
@@ -37,8 +39,8 @@ class WorkbookManager:
             "bold": True
         })
 
+        # "bg_color": "#FF4444", # reddish
         self.fileErrorFormat = self.wb.add_format({
-            "bg_color": "#FF4444", # reddish
             "bold": True
         })
 
@@ -65,31 +67,61 @@ class WorkbookManager:
 
     def addCheckSheet(self, wsName, functionSelection: Callable[[str, str], bool]):
         """Adds a worksheet and corresponding checkMethod"""
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.worksheetsList), 0, wsName + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.checkSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)
-        self.worksheetsList.append(tmpWsVar)
+        self.checkSheetsList.append(tmpWsVar)
         self.sheetRow[tmpWsVar] = 1
         self.checkSheetErrorCount[tmpWsVar] = 0
 
         self.checkMethods.append(functionSelection)
 
 
+    def addFixSheet(self, wsName, functionSelection: Callable[[str, str], bool]):
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.checkSheetsList), 0, wsName + " count", self.headerFormat)
+
+        tmpWsVar = self.wb.add_worksheet(wsName)
+        self.fixSheetsList.append(tmpWsVar)
+        self.sheetRow[tmpWsVar] = 1
+        self.checkSheetErrorCount[tmpWsVar] = 0
+
+        self.fixMethods.append(functionSelection)
+        
+
+
     def setDefaultFormatting(self, dirAbsolute, includeSubFolders, renamingFiles):
-        for ws in self.worksheetsList:
+        for wsc in self.checkSheetsList:
             # Column width
-            ws.set_column(self.DIR_COL, self.DIR_COL, 50)
-            ws.set_column(self.ITEM_COL, self.RENAME_COL, 30)
-            ws.set_column(self.ERROR_COL, self.ERROR_COL, 20)
-            ws.freeze_panes(1, 0)
+            # wsc.set_column(self.DIR_COL, self.DIR_COL, 50)
+            # wsc.set_column(self.ITEM_COL, self.ITEM_COL, 30)
+            # wsc.set_column(self.ERROR_COL, self.ERROR_COL, 20)
+
+            wsc.freeze_panes(1, 0)
 
             # Write headers
-            ws.write(0, self.DIR_COL, "Directories", self.headerFormat)
-            ws.write(0, self.ITEM_COL, "Items", self.headerFormat)
+            wsc.write(0, self.DIR_COL, "Directories", self.headerFormat)
+            wsc.write(0, self.ITEM_COL, "Items", self.headerFormat)
+            wsc.write(0, self.ERROR_COL, "Error", self.headerFormat)
 
-            # TODO: Change this title dynamically based on whether user chose to rename or not rename
-            ws.write(0, self.RENAME_COL, "Potential Rename / Renamed", self.headerFormat)
-            ws.write(0, self.ERROR_COL, "Error", self.headerFormat)
+
+        if (renamingFiles):
+            renameColName = "Renamed"
+        else:
+            renameColName = "Potential Rename"
+
+        
+        for wsf in self.fixSheetsList:
+            # Column width
+            # wsf.set_column(self.DIR_COL, self.DIR_COL, 50)
+            # wsf.set_column(self.ITEM_COL, self.RENAME_COL, 30)
+
+            wsf.freeze_panes(1, 0)
+            
+            # Write headers
+            wsf.write(0, self.DIR_COL, "Directories", self.headerFormat)
+            wsf.write(0, self.ITEM_COL, "Items", self.headerFormat)
+            wsf.write(0, self.ERROR_COL, renameColName, self.headerFormat)
+            
 
 
         self.summarySheet.set_column(0, 0, 20)
@@ -122,20 +154,23 @@ class WorkbookManager:
             # Run every selected checkMethod on itemName
             for i in range(len(self.checkMethods)):
                 # If error present
-                if (self.checkMethods[i](dirAbsolute, itemName, self.worksheetsList[i])):
+                if (self.checkMethods[i](dirAbsolute, itemName, self.checkSheetsList[i])):
                     if (not alreadyCounted):
                         self.errorCount += 1
                         alreadyCounted = True
             
             alreadyCounted = False
-                    
 
+            for i in range(len(self.fixMethods)):
+                self.fixMethods[i](dirAbsolute, itemName, self.fixSheetsList[i]);
+                
+                    
 
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         start = time()
         
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
-            for ws in self.worksheetsList:
+            for ws in self.checkSheetsList + self.fixSheetsList:
                 ws.write(self.sheetRow[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
 
             self.fileCrawl(dirAbsolute, dirFiles)
@@ -172,10 +207,16 @@ class WorkbookManager:
         self.summarySheet.write_number(5, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 0
-        for ws in self.worksheetsList:
+        for ws in self.checkSheetsList:
             self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetErrorCount[ws], self.summaryValueFormat)
+            ws.autofit()
             i += 1
-
+        
+        i = 0
+        for ws in self.fixSheetsList:
+            self.summarySheet.write(self.sheetRow[self.summarySheet] + i + len(self.checkSheetsList), 1, self.checkSheetErrorCount[ws], self.summaryValueFormat)
+            ws.autofit()
+            i += 1
 
 
     def close(self):

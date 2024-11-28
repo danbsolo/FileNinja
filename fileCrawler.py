@@ -28,15 +28,17 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
     wbm = WorkbookManager(workbookPathName)
     checkMethodsPCPAEC.setWorkBookManager(wbm)
 
-    # Set checkMethod function
-    # TODO: Add renameFile functionality
+    # Set checkMethod and fixMethod functions
     if (renameFiles):
-        pass
-        # wbm.appendCheckMethod(checkMethodsPCPAEC.renameItem)
+        wbm.addCheckSheet("CharLimit-Check", checkMethodsPCPAEC.overCharacterLimit)        
+        wbm.addCheckSheet("BadChar-Check", checkMethodsPCPAEC.badCharacters)
+        wbm.addCheckSheet("SPC-Check", checkMethodsPCPAEC.hasSpace)
+        wbm.addFixSheet("SPC-Fix", checkMethodsPCPAEC.fixSpacesDo)
     else:
-        wbm.addCheckSheet("SPC-Error", checkMethodsPCPAEC.hasSpace)
-        wbm.addCheckSheet("CharLimit-Error", checkMethodsPCPAEC.overCharacterLimit)        
-        wbm.addCheckSheet("BadChar-Error", checkMethodsPCPAEC.badCharacters)
+        wbm.addCheckSheet("CharLimit-Check", checkMethodsPCPAEC.overCharacterLimit)        
+        wbm.addCheckSheet("BadChar-Check", checkMethodsPCPAEC.badCharacters)
+        wbm.addCheckSheet("SPC-Check", checkMethodsPCPAEC.hasSpace)
+        wbm.addFixSheet("SPC-Fix", checkMethodsPCPAEC.fixSpacesShow)
     
     wbm.setDefaultFormatting(dirAbsolute, includeSubFolders, renameFiles)
 
