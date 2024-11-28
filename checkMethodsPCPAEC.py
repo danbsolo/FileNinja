@@ -5,8 +5,8 @@ from workbookManager import WorkbookManager
 
 
 # Global variable so it's set in stone
-# Used by badCharacters()
-# This includes space as a permissibleCharacter as it is checked by a different method instead
+# Used by badCharErrorCheck()
+# This includes space as a permissible character as it is checked by spaceErrorCheck() instead
 permissibleCharacters = set(string.ascii_letters + string.digits + "-. ")
 
 # Declare a global variable within a function
