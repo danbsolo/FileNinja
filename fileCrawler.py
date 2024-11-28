@@ -1,3 +1,4 @@
+import tkinter as tk
 from tkinter import filedialog, messagebox
 import os
 from workbookManager import WorkbookManager
@@ -5,7 +6,7 @@ from datetime import datetime
 import checkMethodsPCPAEC
 
 
-def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
+def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, fixOption: str):
     # Create fileCrawlerResults if does not exist. If it does, just pass
     try:
         os.mkdir("fileCrawlerResults")
@@ -30,15 +31,24 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
 
     # Set checkMethod and fixMethod functions
     if (renameFiles):
-        wbm.addCheckSheet("CharLimit-Check", checkMethodsPCPAEC.overCharacterLimit)        
-        wbm.addCheckSheet("BadChar-Check", checkMethodsPCPAEC.badCharacters)
-        wbm.addCheckSheet("SPC-Check", checkMethodsPCPAEC.hasSpace)
-        wbm.addFixSheet("SPC-Fix", checkMethodsPCPAEC.fixSpacesDo)
+        wbm.addCheckMethod("CharLimit-Check", checkMethodsPCPAEC.overCharLimitCheck)        
+        wbm.addCheckMethod("BadChar-Check", checkMethodsPCPAEC.badCharErrorCheck)
+        wbm.addCheckMethod("SPC-Check", checkMethodsPCPAEC.spaceErrorCheck)
+        
+        if fixOption == "SPC-Fix":
+            wbm.setFixMethod("SPC-Fix", checkMethodsPCPAEC.spaceErrorFixExecute)
+        else:
+            wbm.setFixMethod("List-All", checkMethodsPCPAEC.listAllLog)
     else:
-        wbm.addCheckSheet("CharLimit-Check", checkMethodsPCPAEC.overCharacterLimit)        
-        wbm.addCheckSheet("BadChar-Check", checkMethodsPCPAEC.badCharacters)
-        wbm.addCheckSheet("SPC-Check", checkMethodsPCPAEC.hasSpace)
-        wbm.addFixSheet("SPC-Fix", checkMethodsPCPAEC.fixSpacesShow)
+        wbm.addCheckMethod("CharLimit-Check", checkMethodsPCPAEC.overCharLimitCheck)        
+        wbm.addCheckMethod("BadChar-Check", checkMethodsPCPAEC.badCharErrorCheck)
+        wbm.addCheckMethod("SPC-Check", checkMethodsPCPAEC.spaceErrorCheck)
+
+        if fixOption == "SPC-Fix":
+            wbm.setFixMethod("SPC-Fix", checkMethodsPCPAEC.spaceErrorFixLog)
+        else:
+            wbm.setFixMethod("List-All", checkMethodsPCPAEC.listAllLog)
+
     
     wbm.setDefaultFormatting(dirAbsolute, includeSubFolders, renameFiles)
 
@@ -68,53 +78,75 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool):
 
 
 def view():
-    # Directory Selection
-    print("Selecting a directory...")
-    dirAbsolute = filedialog.askdirectory()
-    if (not dirAbsolute): 
-        print("Nothing selected. Terminating program.")
-        return
-    else:
-        print("Selected directory: ", dirAbsolute)
+    def launchController():
+        if (not dirAbsolute.get()):
+            print("Invalid directory.")
+            return
+        
+        if (renameState.get() and not messagebox.askyesnocancel("Are you sure?", "You have chosen to rename files. This is an IRREVERSIBLE action. Are you sure?")):
+            print("Continuing selection.")
+            return
 
+        # root.destroy()
+        exitCode = control(dirAbsolute.get(), bool(includeSubFoldersState.get()), bool(renameState.get()), fixOption.get())
 
-    # Subfolder Inclusion
-    print("\nInquiring regarding the inclusion of subfolders...")
-    includeSubFolders = messagebox.askyesnocancel("Yes or no?", "Include sub folders?")
-    if (includeSubFolders):
-        print("Including subfolders.")
-    elif (includeSubFolders == False):
-        print("Excluding subfolders.")
-    else:
-        print("Cancel selected. Terminating program.")
-        return
+        if (exitCode == -1):
+            print("Could not open file. Close file and try again.")
     
 
-    # Whether to rename files
-    print("\nInquiring regarding renaming of files...")
-    renameFiles = messagebox.askyesnocancel("Yes or no?", "Rename files? An excel sheet will log would-be changes regardless.")
-    if (renameFiles):
-        print("Renaming files.")
-        if (includeSubFolders and not messagebox.askyesnocancel("Are you sure?", "You have chosen to include subfolders AND rename files. This is an IRREVERSIBLE action. Are you sure?")):
-            print("Cancel selected. Terminating program.")
-            return
-    elif (renameFiles == False):
-        print("Not renaming files.")
-    else:
-        print("Cancel selected. Terminating program.")
-        return
+    def selectDirectory():
+        potentialDirectory = filedialog.askdirectory()
+
+        # If user actually selected something, set dirAbsolute accordingly
+        if (potentialDirectory):
+            dirAbsolute.set(potentialDirectory)
 
 
-    exitCode = control(dirAbsolute, includeSubFolders, renameFiles) 
+    # GUI Window
+    root = tk.Tk()
+    root.title("File Crawler")
+    root.resizable(0, 0)
 
-    if (exitCode == -1):
-        print(f"Could not open file. Close file and try again.")
+    frame1 = tk.Frame(root)
+    frame1.pack()
+    frame2 = tk.Frame(root)
+    frame2.pack()
+    frame3 = tk.Frame(root)
+    frame3.pack(side=tk.BOTTOM)
 
+    dirAbsolute = tk.StringVar()
+
+    includeSubFoldersState = tk.IntVar()
+    isf = tk.Checkbutton(frame1, text="Include sub folders?", variable=includeSubFoldersState)
+    
+    renameState = tk.IntVar()
+    rf = tk.Checkbutton(frame1, text="Rename files?", variable=renameState)
+
+    fixOptions = ["List-All", "SPC-Fix"]
+    fixOption = tk.StringVar()
+    fixOption.set("List-All")
+    fixDropdownMenu = tk.OptionMenu(frame2, fixOption, *fixOptions)
+
+    browseButton = tk.Button(frame2, text="BROWSE", command=selectDirectory)
+    
+    okayButton = tk.Button(frame2, text="OK", command=launchController)
+    dirHeaderLabel = tk.Label(frame3, text = "Directory: ")
+    dirLabel = tk.Label(frame3, textvariable=dirAbsolute)
+
+    isf.pack(side=tk.LEFT)
+    rf.pack(side=tk.RIGHT)
+    fixDropdownMenu.pack(side=tk.LEFT)
+    browseButton.pack(side=tk.LEFT)
+    okayButton.pack(side=tk.RIGHT)
+    dirHeaderLabel.pack(side=tk.LEFT)
+    dirLabel.pack(side=tk.RIGHT)
+    
+    root.mainloop()
         
+
 
 def main():
     view()
-
 
 
 if __name__ == "__main__":

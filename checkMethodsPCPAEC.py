@@ -1,4 +1,4 @@
-from typing import Union, Set
+from typing import Set
 import string
 import os
 from workbookManager import WorkbookManager
@@ -16,26 +16,26 @@ def setWorkBookManager(newManager: WorkbookManager):
     wbm = newManager
 
 
-def hasSpace(dirAbsolute:str, itemName:str, ws) -> bool:
+def spaceErrorCheck(dirAbsolute:str, itemName:str, ws) -> bool:
     if " " in itemName:
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat, rowIncrement=1, errorIncrement=1)
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat, rowIncrement=1, fileIncrement=1)
         # no need to write in the error column as this won't vary between errors found
         return True
     
     return False
 
 
-def overCharacterLimit(dirAbsolute:str, itemName:str, ws) -> bool:
+def overCharLimitCheck(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > 200):
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength), rowIncrement=1, errorIncrement=1)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength), rowIncrement=1, fileIncrement=1)
         return True
     
     return False
 
 
-def badCharacters(dirAbsolute:str, itemName:str, ws) -> Set[str]:
+def badCharErrorCheck(dirAbsolute:str, itemName:str, ws) -> Set[str]:
     """Does not check for SPC characters nor extra periods."""
     
     badChars = set()
@@ -53,13 +53,13 @@ def badCharacters(dirAbsolute:str, itemName:str, ws) -> Set[str]:
     # write to own sheet here
     if (badChars):
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars), rowIncrement=1, errorIncrement=1)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars), rowIncrement=1, fileIncrement=1)
 
         
     return badChars
 
 
-def fixSpacesShow(dirAbsolute:str, oldItemName:str, ws):
+def spaceErrorFixLog(dirAbsolute:str, oldItemName:str, ws):
     # if no spaces, just leave
     if (" " not in oldItemName):
         return
@@ -80,7 +80,7 @@ def fixSpacesShow(dirAbsolute:str, oldItemName:str, ws):
     wbm.writeInCell(ws, wbm.RENAME_COL, newItemName, wbm.showRenameFormat, 1, 1)
 
     
-def fixSpacesDo(dirAbsolute:str, oldItemName:str, ws):
+def spaceErrorFixExecute(dirAbsolute:str, oldItemName:str, ws):
     if (" " not in oldItemName):
         return
     
@@ -98,6 +98,10 @@ def fixSpacesDo(dirAbsolute:str, oldItemName:str, ws):
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
         wbm.writeInCell(ws, wbm.RENAME_COL, newItemName, wbm.renameFormat, 1, 1)
     except PermissionError:
-        wbm.writeInCell(wbm.mainSheet, wbm.RENAME_COL, "FILE LOCKED. RENAME FAILED.", wbm.fileErrorFormat, 1, 0)
+        wbm.writeInCell(ws, wbm.RENAME_COL, "FILE LOCKED. RENAME FAILED.", wbm.fileErrorFormat, 1, 0)
     except OSError:
-        wbm.writeInCell(wbm.mainSheet, wbm.RENAME_COL, "OS ERROR. RENAME FAILED.", wbm.fileErrorFormat, 1, 0)
+        wbm.writeInCell(ws, wbm.RENAME_COL, "OS ERROR. RENAME FAILED.", wbm.fileErrorFormat, 1, 0)
+
+
+def listAllLog(dirAbsolute:str, itemName:str, ws):
+    wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1, fileIncrement=1)

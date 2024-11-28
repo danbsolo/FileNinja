@@ -13,20 +13,20 @@ class WorkbookManager:
 
         # Doesn't add summarySheet
         self.checkSheetsList = []
-        self.fixSheetsList = []
+        self.fixSheet = 0  # initializing for clarity, but this is a worksheet, not an int
 
-        # For summarySheet first 3 rows are used for other stats. Skip a line, then write variable errors.
+        # List of checkMethods to run on the fileName. Called within fileCrawl()
+        self.checkMethods = []
+        self.fixMethod = lambda : None
+
+        # For summarySheet first 6 rows are used for other stats. Skip a line, then write variable errors.
         self.sheetRow = {self.summarySheet: 7}
-        self.checkSheetErrorCount = {}
+        self.checkSheetFileCount = {}
 
         # Summary sheet metrics
         self.filesScannedCount = 0
         self.executionTime = 0
         self.errorCount = 0
-
-        # List of checkMethods to run on the fileName. Called within fileCrawl()
-        self.checkMethods = []
-        self.fixMethods = []
 
         self.DIR_COL = 0
         self.ITEM_COL = 1
@@ -65,27 +65,28 @@ class WorkbookManager:
 
 
 
-    def addCheckSheet(self, wsName, functionSelection: Callable[[str, str], bool]):
+    def addCheckMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
         """Adds a worksheet and corresponding checkMethod"""
+        
         self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.checkSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)
         self.checkSheetsList.append(tmpWsVar)
         self.sheetRow[tmpWsVar] = 1
-        self.checkSheetErrorCount[tmpWsVar] = 0
+        self.checkSheetFileCount[tmpWsVar] = 0
 
         self.checkMethods.append(functionSelection)
 
 
-    def addFixSheet(self, wsName, functionSelection: Callable[[str, str], bool]):
+    def setFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
         self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.checkSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)
-        self.fixSheetsList.append(tmpWsVar)
+        self.fixSheet = tmpWsVar
         self.sheetRow[tmpWsVar] = 1
-        self.checkSheetErrorCount[tmpWsVar] = 0
+        self.checkSheetFileCount[tmpWsVar] = 0
 
-        self.fixMethods.append(functionSelection)
+        self.fixMethod = functionSelection
         
 
 
@@ -95,34 +96,17 @@ class WorkbookManager:
             # wsc.set_column(self.DIR_COL, self.DIR_COL, 50)
             # wsc.set_column(self.ITEM_COL, self.ITEM_COL, 30)
             # wsc.set_column(self.ERROR_COL, self.ERROR_COL, 20)
-
             wsc.freeze_panes(1, 0)
 
-            # Write headers
             wsc.write(0, self.DIR_COL, "Directories", self.headerFormat)
             wsc.write(0, self.ITEM_COL, "Items", self.headerFormat)
             wsc.write(0, self.ERROR_COL, "Error", self.headerFormat)
 
 
-        if (renamingFiles):
-            renameColName = "Renamed"
-        else:
-            renameColName = "Potential Rename"
-
-        
-        for wsf in self.fixSheetsList:
-            # Column width
-            # wsf.set_column(self.DIR_COL, self.DIR_COL, 50)
-            # wsf.set_column(self.ITEM_COL, self.RENAME_COL, 30)
-
-            wsf.freeze_panes(1, 0)
-            
-            # Write headers
-            wsf.write(0, self.DIR_COL, "Directories", self.headerFormat)
-            wsf.write(0, self.ITEM_COL, "Items", self.headerFormat)
-            wsf.write(0, self.ERROR_COL, renameColName, self.headerFormat)
-            
-
+        self.fixSheet.freeze_panes(1, 0)
+        self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
+        self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
+        self.fixSheet.write(0, self.ERROR_COL, "Renamed" if renamingFiles else "Potential Rename", self.headerFormat)
 
         self.summarySheet.set_column(0, 0, 20)
         self.summarySheet.set_column(1, 1, 15)
@@ -161,8 +145,7 @@ class WorkbookManager:
             
             alreadyCounted = False
 
-            for i in range(len(self.fixMethods)):
-                self.fixMethods[i](dirAbsolute, itemName, self.fixSheetsList[i]);
+            self.fixMethod(dirAbsolute, itemName, self.fixSheet)
                 
                     
 
@@ -170,7 +153,7 @@ class WorkbookManager:
         start = time()
         
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
-            for ws in self.checkSheetsList + self.fixSheetsList:
+            for ws in self.checkSheetsList + [self.fixSheet]:
                 ws.write(self.sheetRow[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
 
             self.fileCrawl(dirAbsolute, dirFiles)
@@ -180,21 +163,20 @@ class WorkbookManager:
         # If no erred files are under the last directory, it still gets printed
         # A fix for that would have to be here, if necessary
 
-
         end = time()
         self.executionTime = end - start
 
 
 
-    def writeInCell(self, ws, col: str, text: str, format=False, rowIncrement=0, errorIncrement=0):
-        # write_string so no equations are accidentally written
+    def writeInCell(self, ws, col: str, text: str, format=False, rowIncrement=0, fileIncrement=0):
+        # write_string() usage so no equations are accidentally written
         if (format): 
             ws.write_string(self.sheetRow[ws], col, text, format)
         else: 
             ws.write_string(self.sheetRow[ws], col, text)
 
         self.sheetRow[ws] += rowIncrement
-        self.checkSheetErrorCount[ws] += errorIncrement
+        self.checkSheetFileCount[ws] += fileIncrement
 
 
 
@@ -208,15 +190,12 @@ class WorkbookManager:
         
         i = 0
         for ws in self.checkSheetsList:
-            self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetErrorCount[ws], self.summaryValueFormat)
+            self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
             ws.autofit()
             i += 1
         
-        i = 0
-        for ws in self.fixSheetsList:
-            self.summarySheet.write(self.sheetRow[self.summarySheet] + i + len(self.checkSheetsList), 1, self.checkSheetErrorCount[ws], self.summaryValueFormat)
-            ws.autofit()
-            i += 1
+        self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
+        self.fixSheet.autofit()
 
 
     def close(self):
