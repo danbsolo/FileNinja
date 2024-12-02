@@ -194,7 +194,7 @@ class WorkbookManager:
             ws.autofit()
             i += 1
         
-        self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[self.fixSheet], self.summaryValueFormat)
         self.fixSheet.autofit()
 
 
