@@ -79,7 +79,7 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, fixOpt
 
 def view():
     def launchController():
-        if (not dirAbsolute.get()):
+        if (not dirAbsoluteVar.get()):
             print("Invalid directory.")
             return
         
@@ -88,7 +88,7 @@ def view():
             return
 
         # root.destroy()
-        exitCode = control(dirAbsolute.get(), bool(includeSubFoldersState.get()), bool(renameState.get()), fixOption.get())
+        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(renameState.get()), fixOption.get())
 
         if (exitCode == -1):
             print("Could not open file. Close file and try again.")
@@ -99,7 +99,15 @@ def view():
 
         # If user actually selected something, set dirAbsolute accordingly
         if (potentialDirectory):
-            dirAbsolute.set(potentialDirectory)
+            dirAbsoluteVar.set(potentialDirectory)
+
+
+    def openResultsFolder():
+        if os.path.exists("fileCrawlerResults"):
+            os.startfile("fileCrawlerResults")
+            return
+        
+        print("Folder does not exist. Try running a file crawl first.")
 
 
     # GUI Window
@@ -114,7 +122,7 @@ def view():
     frame3 = tk.Frame(root)
     frame3.pack(side=tk.BOTTOM)
 
-    dirAbsolute = tk.StringVar()
+    dirAbsoluteVar = tk.StringVar()
 
     includeSubFoldersState = tk.IntVar()
     isf = tk.Checkbutton(frame1, text="Include sub folders?", variable=includeSubFoldersState)
@@ -125,22 +133,24 @@ def view():
     fixOptions = ["List-All", "SPC-Fix"]
     fixOption = tk.StringVar()
     fixOption.set("List-All")
-    fixDropdownMenu = tk.OptionMenu(frame2, fixOption, *fixOptions)
+    fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptions)
 
     browseButton = tk.Button(frame2, text="BROWSE", command=selectDirectory)
-    
-    okayButton = tk.Button(frame2, text="OK", command=launchController)
-    dirHeaderLabel = tk.Label(frame3, text = "Directory: ")
-    dirLabel = tk.Label(frame3, textvariable=dirAbsolute)
+    dirHeaderLabel = tk.Label(frame2, text = "Directory: ")
+    dirLabel = tk.Label(frame2, textvariable=dirAbsoluteVar)
+    resultsButton = tk.Button(frame3, text="Open results", command=openResultsFolder)
+    okayButton = tk.Button(frame3, text="OK", command=launchController)
+
 
     isf.pack(side=tk.LEFT)
-    rf.pack(side=tk.RIGHT)
-    fixDropdownMenu.pack(side=tk.LEFT)
+    rf.pack(side=tk.LEFT)
+    fixDropdownMenu.pack(side=tk.RIGHT)
     browseButton.pack(side=tk.LEFT)
+    resultsButton.pack(side=tk.LEFT)
     okayButton.pack(side=tk.RIGHT)
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.RIGHT)
-    
+
     root.mainloop()
         
 
