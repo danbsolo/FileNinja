@@ -188,7 +188,7 @@ class WorkbookManager:
     def populateSummarySheet(self):
         errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
 
-        if (self.fixArg == ""): self.summarySheet.write_number(3, 1, self.fixArg, self.summaryValueFormat)
+        if (self.fixArg != ""): self.summarySheet.write_number(3, 1, self.fixArg, self.summaryValueFormat)
         
         self.summarySheet.write_number(4, 1, self.filesScannedCount, self.summaryValueFormat)
         self.summarySheet.write_number(5, 1, self.errorCount, self.summaryValueFormat)

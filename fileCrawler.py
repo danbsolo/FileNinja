@@ -13,9 +13,16 @@ CHARACTER_LIMIT_CHECK = "CharLimit-Check"
 BAD_CHARACTER_CHECK = "BadChar-Check"
 SPACE_CHECK = "SPC-Check"
 
+# a constant dictionary of available checks and their corresponding function
+CHECK_METHODS = {
+    CHARACTER_LIMIT_CHECK: checkMethodsPCPAEC.overCharLimitCheck,
+    BAD_CHARACTER_CHECK: checkMethodsPCPAEC.badCharErrorCheck,
+    SPACE_CHECK: checkMethodsPCPAEC.spaceErrorCheck
+}
 
 
-def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, fixOption: str, arg: str):
+
+def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, selectedCheckMethods: list[str], fixOption: str, arg: str):
     if (not dirAbsolute):
         return -2
     
@@ -32,10 +39,8 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, fixOpt
     wbm = WorkbookManager(workbookPathName)
     checkMethodsPCPAEC.setWorkBookManager(wbm)
 
-    # Set checkMethod and fixMethod functions
-    wbm.addCheckMethod(CHARACTER_LIMIT_CHECK, checkMethodsPCPAEC.overCharLimitCheck)        
-    wbm.addCheckMethod(BAD_CHARACTER_CHECK, checkMethodsPCPAEC.badCharErrorCheck)
-    wbm.addCheckMethod(SPACE_CHECK, checkMethodsPCPAEC.spaceErrorCheck)
+    for cm in selectedCheckMethods:
+        wbm.addCheckMethod(cm, CHECK_METHODS[cm])
 
     if (renameFiles):
         if fixOption == SPACE_FIX:
@@ -114,7 +119,8 @@ def view():
             print("Continuing selection.")
             return
 
-        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(renameState.get()), fixOption.get(), parameterVar.get())
+        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(renameState.get()), 
+                           [checkMethodBox.get(cm) for cm in checkMethodBox.curselection()], fixOption.get(), parameterVar.get())
 
         if (exitCode == -1):
             print("Could not open file. Close file and try again.")
@@ -153,6 +159,8 @@ def view():
     frame2.pack()
     frame3 = tk.Frame(root)
     frame3.pack(side=tk.BOTTOM)
+    # frame4 = tk.Frame(frame3)
+    # frame4.pack(side=tk.RIGHT)
 
     fontGeneral = ("Calibri", 15)
 
@@ -160,10 +168,10 @@ def view():
     parameterVar = tk.StringVar()
 
     includeSubFoldersState = tk.IntVar()
-    isf = tk.Checkbutton(frame1, text="Include sub folders?", variable=includeSubFoldersState, font=fontGeneral)
+    isf = tk.Checkbutton(frame1, text="Subfolders?", variable=includeSubFoldersState, font=fontGeneral)
     
     renameState = tk.IntVar()
-    rf = tk.Checkbutton(frame1, text="Rename files?", variable=renameState, font=fontGeneral)
+    rf = tk.Checkbutton(frame1, text="Modify?", variable=renameState, font=fontGeneral)
 
     fixOptions = [LIST_ALL, SPACE_FIX, DELETE_OLD_FILES]
     fixOption = tk.StringVar()
@@ -180,9 +188,16 @@ def view():
     resultsButton = tk.Button(frame3, text="Open results", command=openResultsFolder, font=fontGeneral)
     okayButton = tk.Button(frame3, text="Execute", command=launchController, font=fontGeneral)
 
+    checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=len(CHECK_METHODS)+1)
+    for cmo in CHECK_METHODS.keys():
+        checkMethodBox.insert(tk.END, cmo)
+    for i in range(3):  # hard code. Just select the first 3.
+        checkMethodBox.select_set(i)
+
 
     isf.pack(side=tk.LEFT)
     rf.pack(side=tk.LEFT)
+    checkMethodBox.pack(side=tk.LEFT)
     fixDropdownMenu.pack(side=tk.LEFT)
     parameterEntry.pack(side=tk.RIGHT)
     browseButton.pack(side=tk.LEFT)
