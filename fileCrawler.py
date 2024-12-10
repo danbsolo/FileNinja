@@ -180,6 +180,8 @@ def view():
     fixDropdownMenu.config(font=fontGeneral) # set the font of fixDropdownMenu
 
     checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=len(CHECK_METHODS)+1)
+    
+    # dictionaries are ordered as of Python version 3.7
     for cmo in CHECK_METHODS.keys():
         checkMethodBox.insert(tk.END, cmo)
     for i in range(3):  # hard code. Just select the first 3.
