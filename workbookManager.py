@@ -15,12 +15,12 @@ class WorkbookManager:
         self.checkSheetsList = []
         self.fixSheet = 0  # initializing for clarity, but this is a worksheet, not an int
 
-        # List of checkMethods to run on the fileName. Called within fileCrawl()
-        self.checkMethods = []
+        self.checkMethods = []  # List of checkMethods to run on the fileName. Called within fileCrawl()
         self.fixMethod = lambda : None
+        self.fixArg = ""  # initialize fixArg to a dummy value
 
-        # For summarySheet first 6 rows are used for other stats. Skip a line, then write variable errors.
-        self.sheetRow = {self.summarySheet: 7}
+        # For summarySheet first 7 rows are used for other stats. Skip a line, then write variable number of errors.
+        self.sheetRow = {self.summarySheet: 8}
         self.checkSheetFileCount = {}
 
         # Summary sheet metrics
@@ -89,6 +89,9 @@ class WorkbookManager:
         self.fixMethod = functionSelection
         
 
+    def setFixArg(self, arg: int):
+        self.fixArg = arg
+
 
     def setDefaultFormatting(self, dirAbsolute, includeSubFolders, renamingFiles):
         for wsc in self.checkSheetsList:
@@ -114,9 +117,10 @@ class WorkbookManager:
         self.summarySheet.write(0, 0, "FilePath", self.headerFormat)
         self.summarySheet.write(1, 0, "SubFolder inclusion", self.headerFormat)
         self.summarySheet.write(2, 0, "Renaming", self.headerFormat)
-        self.summarySheet.write(3, 0, "File count", self.headerFormat)
-        self.summarySheet.write(4, 0, "Error count / %", self.headerFormat)
-        self.summarySheet.write(5, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(3, 0, "Argument", self.headerFormat)
+        self.summarySheet.write(4, 0, "File count", self.headerFormat)
+        self.summarySheet.write(5, 0, "Error count / %", self.headerFormat)
+        self.summarySheet.write(6, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(1, 1, str(includeSubFolders), self.summaryValueFormat)
@@ -145,6 +149,7 @@ class WorkbookManager:
             
             alreadyCounted = False
 
+            self.filesScannedCount += 1
             self.fixMethod(dirAbsolute, itemName, self.fixSheet)
                 
                     
@@ -158,7 +163,7 @@ class WorkbookManager:
 
             self.fileCrawl(dirAbsolute, dirFiles)
 
-            self.filesScannedCount += len(dirFiles)
+            # self.filesScannedCount += len(dirFiles)
 
         # If no erred files are under the last directory, it still gets printed
         # A fix for that would have to be here, if necessary
@@ -183,21 +188,60 @@ class WorkbookManager:
     def populateSummarySheet(self):
         errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
 
-        self.summarySheet.write_number(3, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(4, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(4, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(5, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        if (self.fixArg == ""): self.summarySheet.write_number(3, 1, self.fixArg, self.summaryValueFormat)
+        
+        self.summarySheet.write_number(4, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(5, 1, self.errorCount, self.summaryValueFormat)
+        self.summarySheet.write(5, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(6, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 0
         for ws in self.checkSheetsList:
             self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
-            ws.autofit()
             i += 1
         
         self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[self.fixSheet], self.summaryValueFormat)
-        self.fixSheet.autofit()
+
+        
+
+    def createHelpMeSheet(self):
+        helpMeSheet = self.wb.add_worksheet("HelpMe")
+
+        termDict = {
+            "Summary": "Various metrics regarding the execution of the file crawl.",
+            "Check methods": "Flags any file name that falls under the error described. Many can be ran per execution.",
+            "Fix method": "Runs a fix on flagged file names, displaying potential renames or actual renames made. Only one can be ran per execution.",
+            "CharLimit-Check": "Flags file paths over 200 characters. These are not backed up.",
+            "BadChar-Check": "Flags file names with bad characters. A bad character is any character that is either not alphanumeric nor a hyphen (-).",
+            "SPC-Check": "Flags file names with spaces.",
+            "List-All": "Lists all files.",
+            "SPC-Fix": "Replaces all instances of spaces with a hyphen (i.e. \"Engagement Tracker.txt\" = \"Engagement-Tracker.txt\")"
+        }
+
+        helpMeSheet.write(0, 0, "Term", self.headerFormat)
+        helpMeSheet.write(0, 1, "Definition", self.headerFormat)
+
+        row = 1
+        for termKey in termDict:
+            helpMeSheet.write(row, 0, termKey)
+            helpMeSheet.write(row, 1, termDict[termKey])
+            row += 1
+
+        helpMeSheet.autofit()
+
+
+
+    def autofitSheets(self):
+        # summarySheet is not autofit as the filepath is much much wider than everything else. It is set manually at the beginning.
+        # Note that autofit only functions sa intended if done after the data has been entered
+        
+        for ws in self.checkSheetsList + [self.fixSheet]:
+            ws.autofit()
+            
 
 
     def close(self):
         self.populateSummarySheet()
+        self.autofitSheets()
+        self.createHelpMeSheet()
         self.wb.close()

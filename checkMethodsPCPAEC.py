@@ -1,13 +1,16 @@
 from typing import Set
 import string
 import os
+import time
+from datetime import datetime, timedelta
 from workbookManager import WorkbookManager
 
 
 # Global variable so it's set in stone
 # Used by badCharErrorCheck()
 # This includes space as a permissible character as it is checked by spaceErrorCheck() instead
-permissibleCharacters = set(string.ascii_letters + string.digits + "-. ")
+PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "-. ")
+CHARACTER_LIMIT = 200
 
 # Declare a global variable within a function
 # ~ Usually a bad idea, but here, it makes sense
@@ -27,9 +30,9 @@ def spaceErrorCheck(dirAbsolute:str, itemName:str, ws) -> bool:
 
 def overCharLimitCheck(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
-    if (absoluteItemLength > 200):
+    if (absoluteItemLength > CHARACTER_LIMIT):
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > 200".format(absoluteItemLength), rowIncrement=1, fileIncrement=1)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT), rowIncrement=1, fileIncrement=1)
         return True
     
     return False
@@ -42,7 +45,7 @@ def badCharErrorCheck(dirAbsolute:str, itemName:str, ws) -> Set[str]:
     itemNameLength = len(itemName)
 
     for i in range(itemNameLength):
-        if itemName[i] not in permissibleCharacters:
+        if itemName[i] not in PERMISSIBLE_CHARACTERS:
             # Not necessary to set errorPresent=True because we're returning non-empty badChars instead
             badChars.add(itemName[i])
         
@@ -54,12 +57,11 @@ def badCharErrorCheck(dirAbsolute:str, itemName:str, ws) -> Set[str]:
     if (badChars):
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
         wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars), rowIncrement=1, fileIncrement=1)
-
         
     return badChars
 
 
-def spaceErrorFixLog(dirAbsolute:str, oldItemName:str, ws):
+def spaceErrorGeneral(oldItemName) -> str:
     # if no spaces, just leave
     if (" " not in oldItemName):
         return
@@ -75,21 +77,21 @@ def spaceErrorFixLog(dirAbsolute:str, oldItemName:str, ws):
     if (lastPeriodIndex > 0 and newItemName[lastPeriodIndex -1] == "-"):
         newItemName = newItemName[0:lastPeriodIndex-1] + newItemName[lastPeriodIndex:]
 
+    return newItemName
+
+
+def spaceErrorFixLog(dirAbsolute:str, oldItemName:str, ws):
+    newItemName = spaceErrorGeneral(oldItemName)
+    if (not newItemName): return
+
     # write the new name in the appropriate field
     wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName)
     wbm.writeInCell(ws, wbm.RENAME_COL, newItemName, wbm.showRenameFormat, 1, 1)
 
     
 def spaceErrorFixExecute(dirAbsolute:str, oldItemName:str, ws):
-    if (" " not in oldItemName):
-        return
-    
-    newItemName = oldItemName.replace("-", " ").split()
-    newItemName = "-".join(newItemName)
-
-    lastPeriodIndex = newItemName.rfind(".")
-    if (lastPeriodIndex > 0 and newItemName[lastPeriodIndex -1] == "-"):
-        newItemName = newItemName[0:lastPeriodIndex-1] + newItemName[lastPeriodIndex:]
+    newItemName = spaceErrorGeneral(oldItemName)
+    if (not newItemName): return
 
     wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName)
 
@@ -103,5 +105,65 @@ def spaceErrorFixExecute(dirAbsolute:str, oldItemName:str, ws):
         wbm.writeInCell(ws, wbm.RENAME_COL, "OS ERROR. RENAME FAILED.", wbm.fileErrorFormat, 1, 0)
 
 
-def listAllLog(dirAbsolute:str, itemName:str, ws):
+def deleteOldFilesGeneral(fullFilePath: str) -> int:
+    """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
+    
+    # double-checking that this value is usable. Dire consequences if not.
+    daysTooOld = wbm.fixArg
+    if (daysTooOld <= 0): return -1
+    
+    # gets date of file. This *can* error virtue of the library functions, hence try/except
+    try:
+        fileDate = datetime.fromtimestamp(os.path.getatime(fullFilePath))
+    except:
+        return -1
+
+    today = datetime.now()
+    cutOffDate = today - timedelta(days=daysTooOld)
+
+    # Any fileDate before cutOffDate is too old
+    if (fileDate < cutOffDate): return (today - fileDate).days
+    else: return 0
+
+
+def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws):
+    fullFilePath =  dirAbsolute + "\\" + itemName
+    daysOld = deleteOldFilesGeneral(fullFilePath)
+
+    if (daysOld == 0): return
+
+    wbm.writeInCell(ws, wbm.ITEM_COL, itemName)
+
+    if (daysOld == -1):
+        wbm.writeInCell(ws, wbm.RENAME_COL, "UNABLE TO READ DATE", wbm.fileErrorFormat, 1, 1) 
+    elif len(fullFilePath) > CHARACTER_LIMIT:
+        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago, but violates charLimit".format(daysOld), wbm.showRenameFormat, 1, 1)
+    else:
+        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago".format(daysOld), wbm.showRenameFormat, 1, 1)    
+
+
+def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
+    fullFilePath =  dirAbsolute + "\\" + itemName
+    daysOld = deleteOldFilesGeneral(fullFilePath)
+
+    # Either it's actually 0 days old or the fileDate is after the cutOffDate. Either way, don't flag.         
+    if (daysOld == 0):
+        return
+
+    wbm.writeInCell(ws, wbm.ITEM_COL, itemName)
+
+    if (daysOld == -1):
+        wbm.writeInCell(ws, wbm.RENAME_COL, "UNABLE TO READ DATE", wbm.fileErrorFormat, 1, 1) 
+    # If over CHARACTER_LIMIT characters, do not delete as it is not backed up
+    elif len(fullFilePath) > CHARACTER_LIMIT:
+        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago, but violates charLimit".format(daysOld), wbm.showRenameFormat, 1, 1)
+    else:
+        try:
+            os.remove(fullFilePath)
+            wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago".format(daysOld), wbm.renameFormat, 1, 1)
+        except:
+            wbm.writeInCell(ws, wbm.RENAME_COL, "FAILED TO DELETE", wbm.fileErrorFormat, 1, 1)
+
+
+def listAll(dirAbsolute:str, itemName:str, ws):
     wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1, fileIncrement=1)
