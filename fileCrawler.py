@@ -115,7 +115,7 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, select
 
 def view():
     def launchController():
-        if (renameState.get() and not messagebox.askyesnocancel("Are you sure?", "You have chosen to rename files. This is an IRREVERSIBLE action. Are you sure?")):
+        if (renameState.get() and not messagebox.askyesnocancel("Are you sure?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?")):
             print("Continuing selection.")
             return
 
@@ -179,20 +179,22 @@ def view():
     fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptions)
     fixDropdownMenu.config(font=fontGeneral) # set the font of fixDropdownMenu
 
+    checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=len(CHECK_METHODS)+1)
+    for cmo in CHECK_METHODS.keys():
+        checkMethodBox.insert(tk.END, cmo)
+    for i in range(3):  # hard code. Just select the first 3.
+        checkMethodBox.select_set(i)
+
     parameterEntry = tk.Entry(frame1, textvariable=parameterVar, width=7, font=fontGeneral)
 
     dirHeaderLabel = tk.Label(frame2, text = "Directory: ", font=fontGeneral)
     dirLabel = tk.Label(frame2, textvariable=dirAbsoluteVar, font=fontGeneral)
 
     browseButton = tk.Button(frame3, text="Browse", command=selectDirectory, font=fontGeneral)
-    resultsButton = tk.Button(frame3, text="Open results", command=openResultsFolder, font=fontGeneral)
     okayButton = tk.Button(frame3, text="Execute", command=launchController, font=fontGeneral)
+    resultsButton = tk.Button(frame3, text="Open results", command=openResultsFolder, font=fontGeneral)
 
-    checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=len(CHECK_METHODS)+1)
-    for cmo in CHECK_METHODS.keys():
-        checkMethodBox.insert(tk.END, cmo)
-    for i in range(3):  # hard code. Just select the first 3.
-        checkMethodBox.select_set(i)
+
 
 
     isf.pack(side=tk.LEFT)
@@ -201,8 +203,8 @@ def view():
     fixDropdownMenu.pack(side=tk.LEFT)
     parameterEntry.pack(side=tk.RIGHT)
     browseButton.pack(side=tk.LEFT)
-    okayButton.pack(side=tk.LEFT)
     resultsButton.pack(side=tk.RIGHT)
+    okayButton.pack(side=tk.RIGHT)
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.RIGHT)
 
