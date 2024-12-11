@@ -195,6 +195,7 @@ def fileExtensionPost(ws):
         ws.write_string(row, 0, ext)
         ws.write_number(row, 1, FILE_EXTENSION_COUNT[ext])
         ws.write_number(row, 2, round(FILE_EXTENSION_TOTAL_SIZE[ext] / FILE_EXTENSION_COUNT[ext], 1))
+        wbm.incrementFileCount(ws)
         row += 1
 
     ws.freeze_panes(1, 0)
@@ -203,9 +204,10 @@ def fileExtensionPost(ws):
 
 def duplicateFileMisc(dirAbsolute:str, fileName:str):
     if fileName in FILES_AND_PATHS:
-        FILES_AND_PATHS[fileName].append(dirAbsolute)
+        FILES_AND_PATHS[fileName].add(dirAbsolute)
     else:
-        FILES_AND_PATHS[fileName] = [dirAbsolute]
+        FILES_AND_PATHS[fileName] = set([dirAbsolute])
+
 
 
 def duplicateFilePost(ws):
@@ -216,7 +218,8 @@ def duplicateFilePost(ws):
     for itemName in sorted(FILES_AND_PATHS.keys()):
         if len(FILES_AND_PATHS[itemName]) > 1:  # if so, it's duplicated
             ws.write_string(row, 0, itemName, wbm.fileErrorFormat)
-
+            wbm.incrementFileCount(ws)
+            
             for path in FILES_AND_PATHS[itemName]:
                 ws.write_string(row, 1, path, wbm.dirColFormat)
                 row += 1

@@ -73,7 +73,7 @@ class WorkbookManager:
         self.concurrentCheckMethods.append(functionSelection)
         tmpWsVar = self.wb.add_worksheet(ccmName)
 
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList), 0, ccmName + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, ccmName + " count", self.headerFormat)
         self.concurrentCheckSheetsList.append(tmpWsVar)
         self.sheetRow[tmpWsVar] = 1
         self.checkSheetFileCount[tmpWsVar] = 0
@@ -85,15 +85,17 @@ class WorkbookManager:
 
     def addPostCheckMethod(self, pcmName:str, functionSelection: Callable):
         self.postCheckMethods.append(functionSelection)
-        
+
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, pcmName + " count", self.headerFormat)
         tmpWsVar = self.wb.add_worksheet(pcmName)
         self.postCheckSheetsList.append(tmpWsVar)
-        # self.sheetRow[tmpWsVar] = 1
+        self.checkSheetFileCount[tmpWsVar] = 0
+        self.sheetRow[tmpWsVar] = 1
 
 
 
     def setFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList), 0, wsName + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)
         self.fixSheet = tmpWsVar
@@ -195,16 +197,21 @@ class WorkbookManager:
         self.executionTime = end - start
 
 
-
-    def writeInCell(self, ws, col: str, text: str, format=False, rowIncrement=0, fileIncrement=0):
+    def writeInCell(self, ws, col: str, text: str, format=None, rowIncrement=0, fileIncrement=0):
         # write_string() usage so no equations are accidentally written
-        if (format): 
-            ws.write_string(self.sheetRow[ws], col, text, format)
-        else: 
-            ws.write_string(self.sheetRow[ws], col, text)
+        if (format): ws.write_string(self.sheetRow[ws], col, text, format)
+        else: ws.write_string(self.sheetRow[ws], col, text)
 
         self.sheetRow[ws] += rowIncrement
         self.checkSheetFileCount[ws] += fileIncrement
+
+
+
+    def incrementRow(self, ws, amount:int=1):
+        self.sheetRow[ws] += amount
+
+    def incrementFileCount(self, ws, amount:int=1):
+        self.checkSheetFileCount[ws] += amount
 
 
 
@@ -220,7 +227,7 @@ class WorkbookManager:
         self.summarySheet.write_number(6, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 0
-        for ws in self.concurrentCheckSheetsList:
+        for ws in (self.concurrentCheckSheetsList + self.postCheckSheetsList):
             self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
             i += 1
         
