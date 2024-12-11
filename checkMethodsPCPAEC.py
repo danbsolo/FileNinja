@@ -10,12 +10,15 @@ from workbookManager import WorkbookManager
 PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "-. ")
 CHARACTER_LIMIT = 200
 
+# Used by deleteOldFilesGeneral()
+TODAY = datetime.now()
+
 # Used by fileTypeMisc() and fileTypePost()
 FILE_EXTENSION_COUNT = {}
 FILE_EXTENSION_TOTAL_SIZE = {}
 
-# Used by deleteOldFilesGeneral()
-TODAY = datetime.now()
+# Used by duplicateFileMisc() and duplicateFilePost()
+FILES_AND_PATHS = {}
 
 
 # Declare a global variable within a function
@@ -169,7 +172,7 @@ def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
             wbm.writeInCell(ws, wbm.RENAME_COL, "FAILED TO DELETE", wbm.fileErrorFormat, 1, 1)
 
 
-def fileTypeMisc(dirAbsolute:str, itemName:str):
+def fileExtensionMisc(dirAbsolute:str, itemName:str):
     _, ext = os.path.splitext(itemName)
     ext = ext.lower()
     fileSize = os.path.getsize(dirAbsolute+"/"+itemName) / 1000_000  # bytes / 1000_000 = mbs
@@ -182,7 +185,7 @@ def fileTypeMisc(dirAbsolute:str, itemName:str):
         FILE_EXTENSION_TOTAL_SIZE[ext] = fileSize
 
 
-def fileTypePost(ws):
+def fileExtensionPost(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)
     ws.write(0, 1, "Count", wbm.headerFormat)
     ws.write(0, 2, "Avg Size (KB)", wbm.headerFormat)
@@ -191,10 +194,34 @@ def fileTypePost(ws):
     for ext in sorted(FILE_EXTENSION_COUNT.keys()):
         ws.write_string(row, 0, ext)
         ws.write_number(row, 1, FILE_EXTENSION_COUNT[ext])
-        ws.write_number(row, 2, round(FILE_EXTENSION_TOTAL_SIZE[ext] / FILE_EXTENSION_COUNT[ext], 2))
+        ws.write_number(row, 2, round(FILE_EXTENSION_TOTAL_SIZE[ext] / FILE_EXTENSION_COUNT[ext], 1))
         row += 1
 
     ws.autofit()
+
+
+def duplicateFileMisc(dirAbsolute:str, fileName:str):
+    if fileName in FILES_AND_PATHS:
+        FILES_AND_PATHS[fileName].append(dirAbsolute)
+    else:
+        FILES_AND_PATHS[fileName] = [dirAbsolute]
+
+
+def duplicateFilePost(ws):
+    ws.write(0, 0, "Files", wbm.headerFormat)
+    ws.write(0, 1, "Directories", wbm.headerFormat)
+    
+    row = 1
+    for itemName in sorted(FILES_AND_PATHS.keys()):
+        if len(FILES_AND_PATHS[itemName]) > 1:  # if so, it's duplicated
+            ws.write_string(row, 0, itemName, wbm.fileErrorFormat)
+
+            for path in FILES_AND_PATHS[itemName]:
+                ws.write_string(row, 1, path, wbm.dirColFormat)
+                row += 1
+
+    ws.autofit()
+
 
 
 def listAll(_:str, itemName:str, ws):

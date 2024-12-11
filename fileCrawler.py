@@ -12,7 +12,8 @@ DELETE_OLD_FILES = "DelOldFiles-Fix"
 CHARACTER_LIMIT_CHECK = "CharLimit-Check"
 BAD_CHARACTER_CHECK = "BadChar-Check"
 SPACE_CHECK = "SPC-Check"
-FILE_TYPE_SUMMARY = "FileType-Summary"  # Call it a summary for the user, but it's really another checkMethod
+FILE_EXTENSION_SUMMARY = "FileExt-Summary"
+DUPLICATE_FILE_CHECK = "DupFile-Check"
 
 # a constant dictionary of available checks and their corresponding function
 CONCURRENT_CHECK_METHODS = {
@@ -22,11 +23,13 @@ CONCURRENT_CHECK_METHODS = {
 }
 
 MISC_CHECK_METHODS = {
-    FILE_TYPE_SUMMARY: checkMethodsPCPAEC.fileTypeMisc
+    FILE_EXTENSION_SUMMARY: checkMethodsPCPAEC.fileExtensionMisc,
+    DUPLICATE_FILE_CHECK: checkMethodsPCPAEC.duplicateFileMisc
 }
 
 POST_CHECK_METHODS = {
-    FILE_TYPE_SUMMARY: checkMethodsPCPAEC.fileTypePost
+    FILE_EXTENSION_SUMMARY: checkMethodsPCPAEC.fileExtensionPost,
+    DUPLICATE_FILE_CHECK: checkMethodsPCPAEC.duplicateFilePost
 }
 
 
@@ -198,7 +201,7 @@ def view():
     fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptions)
     fixDropdownMenu.config(font=fontGeneral) # set the font of fixDropdownMenu
 
-    checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=len(CONCURRENT_CHECK_METHODS)+1)
+    checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=6)
     
     # dictionaries are ordered as of Python version 3.7
     for ccm in CONCURRENT_CHECK_METHODS.keys(): checkMethodBox.insert(tk.END, ccm)
