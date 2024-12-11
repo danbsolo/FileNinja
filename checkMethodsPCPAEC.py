@@ -169,6 +169,7 @@ def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
 
 def fileTypeMisc(dirAbsolute:str, itemName:str):
     _, ext = os.path.splitext(itemName)
+    ext = ext.lower()
     fileSize = os.path.getsize(dirAbsolute+"/"+itemName) / 1000_000  # bytes / 1000_000 = mbs
 
     if ext in FILE_EXTENSION_COUNT:
