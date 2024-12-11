@@ -6,11 +6,13 @@ from datetime import datetime, timedelta
 from workbookManager import WorkbookManager
 
 
-# Global variable so it's set in stone
-# Used by badCharErrorCheck()
-# This includes space as a permissible character as it is checked by spaceErrorCheck() instead
+# Used by badCharErrorCheck(). This includes space as a permissible character as it is checked by spaceErrorCheck() instead
 PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "-. ")
 CHARACTER_LIMIT = 200
+
+# Used by fileTypeMisc() and fileTypePost()
+FILE_EXTENSION_COUNT = {}
+FILE_EXTENSION_TOTAL_SIZE = {}
 
 # Declare a global variable within a function
 # ~ Usually a bad idea, but here, it makes sense
@@ -19,7 +21,7 @@ def setWorkBookManager(newManager: WorkbookManager):
     wbm = newManager
 
 
-def spaceErrorCheck(dirAbsolute:str, itemName:str, ws) -> bool:
+def spaceErrorCheck(_:str, itemName:str, ws) -> bool:
     if " " in itemName:
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat, rowIncrement=1, fileIncrement=1)
         # no need to write in the error column as this won't vary between errors found
@@ -38,7 +40,7 @@ def overCharLimitCheck(dirAbsolute:str, itemName:str, ws) -> bool:
     return False
 
 
-def badCharErrorCheck(dirAbsolute:str, itemName:str, ws) -> Set[str]:
+def badCharErrorCheck(_:str, itemName:str, ws) -> Set[str]:
     """Does not check for SPC characters nor extra periods."""
     
     badChars = set()
@@ -80,7 +82,7 @@ def spaceErrorGeneral(oldItemName) -> str:
     return newItemName
 
 
-def spaceErrorFixLog(dirAbsolute:str, oldItemName:str, ws):
+def spaceErrorFixLog(_:str, oldItemName:str, ws):
     newItemName = spaceErrorGeneral(oldItemName)
     if (not newItemName): return
 
@@ -165,5 +167,32 @@ def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
             wbm.writeInCell(ws, wbm.RENAME_COL, "FAILED TO DELETE", wbm.fileErrorFormat, 1, 1)
 
 
-def listAll(dirAbsolute:str, itemName:str, ws):
+def fileTypeMisc(dirAbsolute:str, itemName:str):
+    _, ext = os.path.splitext(itemName)
+    fileSize = os.path.getsize(dirAbsolute+"/"+itemName) / 1000_000  # bytes / 1000_000 = mbs
+
+    if ext in FILE_EXTENSION_COUNT:
+        FILE_EXTENSION_COUNT[ext] += 1
+        FILE_EXTENSION_TOTAL_SIZE[ext] += fileSize
+    else:
+        FILE_EXTENSION_COUNT[ext] = 1
+        FILE_EXTENSION_TOTAL_SIZE[ext] = fileSize
+
+
+def fileTypePost(ws):
+    ws.write(0, 0, "Extensions", wbm.headerFormat)
+    ws.write(0, 1, "Count", wbm.headerFormat)
+    ws.write(0, 2, "Avg Size (KB)", wbm.headerFormat)
+
+    row = 1
+    for ext in sorted(FILE_EXTENSION_COUNT.keys()):
+        ws.write_string(row, 0, ext)
+        ws.write_number(row, 1, FILE_EXTENSION_COUNT[ext])
+        ws.write_number(row, 2, round(FILE_EXTENSION_TOTAL_SIZE[ext] / FILE_EXTENSION_COUNT[ext], 2))
+        row += 1
+
+    ws.autofit()
+
+
+def listAll(_:str, itemName:str, ws):
     wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1, fileIncrement=1)

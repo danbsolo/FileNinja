@@ -12,12 +12,15 @@ class WorkbookManager:
         self.summarySheet.activate()  # view this worksheet on startup
 
         # Doesn't add summarySheet
-        self.checkSheetsList = []
+        self.concurrentCheckSheetsList = []
+        self.postCheckSheetsList = []
         self.fixSheet = 0  # initializing for clarity, but this is a worksheet, not an int
 
-        self.checkMethods = []  # List of checkMethods to run on the fileName. Called within fileCrawl()
+        self.concurrentCheckMethods = []  # List of checkMethods to run on the fileName. Called within fileCrawl()
+        self.miscCheckMethods = []
+        self.postCheckMethods = []
         self.fixMethod = lambda : None
-        self.fixArg = ""  # initialize fixArg to a dummy value
+        self.fixArg = None  # initialize fixArg to a dummy value
 
         # For summarySheet first 7 rows are used for other stats. Skip a line, then write variable number of errors.
         self.sheetRow = {self.summarySheet: 8}
@@ -64,22 +67,33 @@ class WorkbookManager:
         })
 
 
-
-    def addCheckMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
+    def addConcurrentCheckMethod(self, ccmName:str, functionSelection: Callable[[str, str], bool]):
         """Adds a worksheet and corresponding checkMethod"""
-        
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.checkSheetsList), 0, wsName + " count", self.headerFormat)
 
-        tmpWsVar = self.wb.add_worksheet(wsName)
-        self.checkSheetsList.append(tmpWsVar)
+        self.concurrentCheckMethods.append(functionSelection)
+        tmpWsVar = self.wb.add_worksheet(ccmName)
+
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList), 0, ccmName + " count", self.headerFormat)
+        self.concurrentCheckSheetsList.append(tmpWsVar)
         self.sheetRow[tmpWsVar] = 1
         self.checkSheetFileCount[tmpWsVar] = 0
 
-        self.checkMethods.append(functionSelection)
+
+    def addMiscCheckMethod(self, mcmName:str, functionSelection: Callable):
+        self.miscCheckMethods.append(functionSelection)
+
+
+    def addPostCheckMethod(self, pcmName:str, functionSelection: Callable):
+        self.postCheckMethods.append(functionSelection)
+        
+        tmpWsVar = self.wb.add_worksheet(pcmName)
+        self.postCheckSheetsList.append(tmpWsVar)
+        # self.sheetRow[tmpWsVar] = 1
+
 
 
     def setFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.checkSheetsList), 0, wsName + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)
         self.fixSheet = tmpWsVar
@@ -94,7 +108,7 @@ class WorkbookManager:
 
 
     def setDefaultFormatting(self, dirAbsolute, includeSubFolders, renamingFiles):
-        for wsc in self.checkSheetsList:
+        for wsc in self.concurrentCheckSheetsList:
             # Column width
             # wsc.set_column(self.DIR_COL, self.DIR_COL, 50)
             # wsc.set_column(self.ITEM_COL, self.ITEM_COL, 30)
@@ -139,16 +153,22 @@ class WorkbookManager:
             if (itemName[0:2] == "~$"):
                 continue
 
-            # Run every selected checkMethod on itemName
-            for i in range(len(self.checkMethods)):
+            # Run every selected checkMethod
+            # Concurrent check methods
+            for i in range(len(self.concurrentCheckMethods)):
                 # If error present
-                if (self.checkMethods[i](dirAbsolute, itemName, self.checkSheetsList[i])):
+                if (self.concurrentCheckMethods[i](dirAbsolute, itemName, self.concurrentCheckSheetsList[i])):
                     if (not alreadyCounted):
                         self.errorCount += 1
                         alreadyCounted = True
-            
+
             alreadyCounted = False
 
+            # Misc check methods
+            for mcm in self.miscCheckMethods:
+                mcm(dirAbsolute, itemName)
+            
+            # Fix method
             self.filesScannedCount += 1
             self.fixMethod(dirAbsolute, itemName, self.fixSheet)
                 
@@ -158,7 +178,7 @@ class WorkbookManager:
         start = time()
         
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
-            for ws in self.checkSheetsList + [self.fixSheet]:
+            for ws in self.concurrentCheckSheetsList + [self.fixSheet]:
                 ws.write(self.sheetRow[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
 
             self.fileCrawl(dirAbsolute, dirFiles)
@@ -167,6 +187,9 @@ class WorkbookManager:
 
         # If no erred files are under the last directory, it still gets printed
         # A fix for that would have to be here, if necessary
+
+        for i in range(len(self.postCheckMethods)):
+            self.postCheckMethods[i](self.postCheckSheetsList[i])
 
         end = time()
         self.executionTime = end - start
@@ -188,7 +211,7 @@ class WorkbookManager:
     def populateSummarySheet(self):
         errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
 
-        if (self.fixArg != ""): self.summarySheet.write_number(3, 1, self.fixArg, self.summaryValueFormat)
+        if (self.fixArg != None): self.summarySheet.write_number(3, 1, self.fixArg, self.summaryValueFormat)
         
         self.summarySheet.write_number(4, 1, self.filesScannedCount, self.summaryValueFormat)
         self.summarySheet.write_number(5, 1, self.errorCount, self.summaryValueFormat)
@@ -196,7 +219,7 @@ class WorkbookManager:
         self.summarySheet.write_number(6, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 0
-        for ws in self.checkSheetsList:
+        for ws in self.concurrentCheckSheetsList:
             self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
             i += 1
         
@@ -235,7 +258,7 @@ class WorkbookManager:
         # summarySheet is not autofit as the filepath is much much wider than everything else. It is set manually at the beginning.
         # Note that autofit only functions sa intended if done after the data has been entered
         
-        for ws in self.checkSheetsList + [self.fixSheet]:
+        for ws in self.concurrentCheckSheetsList + [self.fixSheet]:
             ws.autofit()
             
 

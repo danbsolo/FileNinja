@@ -12,14 +12,22 @@ DELETE_OLD_FILES = "DelOldFiles-Fix"
 CHARACTER_LIMIT_CHECK = "CharLimit-Check"
 BAD_CHARACTER_CHECK = "BadChar-Check"
 SPACE_CHECK = "SPC-Check"
+FILE_TYPE_SUMMARY = "FileType-Summary"  # Call it a summary for the user, but it's really another checkMethod
 
 # a constant dictionary of available checks and their corresponding function
-CHECK_METHODS = {
+CONCURRENT_CHECK_METHODS = {
     CHARACTER_LIMIT_CHECK: checkMethodsPCPAEC.overCharLimitCheck,
     BAD_CHARACTER_CHECK: checkMethodsPCPAEC.badCharErrorCheck,
-    SPACE_CHECK: checkMethodsPCPAEC.spaceErrorCheck
+    SPACE_CHECK: checkMethodsPCPAEC.spaceErrorCheck,
 }
 
+MISC_CHECK_METHODS = {
+    FILE_TYPE_SUMMARY: checkMethodsPCPAEC.fileTypeMisc
+}
+
+POST_CHECK_METHODS = {
+    FILE_TYPE_SUMMARY: checkMethodsPCPAEC.fileTypePost
+}
 
 
 def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, selectedCheckMethods: list[str], fixOption: str, arg: str):
@@ -39,8 +47,19 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, select
     wbm = WorkbookManager(workbookPathName)
     checkMethodsPCPAEC.setWorkBookManager(wbm)
 
+    # The selectedCheckMethods are guaranteed to be in CONCURRENT_CHECK_METHODS, but not necessarily POST_CHECK_METHODS
     for cm in selectedCheckMethods:
-        wbm.addCheckMethod(cm, CHECK_METHODS[cm])
+        if cm in CONCURRENT_CHECK_METHODS:
+            wbm.addConcurrentCheckMethod(cm, CONCURRENT_CHECK_METHODS[cm])
+
+        if cm in MISC_CHECK_METHODS:
+            wbm.addMiscCheckMethod(cm, MISC_CHECK_METHODS[cm])
+
+        if cm in POST_CHECK_METHODS:
+           wbm.addPostCheckMethod(cm, POST_CHECK_METHODS[cm])
+
+        
+
 
     if (renameFiles):
         if fixOption == SPACE_FIX:
@@ -179,11 +198,12 @@ def view():
     fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptions)
     fixDropdownMenu.config(font=fontGeneral) # set the font of fixDropdownMenu
 
-    checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=len(CHECK_METHODS)+1)
+    checkMethodBox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=len(CONCURRENT_CHECK_METHODS)+1)
     
     # dictionaries are ordered as of Python version 3.7
-    for cmo in CHECK_METHODS.keys():
-        checkMethodBox.insert(tk.END, cmo)
+    for ccm in CONCURRENT_CHECK_METHODS.keys(): checkMethodBox.insert(tk.END, ccm)
+    for mcm in MISC_CHECK_METHODS.keys(): checkMethodBox.insert(tk.END, mcm)
+
     for i in range(3):  # hard code. Just select the first 3.
         checkMethodBox.select_set(i)
 
