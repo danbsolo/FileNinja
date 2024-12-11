@@ -197,6 +197,7 @@ def fileExtensionPost(ws):
         ws.write_number(row, 2, round(FILE_EXTENSION_TOTAL_SIZE[ext] / FILE_EXTENSION_COUNT[ext], 1))
         row += 1
 
+    ws.freeze_panes(1, 0)
     ws.autofit()
 
 
@@ -220,6 +221,7 @@ def duplicateFilePost(ws):
                 ws.write_string(row, 1, path, wbm.dirColFormat)
                 row += 1
 
+    ws.freeze_panes(1, 0)
     ws.autofit()
 
 
