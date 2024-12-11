@@ -14,6 +14,10 @@ CHARACTER_LIMIT = 200
 FILE_EXTENSION_COUNT = {}
 FILE_EXTENSION_TOTAL_SIZE = {}
 
+# Used by deleteOldFilesGeneral()
+TODAY = datetime.now()
+
+
 # Declare a global variable within a function
 # ~ Usually a bad idea, but here, it makes sense
 def setWorkBookManager(newManager: WorkbookManager):
@@ -110,9 +114,9 @@ def spaceErrorFixExecute(dirAbsolute:str, oldItemName:str, ws):
 def deleteOldFilesGeneral(fullFilePath: str) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
     
-    # double-checking that this value is usable. Dire consequences if not.
     daysTooOld = wbm.fixArg
-    if (daysTooOld <= 0): return -1
+    # Could double-check that this value is usable. Dire consequences if not.
+    #  if (daysTooOld <= 0): return -1
     
     # gets date of file. This *can* error virtue of the library functions, hence try/except
     try:
@@ -120,11 +124,9 @@ def deleteOldFilesGeneral(fullFilePath: str) -> int:
     except:
         return -1
 
-    today = datetime.now()
-    cutOffDate = today - timedelta(days=daysTooOld)
+    fileDaysAgo = (TODAY - fileDate).days
 
-    # Any fileDate before cutOffDate is too old
-    if (fileDate < cutOffDate): return (today - fileDate).days
+    if (fileDaysAgo >= daysTooOld): return fileDaysAgo
     else: return 0
 
 
@@ -158,11 +160,11 @@ def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
         wbm.writeInCell(ws, wbm.RENAME_COL, "UNABLE TO READ DATE", wbm.fileErrorFormat, 1, 1) 
     # If over CHARACTER_LIMIT characters, do not delete as it is not backed up
     elif len(fullFilePath) > CHARACTER_LIMIT:
-        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago, but violates charLimit".format(daysOld), wbm.showRenameFormat, 1, 1)
+        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days, but violates charLimit".format(daysOld), wbm.showRenameFormat, 1, 1)
     else:
         try:
             os.remove(fullFilePath)
-            wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago".format(daysOld), wbm.renameFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.RENAME_COL, "{} days".format(daysOld), wbm.renameFormat, 1, 1)
         except:
             wbm.writeInCell(ws, wbm.RENAME_COL, "FAILED TO DELETE", wbm.fileErrorFormat, 1, 1)
 
