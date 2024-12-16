@@ -1,0 +1,50 @@
+- Summary
+Various metrics regarding the execution of the file crawl.
+
+- Parameter
+
+
+- SubFolders?
+
+
+- Modify?
+
+
+- Browse
+
+
+- Execute
+
+
+- Results
+
+
+- Check methods
+Flags any file name that falls under the error described. Many can be ran per execution.
+
+- Fix method
+Runs a fix on flagged file names, displaying potential renames or actual renames made. Only one can be ran per execution.
+
+- CharLimit-Check
+Flags file paths over 200 characters. These are not backed up.
+
+- BadChar-Check
+Flags file names with bad characters. A bad character is any character that is either not alphanumeric nor a hyphen (-).
+
+- SPC-Check
+Flags file names with spaces.
+
+- List-All
+Lists all files.
+
+- SPC-Fix
+Replaces all instances of spaces with a hyphen (i.e. "Engagement Tracker.txt" = "Engagement-Tracker.txt").
+
+- FileExt-Summary
+
+- DupFile-Check
+
+- DelOldFiles-Fix
+
+- DelEmptyDirs-Fix
+

@@ -173,9 +173,15 @@ def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
 
 
 def fileExtensionMisc(dirAbsolute:str, itemName:str):
-    _, ext = os.path.splitext(itemName)
+    # Like other os operations, this may randomly crash. The solution here is to catch and return, ignoring the file completely
+    # However, for this function, it's okay. We're just looking for general averages; a couple values is fine to ignore
+    try: _, ext = os.path.splitext(itemName)
+    except: return
+
     ext = ext.lower()
-    fileSize = os.path.getsize(dirAbsolute+"/"+itemName) / 1000_000  # bytes / 1000_000 = mbs
+
+    try: fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) / 1000_000  # bytes / 1000_000 = mbs
+    except: return
 
     if ext in FILE_EXTENSION_COUNT:
         FILE_EXTENSION_COUNT[ext] += 1
@@ -226,6 +232,41 @@ def duplicateFilePost(ws):
 
     ws.freeze_panes(1, 0)
     ws.autofit()
+
+
+
+def deleteEmptyDirectoriesLog(dirAbsolute, dirFolders, dirFiles, ws):
+    tooFewAmount = wbm.fixArg
+
+    # If even 1 folder exists, this isn't empty
+    if len(dirFolders) != 0:
+        return
+
+    # If equal to tooFewAmount or less, then this folder needs to be at least flagged
+    fileAmount = len(dirFiles)
+    if fileAmount <= tooFewAmount:
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.showRenameFormat, 1, 1)
+
+
+def deleteEmptyDirectoriesExecute(dirAbsolute, dirFolders, dirFiles, ws):
+    tooFewAmount = wbm.fixArg
+
+    if len(dirFolders) != 0:
+        return
+
+    fileAmount = len(dirFiles)
+    if fileAmount <= tooFewAmount:
+
+        # If it specifically has 0 files, delete the folder
+        if (fileAmount == 0):
+            try: 
+                os.rmdir(dirAbsolute)
+            except:
+                wbm.writeInCell(ws, wbm.ERROR_COL, "{} FILES. COULD NOT DELETE".format(fileAmount), wbm.fileErrorFormat, 1, 1)
+                return
+            wbm.writeInCell(ws, wbm.ERROR_COL, "{} FILES".format(fileAmount), wbm.renameFormat, 1, 1)
+        else: # Otherwise, just flag as usual
+            wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.showRenameFormat, 1, 1)
 
 
 

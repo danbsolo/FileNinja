@@ -14,12 +14,13 @@ class WorkbookManager:
         # Doesn't add summarySheet
         self.concurrentCheckSheetsList = []
         self.postCheckSheetsList = []
-        self.fixSheet = 0  # initializing for clarity, but this is a worksheet, not an int
+        self.fixSheet = None # initializing for clarity
 
         self.concurrentCheckMethods = []  # List of checkMethods to run on the fileName. Called within fileCrawl()
         self.miscCheckMethods = []
         self.postCheckMethods = []
-        self.fixMethod = lambda : None
+        self.fixMethod = lambda _1, _2, _3: None  # default dummy function
+        self.folderFixMethod = lambda _1, _2, _3, _4: None
         self.fixArg = None  # initialize fixArg to a dummy value
 
         # For summarySheet first 7 rows are used for other stats. Skip a line, then write variable number of errors.
@@ -94,6 +95,7 @@ class WorkbookManager:
 
 
 
+    # TODO: Create a generic function for the following 2 fix method setting functions
     def setFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
         self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, wsName + " count", self.headerFormat)
 
@@ -103,10 +105,30 @@ class WorkbookManager:
         self.checkSheetFileCount[tmpWsVar] = 0
 
         self.fixMethod = functionSelection
+
+
+    def setFolderFixMethod(self, wsName, functionSelection):
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, wsName + " count", self.headerFormat)
+
+        tmpWsVar = self.wb.add_worksheet(wsName)
+        self.fixSheet = tmpWsVar
+        self.sheetRow[tmpWsVar] = 1
+        self.checkSheetFileCount[tmpWsVar] = 0
+
+        self.folderFixMethod = functionSelection
+
         
 
     def setFixArg(self, arg: int):
         self.fixArg = arg
+
+
+    # Lambdas are automatically considered bad functions
+    def isFixSheetSet(self) -> bool:
+        return bool(self.fixSheet)  # if self.fixSheet is not set to its default value "None"
+
+        # The following line is specifically for checking fixMethod being set to a valid function, and *not* a lambda
+        # return callable(self.fixMethod) and self.fixMethod.__name__ != "<lambda>"
 
 
     def setDefaultFormatting(self, dirAbsolute, includeSubFolders, renamingFiles):
@@ -122,10 +144,12 @@ class WorkbookManager:
             wsc.write(0, self.ERROR_COL, "Error", self.headerFormat)
 
 
-        self.fixSheet.freeze_panes(1, 0)
-        self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
-        self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
-        self.fixSheet.write(0, self.ERROR_COL, "Renamed" if renamingFiles else "Potential Rename", self.headerFormat)
+        if (self.isFixSheetSet()):
+            self.fixSheet.freeze_panes(1, 0)
+            self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
+            self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
+            self.fixSheet.write(0, self.ERROR_COL, "Modification" if renamingFiles else "Potential Modification", self.headerFormat)
+
 
         self.summarySheet.set_column(0, 0, 20)
         self.summarySheet.set_column(1, 1, 15)
@@ -178,17 +202,20 @@ class WorkbookManager:
 
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         start = time()
+
+        allSheets = self.concurrentCheckSheetsList[:]
+        if (self.isFixSheetSet()):
+            allSheets.append(self.fixSheet)   
         
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
-            for ws in self.concurrentCheckSheetsList + [self.fixSheet]:
+            for ws in allSheets:
                 ws.write(self.sheetRow[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
 
             self.fileCrawl(dirAbsolute, dirFiles)
 
-            # self.filesScannedCount += len(dirFiles)
+            # Folder fix method
+            self.folderFixMethod(dirAbsolute, dirFolders, dirFiles, self.fixSheet)
 
-        # If no erred files are under the last directory, it still gets printed
-        # A fix for that would have to be here, if necessary
 
         for i in range(len(self.postCheckMethods)):
             self.postCheckMethods[i](self.postCheckSheetsList[i])
@@ -230,25 +257,31 @@ class WorkbookManager:
         for ws in (self.concurrentCheckSheetsList + self.postCheckSheetsList):
             self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
             i += 1
-        
-        self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[self.fixSheet], self.summaryValueFormat)
+
+        if (self.isFixSheetSet()):
+            self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[self.fixSheet], self.summaryValueFormat)
 
         
 
     def createHelpMeSheet(self):
+        # attempt to open HELPME.txt
+        try: helpMeFile = open("HELPME.txt", "r")
+        except FileNotFoundError: return
+        
+        termDict = {}
+        lines = helpMeFile.readlines()
+        linesLength = len(lines)
+
+        i = 0
+        while i < linesLength:
+            if lines[i][0] == "-":
+                term = lines[i][1:].strip()
+                definition = lines[i+1].strip()
+                termDict[term] = definition
+                i += 1
+            i += 1
+
         helpMeSheet = self.wb.add_worksheet("HelpMe")
-
-        termDict = {
-            "Summary": "Various metrics regarding the execution of the file crawl.",
-            "Check methods": "Flags any file name that falls under the error described. Many can be ran per execution.",
-            "Fix method": "Runs a fix on flagged file names, displaying potential renames or actual renames made. Only one can be ran per execution.",
-            "CharLimit-Check": "Flags file paths over 200 characters. These are not backed up.",
-            "BadChar-Check": "Flags file names with bad characters. A bad character is any character that is either not alphanumeric nor a hyphen (-).",
-            "SPC-Check": "Flags file names with spaces.",
-            "List-All": "Lists all files.",
-            "SPC-Fix": "Replaces all instances of spaces with a hyphen (i.e. \"Engagement Tracker.txt\" = \"Engagement-Tracker.txt\")"
-        }
-
         helpMeSheet.write(0, 0, "Term", self.headerFormat)
         helpMeSheet.write(0, 1, "Definition", self.headerFormat)
 
@@ -264,9 +297,13 @@ class WorkbookManager:
 
     def autofitSheets(self):
         # summarySheet is not autofit as the filepath is much much wider than everything else. It is set manually at the beginning.
-        # Note that autofit only functions sa intended if done after the data has been entered
+        # Note that autofit only functions as intended if done after the data has been entered
+
+        allSheets = self.concurrentCheckSheetsList[:]
+        if (self.isFixSheetSet()):
+            allSheets.append(self.fixSheet)  
         
-        for ws in self.concurrentCheckSheetsList + [self.fixSheet]:
+        for ws in allSheets:
             ws.autofit()
             
 

@@ -9,6 +9,7 @@ import checkMethodsPCPAEC
 LIST_ALL = "ListAll"
 SPACE_FIX = "SPC-Fix"
 DELETE_OLD_FILES = "DelOldFiles-Fix"
+DELETE_EMPTY_DIRECTORIES_FIX = "DelEmptyDirs-Fix"
 CHARACTER_LIMIT_CHECK = "CharLimit-Check"
 BAD_CHARACTER_CHECK = "BadChar-Check"
 SPACE_CHECK = "SPC-Check"
@@ -31,6 +32,18 @@ POST_CHECK_METHODS = {
     FILE_EXTENSION_SUMMARY: checkMethodsPCPAEC.fileExtensionPost,
     DUPLICATE_FILE_CHECK: checkMethodsPCPAEC.duplicateFilePost
 }
+
+
+def validateArgument(arg, minimum):
+    # Before execution, ensure the arg given is valid
+    try:
+        arg.strip()  # remove leading and trailing whitespace
+        arg = int(arg)  # attempt to convert to int
+        if (arg >= minimum): return arg
+    except:
+        pass
+
+    return  # None
 
 
 def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, selectedCheckMethods: list[str], fixOption: str, arg: str):
@@ -68,34 +81,31 @@ def control(dirAbsolute: str, includeSubFolders: bool, renameFiles: bool, select
         if fixOption == SPACE_FIX:
             wbm.setFixMethod(SPACE_FIX, checkMethodsPCPAEC.spaceErrorFixExecute)
         elif fixOption == DELETE_OLD_FILES:
-            try:
-                arg.strip()
-                arg = int(arg)
-                if (arg <= 0):
-                    return -3
-            except:
-                return -3
-            
+            arg = validateArgument(arg, 1)
+            if (arg is None): return -3
             wbm.setFixMethod(DELETE_OLD_FILES, checkMethodsPCPAEC.deleteOldFilesExecute) 
             wbm.setFixArg(arg)
-        else:
+        elif fixOption == LIST_ALL:
             wbm.setFixMethod(LIST_ALL, checkMethodsPCPAEC.listAll)
+        elif fixOption == DELETE_EMPTY_DIRECTORIES_FIX:
+            arg = validateArgument(arg, 0)
+            if (arg is None): return -4
+            wbm.setFolderFixMethod(DELETE_EMPTY_DIRECTORIES_FIX, checkMethodsPCPAEC.deleteEmptyDirectoriesExecute)
+            wbm.setFixArg(arg)
     else:
         if fixOption == SPACE_FIX:
             wbm.setFixMethod(SPACE_FIX, checkMethodsPCPAEC.spaceErrorFixLog)
         elif fixOption == DELETE_OLD_FILES:
-            # Before execution, ensure the arg given is valid
-            try:
-                arg.strip()  # remove leading and trailing whitespace
-                arg = int(arg)  # attempt to convert to int
-                if (arg <= 0):
-                    return -3
-            except:
-                return -3
-            
+            arg = validateArgument(arg, 1)
+            if (not arg): return -3
             wbm.setFixMethod(DELETE_OLD_FILES, checkMethodsPCPAEC.deleteOldFilesLog)
             wbm.setFixArg(arg)
-        else:
+        elif fixOption == DELETE_EMPTY_DIRECTORIES_FIX:
+            arg = validateArgument(arg, 0)
+            if (arg is None): return -4
+            wbm.setFolderFixMethod(DELETE_EMPTY_DIRECTORIES_FIX, checkMethodsPCPAEC.deleteEmptyDirectoriesLog)
+            wbm.setFixArg(arg)
+        elif fixOption == LIST_ALL:
             wbm.setFixMethod(LIST_ALL, checkMethodsPCPAEC.listAll)
 
     # Errors if this file already exists and is currently opened
@@ -150,6 +160,8 @@ def view():
             print("Invalid directory.")
         elif (exitCode == -3):
             print("Invalid argument. Must be an integer greater than 0.")
+        elif (exitCode == -4):
+            print("Invalid argument. Must be an integer greater than or equal to 0.")
 
 
 
@@ -195,7 +207,7 @@ def view():
     renameState = tk.IntVar()
     rf = tk.Checkbutton(frame1, text="Modify?", variable=renameState, font=fontGeneral)
 
-    fixOptions = [LIST_ALL, SPACE_FIX, DELETE_OLD_FILES]
+    fixOptions = ["...", LIST_ALL, SPACE_FIX, DELETE_OLD_FILES, DELETE_EMPTY_DIRECTORIES_FIX]
     fixOption = tk.StringVar()
     fixOption.set(fixOptions[0])
     fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptions)
@@ -217,8 +229,7 @@ def view():
 
     browseButton = tk.Button(frame3, text="Browse", command=selectDirectory, font=fontGeneral)
     okayButton = tk.Button(frame3, text="Execute", command=launchController, font=fontGeneral)
-    resultsButton = tk.Button(frame3, text="Open results", command=openResultsFolder, font=fontGeneral)
-
+    resultsButton = tk.Button(frame3, text="Results", command=openResultsFolder, font=fontGeneral)
 
 
 
