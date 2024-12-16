@@ -84,7 +84,7 @@ class WorkbookManager:
         self.miscCheckMethods.append(functionSelection)
 
 
-    def addPostStatefulFindMethod(self, pcmName:str, functionSelection: Callable):
+    def addPostMethod(self, pcmName:str, functionSelection: Callable):
         self.postCheckMethods.append(functionSelection)
 
         self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, pcmName + " count", self.headerFormat)

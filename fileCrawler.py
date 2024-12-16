@@ -6,6 +6,7 @@ from datetime import datetime
 import findFixMethods
 
 RESULTS_DIRECTORY = "fileCrawlerResults"
+
 LIST_ALL = "ListAll"
 CHARACTER_LIMIT_FIND = "CharLimit-Find"
 BAD_CHARACTER_FIND = "BadChar-Find"
@@ -18,28 +19,28 @@ SPACE_FIX = "SPC-Fix"
 DELETE_OLD_FILES = "DelOldFiles-Fix"
 DELETE_EMPTY_DIRECTORIES_FIX = "DelEmptyDirs-Fix"
 
-
-STATELESS_FIND_METHODS = {
-    LIST_ALL: findFixMethods.listAll,
-    CHARACTER_LIMIT_FIND: findFixMethods.overCharLimitFind,
-    BAD_CHARACTER_FIND: findFixMethods.badCharErrorFind,
-    SPACE_FIND: findFixMethods.spaceErrorFind,
-}
-STATEFUL_FIND_METHODS = {
-    FILE_EXTENSION_SUMMARY: findFixMethods.fileExtensionMisc,
-    DUPLICATE_FILE_FIND: findFixMethods.duplicateFileMisc
-}
-POST_METHODS = {
-    FILE_EXTENSION_SUMMARY: findFixMethods.fileExtensionPost,
-    DUPLICATE_FILE_FIND: findFixMethods.duplicateFilePost
+# First argument is the corresponding function.
+# Second is True if stateless (concurrent writing), False if stateful.
+FIND_METHODS = {
+    LIST_ALL: (findFixMethods.listAll, True),
+    CHARACTER_LIMIT_FIND: (findFixMethods.overCharLimitFind, True),
+    BAD_CHARACTER_FIND: (findFixMethods.badCharErrorFind, True),
+    SPACE_FIND: (findFixMethods.spaceErrorFind, True),
+    DUPLICATE_FILE_FIND: (findFixMethods.duplicateFileMisc, False),
+    FILE_EXTENSION_SUMMARY: (findFixMethods.fileExtensionMisc, False)
 }
 
-# First argument is Log. Second is Execute. Third is True if fileFixMethod, False if folderFixMethod. Fourth is fixArg's minimum (optional).
+# First argument is Log function (modify off). Second is Execute function (modify on). 
+# Third is True if fileFixMethod, False if folderFixMethod. Fourth is fixArg's minimum (optional).
 FIX_METHODS = {
     NULL_OPTION: None,
     SPACE_FIX: (findFixMethods.spaceErrorFixLog, findFixMethods.spaceErrorFixExecute, True),
     DELETE_OLD_FILES: (findFixMethods.deleteOldFilesLog, findFixMethods.deleteOldFilesExecute, True, 1),
     DELETE_EMPTY_DIRECTORIES_FIX: (findFixMethods.deleteEmptyDirectoriesLog, findFixMethods.deleteEmptyDirectoriesExecute, False, 0)
+}
+POST_METHODS = {
+    FILE_EXTENSION_SUMMARY: findFixMethods.fileExtensionPost,
+    DUPLICATE_FILE_FIND: findFixMethods.duplicateFilePost
 }
 
 
@@ -49,7 +50,7 @@ def validateArgument(arg:int, minimum:int):
         arg = int(arg)
         if (arg >= minimum): return arg
     except:
-        pass
+        return
 
 
 def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMethods:list[str], selectedFixMethod:str, arg:str):
@@ -76,13 +77,13 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
 
     # Set findMethods and fixMethod
     for fm in selectedFindMethods:
-        if fm in STATELESS_FIND_METHODS:
-            wbm.addStatelessFindMethod(fm, STATELESS_FIND_METHODS[fm])
-        elif fm in STATEFUL_FIND_METHODS:
-            wbm.addStatefulFindMethod(fm, STATEFUL_FIND_METHODS[fm])
+        if FIND_METHODS[fm][1]:
+            wbm.addStatelessFindMethod(fm, FIND_METHODS[fm][0])
+        else:
+            wbm.addStatefulFindMethod(fm, FIND_METHODS[fm][0])
 
         if fm in POST_METHODS:
-           wbm.addPostStatefulFindMethod(fm, POST_METHODS[fm])
+           wbm.addPostMethod(fm, POST_METHODS[fm])
 
     if selectedFixMethod != NULL_OPTION:
         if len(FIX_METHODS[selectedFixMethod]) >= 4:
@@ -95,6 +96,9 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
             wbm.setFileFixMethod(selectedFixMethod, FIX_METHODS[selectedFixMethod][int(modify)])
         else:
             wbm.setFolderFixMethod(selectedFixMethod, FIX_METHODS[selectedFixMethod][int(modify)])
+
+        # No fix methods - whether file or folder - have a post method.
+        # However, it is possible. If it were done, it would be checked and set here.
 
     # After sheets have been created, set formatting
     wbm.setDefaultFormatting(dirAbsolute, includeSubfolders, modify)    
@@ -186,8 +190,7 @@ def view():
     findMethodListbox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=7)
     
     # dictionaries are ordered as of Python version 3.7
-    for fm in STATELESS_FIND_METHODS.keys(): findMethodListbox.insert(tk.END, fm)
-    for fm in STATEFUL_FIND_METHODS.keys(): findMethodListbox.insert(tk.END, fm)
+    for fm in FIND_METHODS.keys(): findMethodListbox.insert(tk.END, fm)
     findMethodListbox.select_set(0)  # Hard code to select the first option.
 
     parameterEntry = tk.Entry(frame1, textvariable=parameterVar, width=7, font=fontGeneral)
