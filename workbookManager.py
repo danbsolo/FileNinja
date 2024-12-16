@@ -68,7 +68,7 @@ class WorkbookManager:
         })
 
 
-    def addConcurrentCheckMethod(self, ccmName:str, functionSelection: Callable[[str, str], bool]):
+    def addStatelessFindMethod(self, ccmName:str, functionSelection: Callable[[str, str], bool]):
         """Adds a worksheet and corresponding checkMethod"""
 
         self.concurrentCheckMethods.append(functionSelection)
@@ -80,11 +80,11 @@ class WorkbookManager:
         self.checkSheetFileCount[tmpWsVar] = 0
 
 
-    def addMiscCheckMethod(self, mcmName:str, functionSelection: Callable):
+    def addStatefulFindMethod(self, mcmName:str, functionSelection: Callable):
         self.miscCheckMethods.append(functionSelection)
 
 
-    def addPostCheckMethod(self, pcmName:str, functionSelection: Callable):
+    def addPostStatefulFindMethod(self, pcmName:str, functionSelection: Callable):
         self.postCheckMethods.append(functionSelection)
 
         self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, pcmName + " count", self.headerFormat)
@@ -96,7 +96,7 @@ class WorkbookManager:
 
 
     # TODO: Create a generic function for the following 2 fix method setting functions
-    def setFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
+    def setFileFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
         self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)

@@ -28,7 +28,7 @@ def setWorkBookManager(newManager: WorkbookManager):
     wbm = newManager
 
 
-def spaceErrorCheck(_:str, itemName:str, ws) -> bool:
+def spaceErrorFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName:
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat, rowIncrement=1, fileIncrement=1)
         # no need to write in the error column as this won't vary between errors found
@@ -37,7 +37,7 @@ def spaceErrorCheck(_:str, itemName:str, ws) -> bool:
     return False
 
 
-def overCharLimitCheck(dirAbsolute:str, itemName:str, ws) -> bool:
+def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
         wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
@@ -47,7 +47,7 @@ def overCharLimitCheck(dirAbsolute:str, itemName:str, ws) -> bool:
     return False
 
 
-def badCharErrorCheck(_:str, itemName:str, ws) -> Set[str]:
+def badCharErrorFind(_:str, itemName:str, ws) -> Set[str]:
     """Does not check for SPC characters nor extra periods."""
     
     badChars = set()
@@ -271,4 +271,4 @@ def deleteEmptyDirectoriesExecute(dirAbsolute, dirFolders, dirFiles, ws):
 
 
 def listAll(_:str, itemName:str, ws):
-    wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1, fileIncrement=1)
+    wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1)
