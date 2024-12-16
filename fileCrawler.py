@@ -3,7 +3,7 @@ from tkinter import filedialog, messagebox
 import os
 from workbookManager import WorkbookManager
 from datetime import datetime
-import findFixMethodsPCPAEC
+import findFixMethods
 
 RESULTS_DIRECTORY = "fileCrawlerResults"
 LIST_ALL = "ListAll"
@@ -20,26 +20,26 @@ DELETE_EMPTY_DIRECTORIES_FIX = "DelEmptyDirs-Fix"
 
 
 STATELESS_FIND_METHODS = {
-    LIST_ALL: findFixMethodsPCPAEC.listAll,
-    CHARACTER_LIMIT_FIND: findFixMethodsPCPAEC.overCharLimitFind,
-    BAD_CHARACTER_FIND: findFixMethodsPCPAEC.badCharErrorFind,
-    SPACE_FIND: findFixMethodsPCPAEC.spaceErrorFind,
+    LIST_ALL: findFixMethods.listAll,
+    CHARACTER_LIMIT_FIND: findFixMethods.overCharLimitFind,
+    BAD_CHARACTER_FIND: findFixMethods.badCharErrorFind,
+    SPACE_FIND: findFixMethods.spaceErrorFind,
 }
 STATEFUL_FIND_METHODS = {
-    FILE_EXTENSION_SUMMARY: findFixMethodsPCPAEC.fileExtensionMisc,
-    DUPLICATE_FILE_FIND: findFixMethodsPCPAEC.duplicateFileMisc
+    FILE_EXTENSION_SUMMARY: findFixMethods.fileExtensionMisc,
+    DUPLICATE_FILE_FIND: findFixMethods.duplicateFileMisc
 }
 POST_METHODS = {
-    FILE_EXTENSION_SUMMARY: findFixMethodsPCPAEC.fileExtensionPost,
-    DUPLICATE_FILE_FIND: findFixMethodsPCPAEC.duplicateFilePost
+    FILE_EXTENSION_SUMMARY: findFixMethods.fileExtensionPost,
+    DUPLICATE_FILE_FIND: findFixMethods.duplicateFilePost
 }
 
 # First argument is Log. Second is Execute. Third is True if fileFixMethod, False if folderFixMethod. Fourth is fixArg's minimum (optional).
 FIX_METHODS = {
     NULL_OPTION: None,
-    SPACE_FIX: (findFixMethodsPCPAEC.spaceErrorFixLog, findFixMethodsPCPAEC.spaceErrorFixExecute, True),
-    DELETE_OLD_FILES: (findFixMethodsPCPAEC.deleteOldFilesLog, findFixMethodsPCPAEC.deleteOldFilesExecute, True, 1),
-    DELETE_EMPTY_DIRECTORIES_FIX: (findFixMethodsPCPAEC.deleteEmptyDirectoriesLog, findFixMethodsPCPAEC.deleteEmptyDirectoriesExecute, False, 0)
+    SPACE_FIX: (findFixMethods.spaceErrorFixLog, findFixMethods.spaceErrorFixExecute, True),
+    DELETE_OLD_FILES: (findFixMethods.deleteOldFilesLog, findFixMethods.deleteOldFilesExecute, True, 1),
+    DELETE_EMPTY_DIRECTORIES_FIX: (findFixMethods.deleteEmptyDirectoriesLog, findFixMethods.deleteEmptyDirectoriesExecute, False, 0)
 }
 
 
@@ -65,7 +65,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
 
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
-    findFixMethodsPCPAEC.setWorkBookManager(wbm)
+    findFixMethods.setWorkBookManager(wbm)
 
     # Errors if this file already exists and is currently opened
     try:
