@@ -1,29 +1,32 @@
-- Summary
-Various metrics regarding the execution of the file crawl.
-
-- Parameter
-
-
 - SubFolders?
-
+On = Include subfolders. Off = Limit search to current folder.
 
 - Modify?
-
-
-- Browse
-
-
-- Execute
-
-
-- Results
-
+On = Execute modifications. Off = Log would-be modifications.
 
 - Find methods
 Flags any file name that falls under the error described. Many can be ran per execution.
 
 - Fix method
-Runs a fix on flagged file names, displaying potential renames or actual renames made. Only one can be ran per execution.
+Runs a fix on flagged file names, displaying potential renames or actual renames made. May require an argument. Only one can be ran per execution.
+
+- Argument text box
+Some fix methods require an integer argument to be set. Type here to designate an argument.
+
+- Browse
+Select a directory.
+
+- Execute
+Execute file crawl.
+
+- Results
+Open results folder, containing Excel files of previous executions.
+
+- Summary
+Various metrics regarding the settings of the execution.
+
+- ListAll
+Lists all files.
 
 - CharLimit-Find
 Flags file paths over 200 characters. These are not backed up.
@@ -34,17 +37,17 @@ Flags file names with bad characters. A bad character is any character that is e
 - SPC-Find
 Flags file names with spaces.
 
-- List-All
-Lists all files.
+- FileExt-Summary
+List all file extensions found, along with their count and average size.
+
+- DupFile-Find
+Finds all duplicate file names within the directory.
 
 - SPC-Fix
 Replaces all instances of spaces with a hyphen (i.e. "Engagement Tracker.txt" = "Engagement-Tracker.txt").
 
-- FileExt-Summary
-
-- DupFile-Find
-
 - DelOldFiles-Fix
+Requires argument. Deletes any file that has not been accessed by argument number of days.
 
 - DelEmptyDirs-Fix
-
+Requires argument. Flags any folder that holds 0 folders and has argument or less number of files. If empty folder, deleted.
