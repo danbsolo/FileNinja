@@ -6,8 +6,9 @@ from datetime import datetime, timedelta
 from workbookManager import WorkbookManager
 
 
-# Used by badCharErrorCheck(). This includes space as a permissible character as it is checked by spaceErrorCheck() instead
-PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "-. ")
+# Used by badCharErrorCheck().
+# Includes ' ' (space) as there is a separate method for finding that error
+PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 CHARACTER_LIMIT = 200
 
 # Used by deleteOldFilesGeneral()
@@ -21,17 +22,23 @@ FILE_EXTENSION_TOTAL_SIZE = {}
 FILES_AND_PATHS = {}
 
 
-# Declare a global variable within a function
-# ~ Usually a bad idea, but here, it makes sense
-def setWorkBookManager(newManager: WorkbookManager):
+
+def setWorkbookManager(newManager: WorkbookManager):
+    # Globally declare the WorkboookManager object
     global wbm
     wbm = newManager
+    
+
+def listAll(_:str, itemName:str, ws):
+    # ListAll is a special case in that it wants to return False so as to not increment the errorCount
+    # But then needs to write the itemName and increment the row itself
+    wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1)
+    return False
 
 
 def spaceErrorFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName:
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat, rowIncrement=1, fileIncrement=1)
-        # no need to write in the error column as this won't vary between errors found
+        # Nothing is explicitly written in the error column here
         return True
     
     return False
@@ -40,60 +47,57 @@ def spaceErrorFind(_:str, itemName:str, ws) -> bool:
 def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT), rowIncrement=1, fileIncrement=1)
+        wbm.writeError(ws, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT))
         return True
     
     return False
 
 
 def badCharErrorFind(_:str, itemName:str, ws) -> Set[str]:
-    """Does not check for SPC characters nor extra periods."""
+    """Does not check for space characters."""
     
     badChars = set()
-    itemNameLength = len(itemName)
+
+    # If no extension (aka, no period), lastPeriodIndex will equal -1
+    lastPeriodIndex = itemName.rfind(".")
+
+    if (lastPeriodIndex == -1): itemNameLength = len(itemName)
+    else: itemNameLength = lastPeriodIndex
 
     for i in range(itemNameLength):
         if itemName[i] not in PERMISSIBLE_CHARACTERS:
-            # Not necessary to set errorPresent=True because we're returning non-empty badChars instead
             badChars.add(itemName[i])
         
-        # double dash error
+        # double-dash error
         elif itemName[i:i+2] == "--":
             badChars.add(itemName[i])
 
-    # write to own sheet here
+    # if any bad characters were found
     if (badChars):
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.fileErrorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars), rowIncrement=1, fileIncrement=1)
+        wbm.writeError(ws, "".join(badChars))
+        return True
         
-    return badChars
+    return False
+
 
 
 def spaceErrorGeneral(oldItemName) -> str:
-    # if no spaces, just leave
     if (" " not in oldItemName):
         return
-    
-    # Replace "-" characters with " " to make the string homogenous for the upcoming split()
+
+    lastPeriodIndex = oldItemName.rfind(".")
+
+    # Replace '-' characters with ' ' to make the string homogenous for the upcoming split()
     # split() automatically removes leading, trailing, and excess middle whitespace
-    newItemName = oldItemName.replace("-", " ").split()
-    newItemName = "-".join(newItemName)
+    newItemNameSansExt = "-".join(oldItemName[0:lastPeriodIndex].replace("-", " ").split())
 
-    # For if there's a dash to the left of the file extension period
-    lastPeriodIndex = newItemName.rfind(".")
-    # If lastPeriodIndex isn't the very first character and there actually is a period
-    if (lastPeriodIndex > 0 and newItemName[lastPeriodIndex -1] == "-"):
-        newItemName = newItemName[0:lastPeriodIndex-1] + newItemName[lastPeriodIndex:]
-
-    return newItemName
+    return newItemNameSansExt + oldItemName[lastPeriodIndex:]
 
 
 def spaceErrorFixLog(_:str, oldItemName:str, ws):
     newItemName = spaceErrorGeneral(oldItemName)
     if (not newItemName): return
 
-    # write the new name in the appropriate field
     wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName)
     wbm.writeInCell(ws, wbm.RENAME_COL, newItemName, wbm.showRenameFormat, 1, 1)
 
@@ -170,11 +174,13 @@ def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
             wbm.writeInCell(ws, wbm.RENAME_COL, "{} days".format(daysOld), wbm.renameFormat, 1, 1)
         except:
             wbm.writeInCell(ws, wbm.RENAME_COL, "FAILED TO DELETE", wbm.fileErrorFormat, 1, 1)
+            
+    
 
-
-def fileExtensionMisc(dirAbsolute:str, itemName:str):
+def fileExtensionMisc(dirAbsolute:str, itemName:str, _):
     # Like other os operations, this may randomly crash. The solution here is to catch and return, ignoring the file completely
     # However, for this function, it's okay. We're just looking for general averages; a couple values is fine to ignore
+    # Honestly, since this likes to error sometimes, could just use the ol' rfind(".") method to separate the extension
     try: _, ext = os.path.splitext(itemName)
     except: return
 
@@ -208,7 +214,7 @@ def fileExtensionPost(ws):
     ws.autofit()
 
 
-def duplicateFileMisc(dirAbsolute:str, fileName:str):
+def duplicateFileMisc(dirAbsolute:str, fileName:str, _):
     if fileName in FILES_AND_PATHS:
         FILES_AND_PATHS[fileName].add(dirAbsolute)
     else:
@@ -268,7 +274,3 @@ def deleteEmptyDirectoriesExecute(dirAbsolute, dirFolders, dirFiles, ws):
         else: # Otherwise, just flag as usual
             wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.showRenameFormat, 1, 1)
 
-
-
-def listAll(_:str, itemName:str, ws):
-    wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1)

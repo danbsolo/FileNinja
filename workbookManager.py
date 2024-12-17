@@ -13,7 +13,7 @@ class WorkbookManager:
 
         # Doesn't add summarySheet
         self.concurrentCheckSheetsList = []
-        self.postCheckSheetsList = []
+        self.miscCheckSheetsList = []
         self.fixSheet = None # initializing for clarity
 
         self.concurrentCheckMethods = []  # List of checkMethods to run on the fileName. Called within fileCrawl()
@@ -74,7 +74,7 @@ class WorkbookManager:
         self.concurrentCheckMethods.append(functionSelection)
         tmpWsVar = self.wb.add_worksheet(ccmName)
 
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, ccmName + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, ccmName + " count", self.headerFormat)
         self.concurrentCheckSheetsList.append(tmpWsVar)
         self.sheetRow[tmpWsVar] = 1
         self.checkSheetFileCount[tmpWsVar] = 0
@@ -83,21 +83,21 @@ class WorkbookManager:
     def addStatefulFindMethod(self, mcmName:str, functionSelection: Callable):
         self.miscCheckMethods.append(functionSelection)
 
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, mcmName + " count", self.headerFormat)
+        tmpWsVar = self.wb.add_worksheet(mcmName)
+        self.miscCheckSheetsList.append(tmpWsVar)
+        self.checkSheetFileCount[tmpWsVar] = 0
+        self.sheetRow[tmpWsVar] = 1
+
 
     def addPostMethod(self, pcmName:str, functionSelection: Callable):
         self.postCheckMethods.append(functionSelection)
-
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, pcmName + " count", self.headerFormat)
-        tmpWsVar = self.wb.add_worksheet(pcmName)
-        self.postCheckSheetsList.append(tmpWsVar)
-        self.checkSheetFileCount[tmpWsVar] = 0
-        self.sheetRow[tmpWsVar] = 1
 
 
 
     # TODO: Create a generic function for the following 2 fix method setting functions
     def setFileFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, wsName + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)
         self.fixSheet = tmpWsVar
@@ -108,7 +108,7 @@ class WorkbookManager:
 
 
     def setFolderFixMethod(self, wsName, functionSelection):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.postCheckSheetsList), 0, wsName + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, wsName + " count", self.headerFormat)
 
         tmpWsVar = self.wb.add_worksheet(wsName)
         self.fixSheet = tmpWsVar
@@ -155,8 +155,8 @@ class WorkbookManager:
         self.summarySheet.set_column(1, 1, 15)
         
         self.summarySheet.write(0, 0, "FilePath", self.headerFormat)
-        self.summarySheet.write(1, 0, "SubFolder inclusion", self.headerFormat)
-        self.summarySheet.write(2, 0, "Renaming", self.headerFormat)
+        self.summarySheet.write(1, 0, "Subfolders inclusion", self.headerFormat)
+        self.summarySheet.write(2, 0, "Modify", self.headerFormat)
         self.summarySheet.write(3, 0, "Argument", self.headerFormat)
         self.summarySheet.write(4, 0, "File count", self.headerFormat)
         self.summarySheet.write(5, 0, "Error count / %", self.headerFormat)
@@ -179,27 +179,30 @@ class WorkbookManager:
             if (itemName[0:2] == "~$"):
                 continue
 
+            # File fix method
+            self.fixMethod(dirAbsolute, itemName, self.fixSheet)
+
             # Run every selected checkMethod
             # Concurrent check methods
             for i in range(len(self.concurrentCheckMethods)):
                 # If error present
                 if (self.concurrentCheckMethods[i](dirAbsolute, itemName, self.concurrentCheckSheetsList[i])):
+                    self.writeInCell(self.concurrentCheckSheetsList[i], self.ITEM_COL, itemName, self.fileErrorFormat, 1, 1) 
+                    
                     if (not alreadyCounted):
                         self.errorCount += 1
                         alreadyCounted = True
 
             alreadyCounted = False
-
-            # Misc check methods
-            for mcm in self.miscCheckMethods:
-                mcm(dirAbsolute, itemName)
-            
-            # Fix method
             self.filesScannedCount += 1
-            self.fixMethod(dirAbsolute, itemName, self.fixSheet)
+            
+            # Misc check methods
+            for i in range(len(self.miscCheckMethods)):
+                self.miscCheckMethods[i](dirAbsolute, itemName, self.miscCheckSheetsList[i])
+            
+
                 
                     
-
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         start = time()
 
@@ -218,11 +221,15 @@ class WorkbookManager:
 
 
         for i in range(len(self.postCheckMethods)):
-            self.postCheckMethods[i](self.postCheckSheetsList[i])
+            self.postCheckMethods[i](self.miscCheckSheetsList[i])
 
         end = time()
         self.executionTime = end - start
 
+
+    def writeError(self, ws, text, format=None):
+        self.writeInCell(ws, self.ERROR_COL, text, format)
+    
 
     def writeInCell(self, ws, col: str, text: str, format=None, rowIncrement=0, fileIncrement=0):
         # write_string() usage so no equations are accidentally written
@@ -254,7 +261,7 @@ class WorkbookManager:
         self.summarySheet.write_number(6, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 0
-        for ws in (self.concurrentCheckSheetsList + self.postCheckSheetsList):
+        for ws in (self.concurrentCheckSheetsList + self.miscCheckSheetsList):
             self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
             i += 1
 

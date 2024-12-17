@@ -20,7 +20,7 @@ DELETE_OLD_FILES = "DelOldFiles-Fix"
 DELETE_EMPTY_DIRECTORIES_FIX = "DelEmptyDirs-Fix"
 
 # First argument is the corresponding function.
-# Second is True if stateless (concurrent writing), False if stateful.
+# Second is True if stateless/concurrent writing/uses default functionality. False otherwise (requiring manual writing and whatnot).
 FIND_METHODS = {
     LIST_ALL: (findFixMethods.listAll, True),
     CHARACTER_LIMIT_FIND: (findFixMethods.overCharLimitFind, True),
@@ -66,7 +66,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
 
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
-    findFixMethods.setWorkBookManager(wbm)
+    findFixMethods.setWorkbookManager(wbm)
 
     # Errors if this file already exists and is currently opened
     try:
