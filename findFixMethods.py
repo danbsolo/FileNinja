@@ -30,27 +30,20 @@ def setWorkbookManager(newManager: WorkbookManager):
     
 
 def listAll(_:str, itemName:str, ws):
-    # ListAll is a special case in that it wants to return False so as to not increment the errorCount
-    # But then needs to write the itemName and increment the row itself
+    # ListAll is a special case in that it wants to return a non-True value so as to not increment the errorCount
+    # As a result, it needs to write the itemName and increment the row itself
     wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1)
-    return False
 
 
 def spaceErrorFind(_:str, itemName:str, ws) -> bool:
-    if " " in itemName:
-        # Nothing is explicitly written in the error column here
-        return True
+    if " " in itemName: 
+        return " "
     
-    return False
-
 
 def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
-        wbm.writeError(ws, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT))
-        return True
-    
-    return False
+        return "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT)
 
 
 def badCharErrorFind(_:str, itemName:str, ws) -> Set[str]:
@@ -74,10 +67,7 @@ def badCharErrorFind(_:str, itemName:str, ws) -> Set[str]:
 
     # if any bad characters were found
     if (badChars):
-        wbm.writeError(ws, "".join(badChars))
-        return True
-        
-    return False
+        return "".join(badChars)
 
 
 

@@ -186,8 +186,11 @@ class WorkbookManager:
             # Concurrent check methods
             for i in range(len(self.concurrentCheckMethods)):
                 # If error present
-                if (self.concurrentCheckMethods[i](dirAbsolute, itemName, self.concurrentCheckSheetsList[i])):
-                    self.writeInCell(self.concurrentCheckSheetsList[i], self.ITEM_COL, itemName, self.fileErrorFormat, 1, 1) 
+                if (errorText := self.concurrentCheckMethods[i](dirAbsolute, itemName, self.concurrentCheckSheetsList[i])):
+                    self.concurrentCheckSheetsList[i].write_string(self.sheetRow[self.concurrentCheckSheetsList[i]], self.ITEM_COL, itemName) 
+                    self.concurrentCheckSheetsList[i].write_string(self.sheetRow[self.concurrentCheckSheetsList[i]], self.ERROR_COL, errorText)
+                    self.incrementRow(self.concurrentCheckSheetsList[i])
+                    self.incrementFileCount(self.concurrentCheckSheetsList[i])
                     
                     if (not alreadyCounted):
                         self.errorCount += 1
