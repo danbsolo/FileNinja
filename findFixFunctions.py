@@ -37,14 +37,18 @@ def listAll(_:str, itemName:str, ws):
 
 def spaceFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName: 
-        return " "
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.errorFormat, 1, 1)
+        return True
+    return False
     
 
 def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
-        return "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT)
-
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.errorFormat)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT), rowIncrement=1, fileIncrement=1)
+        return True
+    return False
 
 def badCharFind(_:str, itemName:str, ws) -> Set[str]:
     """Does not check for space characters."""
@@ -67,8 +71,10 @@ def badCharFind(_:str, itemName:str, ws) -> Set[str]:
 
     # if any bad characters were found
     if (badChars):
-        return "".join(badChars)
-
+        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.errorFormat)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars), rowIncrement=1, fileIncrement=1)
+        return True
+    return False
 
 
 def spaceFixHelper(oldItemName) -> str:
@@ -165,11 +171,8 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
     
 
 def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
-    # try: _, ext = os.path.splitext(itemName)
-    # except: return
-
     try: fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
-    except: return
+    except: return False
 
     lastPeriodIndex = itemName.rfind(".")
 
@@ -184,6 +187,7 @@ def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
     else:
         FILE_EXTENSION_COUNT[extension] = 1
         FILE_EXTENSION_TOTAL_SIZE[extension] = fileSize
+    return False
 
 
 def fileExtensionPost(ws):
@@ -208,6 +212,7 @@ def duplicateFileConcurrent(dirAbsolute:str, fileName:str, _):
         FILES_AND_PATHS[fileName].add(dirAbsolute)
     else:
         FILES_AND_PATHS[fileName] = set([dirAbsolute])
+    return False
 
 
 

@@ -38,12 +38,9 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
         if not wbm.setFixArg(fixMethodObject, unprocessedArg):
             return -3
         
-        wbm.setFixMethodHelper(fixMethodObject, modify)
-                
-
-    # After sheets have been created, set formatting
-    wbm.setDefaultFormatting(dirAbsolute, includeSubfolders, modify)    
-
+        wbm.setFixMethod(fixMethodObject, modify)
+                    
+    wbm.styleSummarySheet(dirAbsolute, includeSubfolders, modify)    
 
     print("\nCreating " + workbookPathName + "...")
     if (includeSubfolders):

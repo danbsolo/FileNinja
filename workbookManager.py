@@ -11,31 +11,24 @@ class WorkbookManager:
         self.summarySheet = self.wb.add_worksheet("Summary")
         self.summarySheet.activate()  # view this worksheet on startup
 
-        # Doesn't add summarySheet
-        self.concurrentCheckSheetsList = []
-        self.miscCheckSheetsList = []
         self.fixSheet = None # initializing for clarity
-
-        self.concurrentCheckMethods = []  # List of checkMethods to run on the fileName. Called within fileCrawl()
-        self.miscCheckMethods = []
-        self.postCheckMethods = []
-        self.fixMethod = lambda _1, _2, _3: None  # default dummy function
+        self.fileFixMethod = lambda _1, _2, _3: None  # default dummy function
         self.folderFixMethod = lambda _1, _2, _3, _4: None
         self.fixArg = None  # initialize fixArg to a dummy value
 
-        # For summarySheet first 7 rows are used for other stats. Skip a line, then write variable number of errors.
-        self.sheetRow = {self.summarySheet: 8}
-        self.checkSheetFileCount = {}
+        self.findSheets = {} # methodObject : worksheet
+        # For summarySheet first 7 rows are used for mainstay metrics. Skip a line, then write variable number of errors.
+        self.sheetRows = {self.summarySheet: 8} # worksheet : Integer
+        self.summaryCounts = {}  # worksheet : Integer
 
-        # Summary sheet metrics
+        # Summary metrics
         self.filesScannedCount = 0
         self.executionTime = 0
         self.errorCount = 0
 
         self.DIR_COL = 0
         self.ITEM_COL = 1
-        self.MOD_COL = 2
-        self.ERROR_COL = 2
+        self.ERROR_COL, self.MOD_COL = 2
 
         # Default cell styles
         self.dirColFormat = self.wb.add_format({
@@ -67,44 +60,39 @@ class WorkbookManager:
         self.summaryValueFormat = self.wb.add_format({
         })
 
-        # self.FIND_SHEETS = {}
-        # self.ROW = {}
-        # self.SUMMARY_COUNT = {}
+
+    def getAllMethodSheets(self):
+        sheets = list(self.findSheets.values())
+        if self.fixSheet:
+            sheets.append(self.fixSheet)
+        return sheets
 
 
     def addFindMethod(self, findMethodObject):
         tmpWsVar = self.wb.add_worksheet(findMethodObject.name)
+        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()), 0, findMethodObject.name + " count", self.headerFormat)
         
-        # #
-        # self.FIND_SHEETS[findMethodObject] = tmpWsVar
-        # self.ROW[findMethodObject] = 1
-        # self.SUMMARY_COUNT[findMethodObject] = 0
-        # #
+        self.findSheets[findMethodObject] = tmpWsVar
+        self.sheetRows[tmpWsVar] = 1
+        self.summaryCounts[tmpWsVar] = 0
 
         if findMethodObject.isStateless:
-            self.concurrentCheckMethods.append(findMethodObject.mainFunction)
-            self.concurrentCheckSheetsList.append(tmpWsVar)
-        else:
-            self.miscCheckMethods.append(findMethodObject.mainFunction)
-            self.miscCheckSheetsList.append(tmpWsVar)
+            tmpWsVar.freeze_panes(1, 0)
+            tmpWsVar.write(0, self.DIR_COL, "Directories", self.headerFormat)
+            tmpWsVar.write(0, self.ITEM_COL, "Items", self.headerFormat)
+            tmpWsVar.write(0, self.ERROR_COL, "Error", self.headerFormat)
 
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, findMethodObject.name + " count", self.headerFormat)
-        self.sheetRow[tmpWsVar] = 1
-        self.checkSheetFileCount[tmpWsVar] = 0
 
-        if findMethodObject.postFunction:
-           self.postCheckMethods.append(findMethodObject.postFunction)
-
-    def setFixMethodHelper(self, fixMethodObject, modify):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, fixMethodObject.name + " count", self.headerFormat)
+    def setFixMethod(self, fixMethodObject, modify):
+        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()), 0, fixMethodObject.name + " count", self.headerFormat)
         tmpWsVar = self.wb.add_worksheet(fixMethodObject.name)
         self.fixSheet = tmpWsVar
-        self.sheetRow[tmpWsVar] = 1
-        self.checkSheetFileCount[tmpWsVar] = 0
+        self.sheetRows[tmpWsVar] = 1
+        self.summaryCounts[tmpWsVar] = 0
 
         if fixMethodObject.isFileFix:
-            if modify: self.fixMethod = fixMethodObject.modifyFunction
-            else: self.fixMethod = fixMethodObject.logFunction
+            if modify: self.fileFixMethod = fixMethodObject.modifyFunction
+            else: self.fileFixMethod = fixMethodObject.logFunction
         else:
             if modify: self.folderFixMethod = fixMethodObject.modifyFunction
             else: self.folderFixMethod = fixMethodObject.logFunction
@@ -123,28 +111,69 @@ class WorkbookManager:
 
         self.fixArg = arg
         return True
+        
+
+    def fileCrawl(self, dirAbsolute, dirItems: List[str]):
+        alreadyCounted = False
+
+        for itemName in dirItems:            
+            # If it's just a temporary file via Microsoft, skip file
+            if (itemName[0:2] == "~$"):
+                continue
+
+            self.fileFixMethod(dirAbsolute, itemName, self.fixSheet)
+
+            for findMethodObject in self.findSheets.keys():
+                if (findMethodObject.mainFunction(dirAbsolute, itemName, self.findSheets[findMethodObject])):
+                    if (not alreadyCounted):
+                        self.errorCount += 1
+                        alreadyCounted = True
+
+            alreadyCounted = False
+            self.filesScannedCount += 1                    
 
 
-    # Lambdas are automatically considered bad functions
-    def isFixSheetSet(self) -> bool:
-        return bool(self.fixSheet)  # if self.fixSheet is not set to its default value "None"
+    def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
+        start = time()
 
-        # The following line is specifically for checking fixMethod being set to a valid function, and *not* a lambda
-        # return callable(self.fixMethod) and self.fixMethod.__name__ != "<lambda>"
+        allSheets = self.getAllMethodSheets() 
+        
+        for (dirAbsolute, dirFolders, dirFiles) in dirTree:
+            for ws in allSheets:
+                ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
+
+            self.fileCrawl(dirAbsolute, dirFiles)
+
+            # Folder fix method
+            self.folderFixMethod(dirAbsolute, dirFolders, dirFiles, self.fixSheet)
+
+        for findMethodObject in self.findSheets.keys():
+            if findMethodObject.postFunction:
+                findMethodObject.postFunction(self.findSheets[findMethodObject])
+
+        end = time()
+        self.executionTime = end - start
 
 
-    def setDefaultFormatting(self, dirAbsolute, includeSubFolders, renamingFiles):
-        for wsc in self.concurrentCheckSheetsList:
-            # Column width
-            # wsc.set_column(self.DIR_COL, self.DIR_COL, 50)
-            # wsc.set_column(self.ITEM_COL, self.ITEM_COL, 30)
-            # wsc.set_column(self.ERROR_COL, self.ERROR_COL, 20)
-            wsc.freeze_panes(1, 0)
+    def writeError(self, ws, text, format=None):
+        self.writeInCell(ws, self.ERROR_COL, text, format)
+    
 
-            wsc.write(0, self.DIR_COL, "Directories", self.headerFormat)
-            wsc.write(0, self.ITEM_COL, "Items", self.headerFormat)
-            wsc.write(0, self.ERROR_COL, "Error", self.headerFormat)
+    def writeInCell(self, ws, col: str, text: str, format=None, rowIncrement=0, fileIncrement=0):
+        if (format): ws.write_string(self.sheetRows[ws], col, text, format)
+        else: ws.write_string(self.sheetRows[ws], col, text)
 
+        self.sheetRows[ws] += rowIncrement
+        self.summaryCounts[ws] += fileIncrement
+
+    def incrementRow(self, ws, amount:int=1):
+        self.sheetRows[ws] += amount
+
+    def incrementFileCount(self, ws, amount:int=1):
+        self.summaryCounts[ws] += amount
+
+
+    def styleSummarySheet(self, dirAbsolute, includeSubFolders, modify):
         self.summarySheet.set_column(0, 0, 20)
         self.summarySheet.set_column(1, 1, 15)
         
@@ -158,92 +187,7 @@ class WorkbookManager:
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(1, 1, str(includeSubFolders), self.summaryValueFormat)
-        self.summarySheet.write(2, 1, str(renamingFiles), self.summaryValueFormat)
-        
-
-
-    def fileCrawl(self, dirAbsolute, dirItems: List[str]):
-        # For ensuring a file already counted isn't counted more than once, even if it has multiple errors
-        alreadyCounted = False
-
-        # can be used to write down folders as well, hence "items" and not "files"
-        for itemName in dirItems:
-            
-            # If it's just a temporary file via Microsoft, skip file
-            if (itemName[0:2] == "~$"):
-                continue
-
-            # File fix method
-            self.fixMethod(dirAbsolute, itemName, self.fixSheet)
-
-            # Run every selected checkMethod
-            # Concurrent check methods
-            for i in range(len(self.concurrentCheckMethods)):
-                # If error present
-                if (errorText := self.concurrentCheckMethods[i](dirAbsolute, itemName, self.concurrentCheckSheetsList[i])):
-                    self.concurrentCheckSheetsList[i].write_string(self.sheetRow[self.concurrentCheckSheetsList[i]], self.ITEM_COL, itemName) 
-                    self.concurrentCheckSheetsList[i].write_string(self.sheetRow[self.concurrentCheckSheetsList[i]], self.ERROR_COL, errorText)
-                    self.incrementRow(self.concurrentCheckSheetsList[i])
-                    self.incrementFileCount(self.concurrentCheckSheetsList[i])
-                    
-                    if (not alreadyCounted):
-                        self.errorCount += 1
-                        alreadyCounted = True
-
-            alreadyCounted = False
-            self.filesScannedCount += 1
-            
-            # Misc check methods
-            for i in range(len(self.miscCheckMethods)):
-                self.miscCheckMethods[i](dirAbsolute, itemName, self.miscCheckSheetsList[i])
-            
-
-                
-                    
-    def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
-        start = time()
-
-        allSheets = self.concurrentCheckSheetsList[:]
-        if (self.isFixSheetSet()):
-            allSheets.append(self.fixSheet)   
-        
-        for (dirAbsolute, dirFolders, dirFiles) in dirTree:
-            for ws in allSheets:
-                ws.write(self.sheetRow[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
-
-            self.fileCrawl(dirAbsolute, dirFiles)
-
-            # Folder fix method
-            self.folderFixMethod(dirAbsolute, dirFolders, dirFiles, self.fixSheet)
-
-
-        for i in range(len(self.postCheckMethods)):
-            self.postCheckMethods[i](self.miscCheckSheetsList[i])
-
-        end = time()
-        self.executionTime = end - start
-
-
-    def writeError(self, ws, text, format=None):
-        self.writeInCell(ws, self.ERROR_COL, text, format)
-    
-
-    def writeInCell(self, ws, col: str, text: str, format=None, rowIncrement=0, fileIncrement=0):
-        # write_string() usage so no equations are accidentally written
-        if (format): ws.write_string(self.sheetRow[ws], col, text, format)
-        else: ws.write_string(self.sheetRow[ws], col, text)
-
-        self.sheetRow[ws] += rowIncrement
-        self.checkSheetFileCount[ws] += fileIncrement
-
-
-
-    def incrementRow(self, ws, amount:int=1):
-        self.sheetRow[ws] += amount
-
-    def incrementFileCount(self, ws, amount:int=1):
-        self.checkSheetFileCount[ws] += amount
-
+        self.summarySheet.write(2, 1, str(modify), self.summaryValueFormat)
 
 
     def populateSummarySheet(self):
@@ -256,19 +200,14 @@ class WorkbookManager:
         self.summarySheet.write_number(5, 1, self.errorCount, self.summaryValueFormat)
         self.summarySheet.write(5, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
         self.summarySheet.write_number(6, 1, round(self.executionTime, 4), self.summaryValueFormat)
-        
+
         i = 0
-        for ws in (self.concurrentCheckSheetsList + self.miscCheckSheetsList):
-            self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[ws], self.summaryValueFormat)
+        for ws in self.getAllMethodSheets():
+            self.summarySheet.write(self.sheetRows[self.summarySheet] + i, 1, self.summaryCounts[ws], self.summaryValueFormat)
             i += 1
 
-        if (self.isFixSheetSet()):
-            self.summarySheet.write(self.sheetRow[self.summarySheet] + i, 1, self.checkSheetFileCount[self.fixSheet], self.summaryValueFormat)
-
         
-
     def createHelpMeSheet(self):
-        # attempt to open HELPME.txt
         try: helpMeFile = open("HELPME.txt", "r")
         except FileNotFoundError: return
         
@@ -298,19 +237,10 @@ class WorkbookManager:
         helpMeSheet.autofit()
 
 
-
-    def autofitSheets(self):
-        # summarySheet is not autofit as the filepath is much much wider than everything else. It is set manually at the beginning.
-        # Note that autofit only functions as intended if done after the data has been entered
-
-        allSheets = self.concurrentCheckSheetsList[:]
-        if (self.isFixSheetSet()):
-            allSheets.append(self.fixSheet)  
-        
-        for ws in allSheets:
+    def autofitSheets(self):        
+        for ws in self.getAllMethodSheets():
             ws.autofit()
             
-
 
     def close(self):
         self.populateSummarySheet()
