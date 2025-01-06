@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from workbookManager import WorkbookManager
 
 
-# Used by badCharErrorCheck().
+# Used by badCharFind().
 # Includes ' ' (space) as there is a separate method for finding that error
 PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 CHARACTER_LIMIT = 200
@@ -35,7 +35,7 @@ def listAll(_:str, itemName:str, ws):
     wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1)
 
 
-def spaceErrorFind(_:str, itemName:str, ws) -> bool:
+def spaceFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName: 
         return " "
     
@@ -46,7 +46,7 @@ def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
         return "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT)
 
 
-def badCharErrorFind(_:str, itemName:str, ws) -> Set[str]:
+def badCharFind(_:str, itemName:str, ws) -> Set[str]:
     """Does not check for space characters."""
     
     badChars = set()
@@ -71,7 +71,7 @@ def badCharErrorFind(_:str, itemName:str, ws) -> Set[str]:
 
 
 
-def spaceErrorGeneral(oldItemName) -> str:
+def spaceFixHelper(oldItemName) -> str:
     if (" " not in oldItemName):
         return
 
@@ -84,16 +84,16 @@ def spaceErrorGeneral(oldItemName) -> str:
     return newItemNameSansExt + oldItemName[lastPeriodIndex:]
 
 
-def spaceErrorFixLog(_:str, oldItemName:str, ws):
-    newItemName = spaceErrorGeneral(oldItemName)
+def spaceFixLog(_:str, oldItemName:str, ws):
+    newItemName = spaceFixHelper(oldItemName)
     if (not newItemName): return
 
     wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName)
-    wbm.writeInCell(ws, wbm.RENAME_COL, newItemName, wbm.showRenameFormat, 1, 1)
+    wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.logFormat, 1, 1)
 
     
-def spaceErrorFixExecute(dirAbsolute:str, oldItemName:str, ws):
-    newItemName = spaceErrorGeneral(oldItemName)
+def spaceFixModify(dirAbsolute:str, oldItemName:str, ws):
+    newItemName = spaceFixHelper(oldItemName)
     if (not newItemName): return
 
     wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName)
@@ -101,25 +101,23 @@ def spaceErrorFixExecute(dirAbsolute:str, oldItemName:str, ws):
     # Log newItemName and rename file
     try:
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
-        wbm.writeInCell(ws, wbm.RENAME_COL, newItemName, wbm.renameFormat, 1, 1)
+        wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.modifyFormat, 1, 1)
     except PermissionError:
-        wbm.writeInCell(ws, wbm.RENAME_COL, "FILE LOCKED. RENAME FAILED.", wbm.fileErrorFormat, 1, 0)
+        wbm.writeInCell(ws, wbm.MOD_COL, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
     except OSError:
-        wbm.writeInCell(ws, wbm.RENAME_COL, "OS ERROR. RENAME FAILED.", wbm.fileErrorFormat, 1, 0)
+        wbm.writeInCell(ws, wbm.MOD_COL, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
 
 
-def deleteOldFilesGeneral(fullFilePath: str) -> int:
+def deleteOldFilesHelper(fullFilePath: str) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
     
     daysTooOld = wbm.fixArg
-    # Could double-check that this value is usable. Dire consequences if not.
+    # Could double-check that this value is usable each time. Dire consequences if not.
     #  if (daysTooOld <= 0): return -1
     
     # gets date of file. This *can* error virtue of the library functions, hence try/except
-    try:
-        fileDate = datetime.fromtimestamp(os.path.getatime(fullFilePath))
-    except:
-        return -1
+    try: fileDate = datetime.fromtimestamp(os.path.getatime(fullFilePath))
+    except: return -1
 
     fileDaysAgo = (TODAY - fileDate).days
 
@@ -129,74 +127,75 @@ def deleteOldFilesGeneral(fullFilePath: str) -> int:
 
 def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws):
     fullFilePath =  dirAbsolute + "\\" + itemName
-    daysOld = deleteOldFilesGeneral(fullFilePath)
+    daysOld = deleteOldFilesHelper(fullFilePath)
+
+    # Either it's actually 0 days old or the fileDate is after the cutOffDate. Either way, don't flag.         
+    if (daysOld == 0): return
+
+    wbm.writeInCell(ws, wbm.ITEM_COL, itemName)
+
+    if (daysOld == -1):
+        wbm.writeInCell(ws, wbm.MOD_COL, "UNABLE TO READ DATE", wbm.errorFormat, 1, 1) 
+    elif len(fullFilePath) > CHARACTER_LIMIT:
+        wbm.writeInCell(ws, wbm.MOD_COL, "{} days but violates charLimit".format(daysOld), wbm.logFormat, 1, 1)
+    else:
+        wbm.writeInCell(ws, wbm.MOD_COL, "{} days".format(daysOld), wbm.logFormat, 1, 1)    
+
+
+def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
+    fullFilePath =  dirAbsolute + "\\" + itemName
+    daysOld = deleteOldFilesHelper(fullFilePath)
 
     if (daysOld == 0): return
 
     wbm.writeInCell(ws, wbm.ITEM_COL, itemName)
 
     if (daysOld == -1):
-        wbm.writeInCell(ws, wbm.RENAME_COL, "UNABLE TO READ DATE", wbm.fileErrorFormat, 1, 1) 
-    elif len(fullFilePath) > CHARACTER_LIMIT:
-        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago, but violates charLimit".format(daysOld), wbm.showRenameFormat, 1, 1)
-    else:
-        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days ago".format(daysOld), wbm.showRenameFormat, 1, 1)    
-
-
-def deleteOldFilesExecute(dirAbsolute:str, itemName:str, ws):
-    fullFilePath =  dirAbsolute + "\\" + itemName
-    daysOld = deleteOldFilesGeneral(fullFilePath)
-
-    # Either it's actually 0 days old or the fileDate is after the cutOffDate. Either way, don't flag.         
-    if (daysOld == 0):
-        return
-
-    wbm.writeInCell(ws, wbm.ITEM_COL, itemName)
-
-    if (daysOld == -1):
-        wbm.writeInCell(ws, wbm.RENAME_COL, "UNABLE TO READ DATE", wbm.fileErrorFormat, 1, 1) 
+        wbm.writeInCell(ws, wbm.MOD_COL, "UNABLE TO READ DATE", wbm.errorFormat, 1, 1) 
     # If over CHARACTER_LIMIT characters, do not delete as it is not backed up
     elif len(fullFilePath) > CHARACTER_LIMIT:
-        wbm.writeInCell(ws, wbm.RENAME_COL, "{} days, but violates charLimit".format(daysOld), wbm.showRenameFormat, 1, 1)
+        wbm.writeInCell(ws, wbm.MOD_COL, "{} days but violates charLimit".format(daysOld), wbm.logFormat, 1, 1)
     else:
         try:
             os.remove(fullFilePath)
-            wbm.writeInCell(ws, wbm.RENAME_COL, "{} days".format(daysOld), wbm.renameFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.MOD_COL, "{} days".format(daysOld), wbm.modifyFormat, 1, 1)
         except:
-            wbm.writeInCell(ws, wbm.RENAME_COL, "FAILED TO DELETE", wbm.fileErrorFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.MOD_COL, "FAILED TO DELETE", wbm.errorFormat, 1, 1)
             
     
 
-def fileExtensionMisc(dirAbsolute:str, itemName:str, _):
-    # Like other os operations, this may randomly crash. The solution here is to catch and return, ignoring the file completely
-    # However, for this function, it's okay. We're just looking for general averages; a couple values is fine to ignore
-    # Honestly, since this likes to error sometimes, could just use the ol' rfind(".") method to separate the extension
-    try: _, ext = os.path.splitext(itemName)
+def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
+    # try: _, ext = os.path.splitext(itemName)
+    # except: return
+
+    try: fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
     except: return
 
-    ext = ext.lower()
+    lastPeriodIndex = itemName.rfind(".")
 
-    try: fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) / 1000_000  # bytes / 1000_000 = mbs
-    except: return
-
-    if ext in FILE_EXTENSION_COUNT:
-        FILE_EXTENSION_COUNT[ext] += 1
-        FILE_EXTENSION_TOTAL_SIZE[ext] += fileSize
+    if lastPeriodIndex == -1: extension = ""
     else:
-        FILE_EXTENSION_COUNT[ext] = 1
-        FILE_EXTENSION_TOTAL_SIZE[ext] = fileSize
+        extension = itemName[lastPeriodIndex:]
+        extension = extension.lower()
+
+    if extension in FILE_EXTENSION_COUNT:
+        FILE_EXTENSION_COUNT[extension] += 1
+        FILE_EXTENSION_TOTAL_SIZE[extension] += fileSize
+    else:
+        FILE_EXTENSION_COUNT[extension] = 1
+        FILE_EXTENSION_TOTAL_SIZE[extension] = fileSize
 
 
 def fileExtensionPost(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)
     ws.write(0, 1, "Count", wbm.headerFormat)
-    ws.write(0, 2, "Avg Size (KB)", wbm.headerFormat)
+    ws.write(0, 2, "Avg Size (MB)", wbm.headerFormat)
 
     row = 1
-    for ext in sorted(FILE_EXTENSION_COUNT.keys()):
-        ws.write_string(row, 0, ext)
-        ws.write_number(row, 1, FILE_EXTENSION_COUNT[ext])
-        ws.write_number(row, 2, round(FILE_EXTENSION_TOTAL_SIZE[ext] / FILE_EXTENSION_COUNT[ext], 1))
+    for extension in sorted(FILE_EXTENSION_COUNT.keys()):
+        ws.write_string(row, 0, extension)
+        ws.write_number(row, 1, FILE_EXTENSION_COUNT[extension])
+        ws.write_number(row, 2, round(FILE_EXTENSION_TOTAL_SIZE[extension] / FILE_EXTENSION_COUNT[extension], 1))
         wbm.incrementFileCount(ws)
         row += 1
 
@@ -204,7 +203,7 @@ def fileExtensionPost(ws):
     ws.autofit()
 
 
-def duplicateFileMisc(dirAbsolute:str, fileName:str, _):
+def duplicateFileConcurrent(dirAbsolute:str, fileName:str, _):
     if fileName in FILES_AND_PATHS:
         FILES_AND_PATHS[fileName].add(dirAbsolute)
     else:
@@ -217,12 +216,13 @@ def duplicateFilePost(ws):
     ws.write(0, 1, "Directories", wbm.headerFormat)
     
     row = 1
-    for itemName in sorted(FILES_AND_PATHS.keys()):
-        if len(FILES_AND_PATHS[itemName]) > 1:  # if so, it's duplicated
-            ws.write_string(row, 0, itemName, wbm.fileErrorFormat)
+    for fileName in sorted(FILES_AND_PATHS.keys()):
+        # if a fileName is seen more than once, it's a duplicate
+        if len(FILES_AND_PATHS[fileName]) > 1:
+            ws.write_string(row, 0, fileName, wbm.errorFormat)
             wbm.incrementFileCount(ws)
             
-            for path in FILES_AND_PATHS[itemName]:
+            for path in FILES_AND_PATHS[fileName]:
                 ws.write_string(row, 1, path, wbm.dirColFormat)
                 row += 1
 
@@ -235,32 +235,29 @@ def deleteEmptyDirectoriesLog(dirAbsolute, dirFolders, dirFiles, ws):
     tooFewAmount = wbm.fixArg
 
     # If even 1 folder exists, this isn't empty
-    if len(dirFolders) != 0:
-        return
+    if len(dirFolders) != 0: return
 
     # If equal to tooFewAmount or less, then this folder needs to be at least flagged
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.showRenameFormat, 1, 1)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.logFormat, 1, 1)
 
 
-def deleteEmptyDirectoriesExecute(dirAbsolute, dirFolders, dirFiles, ws):
+def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
     tooFewAmount = wbm.fixArg
 
-    if len(dirFolders) != 0:
-        return
+    if len(dirFolders) != 0: return
 
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
-
         # If it specifically has 0 files, delete the folder
         if (fileAmount == 0):
             try: 
                 os.rmdir(dirAbsolute)
             except:
-                wbm.writeInCell(ws, wbm.ERROR_COL, "{} FILES. COULD NOT DELETE".format(fileAmount), wbm.fileErrorFormat, 1, 1)
+                wbm.writeInCell(ws, wbm.ERROR_COL, "0 FILES. COULD NOT DELETE", wbm.errorFormat, 1, 1)
                 return
-            wbm.writeInCell(ws, wbm.ERROR_COL, "{} FILES".format(fileAmount), wbm.renameFormat, 1, 1)
-        else: # Otherwise, just flag as usual
-            wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.showRenameFormat, 1, 1)
-
+            wbm.writeInCell(ws, wbm.ERROR_COL, "{} FILES".format(fileAmount), wbm.modifyFormat, 1, 1)
+        # Otherwise, just flag as usual
+        else:
+            wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.logFormat, 1, 1)

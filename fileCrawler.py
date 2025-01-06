@@ -3,54 +3,7 @@ from tkinter import filedialog, messagebox
 import os
 from workbookManager import WorkbookManager
 from datetime import datetime
-import findFixMethods
-
-RESULTS_DIRECTORY = "fileCrawlerResults"
-
-LIST_ALL = "ListAll"
-CHARACTER_LIMIT_FIND = "CharLimit-Find"
-BAD_CHARACTER_FIND = "BadChar-Find"
-SPACE_FIND = "SPC-Find"
-FILE_EXTENSION_SUMMARY = "FileExt-Summary"
-DUPLICATE_FILE_FIND = "DupFile-Find"
-
-NULL_OPTION = "..."
-SPACE_FIX = "SPC-Fix"
-DELETE_OLD_FILES = "DelOldFiles-Fix"
-DELETE_EMPTY_DIRECTORIES_FIX = "DelEmptyDirs-Fix"
-
-# First argument is the corresponding function.
-# Second is True if stateless/concurrent writing/uses default functionality. False otherwise (requiring manual writing and whatnot).
-FIND_METHODS = {
-    LIST_ALL: (findFixMethods.listAll, True),
-    CHARACTER_LIMIT_FIND: (findFixMethods.overCharLimitFind, True),
-    BAD_CHARACTER_FIND: (findFixMethods.badCharErrorFind, True),
-    SPACE_FIND: (findFixMethods.spaceErrorFind, True),
-    DUPLICATE_FILE_FIND: (findFixMethods.duplicateFileMisc, False),
-    FILE_EXTENSION_SUMMARY: (findFixMethods.fileExtensionMisc, False)
-}
-
-# First argument is Log function (modify off). Second is Execute function (modify on). 
-# Third is True if fileFixMethod, False if folderFixMethod. Fourth is fixArg's minimum (optional).
-FIX_METHODS = {
-    NULL_OPTION: None,
-    SPACE_FIX: (findFixMethods.spaceErrorFixLog, findFixMethods.spaceErrorFixExecute, True),
-    DELETE_OLD_FILES: (findFixMethods.deleteOldFilesLog, findFixMethods.deleteOldFilesExecute, True, 1),
-    DELETE_EMPTY_DIRECTORIES_FIX: (findFixMethods.deleteEmptyDirectoriesLog, findFixMethods.deleteEmptyDirectoriesExecute, False, 0)
-}
-POST_METHODS = {
-    FILE_EXTENSION_SUMMARY: findFixMethods.fileExtensionPost,
-    DUPLICATE_FILE_FIND: findFixMethods.duplicateFilePost
-}
-
-
-def validateArgument(arg:int, minimum:int):
-    try:
-        arg.strip()
-        arg = int(arg)
-        if (arg >= minimum): return arg
-    except:
-        return
+from findFixDefs import *
 
 
 def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMethods:list[str], selectedFixMethod:str, arg:str):
@@ -66,7 +19,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
 
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
-    findFixMethods.setWorkbookManager(wbm)
+    setWorkbookManager(wbm)
 
     # Errors if this file already exists and is currently opened
     try:
@@ -77,28 +30,27 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
 
     # Set findMethods and fixMethod
     for fm in selectedFindMethods:
-        if FIND_METHODS[fm][1]:
-            wbm.addStatelessFindMethod(fm, FIND_METHODS[fm][0])
-        else:
-            wbm.addStatefulFindMethod(fm, FIND_METHODS[fm][0])
+        findMethodObject = FIND_METHODS[fm] 
 
-        if fm in POST_METHODS:
-           wbm.addPostMethod(fm, POST_METHODS[fm])
+        if findMethodObject.isStateless:
+            wbm.addStatelessFindMethod(fm, findMethodObject.mainMethod)
+        else:
+            wbm.addStatefulFindMethod(fm, findMethodObject.mainMethod)
+
+        if findMethodObject.postMethod:
+           wbm.addPostMethod(fm, findMethodObject.postMethod)
+
 
     if selectedFixMethod != NULL_OPTION:
-        if len(FIX_METHODS[selectedFixMethod]) >= 4:
-            arg = validateArgument(arg, FIX_METHODS[selectedFixMethod][2])
+        fixMethodObject = FIX_METHODS[selectedFixMethod]
+
+        if fixMethodObject.validatorFunction:
+            arg = fixMethodObject.validatorFunction(arg, fixMethodObject.argBoundary)
             if (arg is None): return -3
             else: wbm.setFixArg(arg)
         
-        # If it's a fileFixMethod. Otherwise, it's a folderFixMethod
-        if FIX_METHODS[selectedFixMethod][2]:
-            wbm.setFileFixMethod(selectedFixMethod, FIX_METHODS[selectedFixMethod][int(modify)])
-        else:
-            wbm.setFolderFixMethod(selectedFixMethod, FIX_METHODS[selectedFixMethod][int(modify)])
-
-        # No fix methods - whether file or folder - have a post method.
-        # However, it is possible. If it were done, it would be checked and set here.
+        wbm.setFixMethodHelper(fixMethodObject, modify)
+                
 
     # After sheets have been created, set formatting
     wbm.setDefaultFormatting(dirAbsolute, includeSubfolders, modify)    

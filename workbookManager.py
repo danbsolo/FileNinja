@@ -1,6 +1,7 @@
 import xlsxwriter
 from typing import List, Tuple, Callable
 from time import time
+from findFixHeader import *
 
 class WorkbookManager:
 
@@ -34,7 +35,7 @@ class WorkbookManager:
 
         self.DIR_COL = 0
         self.ITEM_COL = 1
-        self.RENAME_COL = 2
+        self.MOD_COL = 2
         self.ERROR_COL = 2
 
         # Default cell styles
@@ -44,16 +45,16 @@ class WorkbookManager:
         })
 
         # "bg_color": "#FF4444", # reddish
-        self.fileErrorFormat = self.wb.add_format({
+        self.errorFormat = self.wb.add_format({
             "bold": True
         })
 
-        self.renameFormat = self.wb.add_format({
+        self.modifyFormat = self.wb.add_format({
             "bg_color": "#00FF80", # greenish
             "bold": True
         })
 
-        self.showRenameFormat = self.wb.add_format({
+        self.logFormat = self.wb.add_format({
             "bg_color": "#9999FF", # purplish
             "bold": True
         })
@@ -94,30 +95,48 @@ class WorkbookManager:
         self.postCheckMethods.append(functionSelection)
 
 
+    def setFileFixMethod(self, fixMethodObject, modify):
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, fixMethodObject.name + " count", self.headerFormat)
 
-    # TODO: Create a generic function for the following 2 fix method setting functions
-    def setFileFixMethod(self, wsName, functionSelection: Callable[[str, str], bool]):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, wsName + " count", self.headerFormat)
-
-        tmpWsVar = self.wb.add_worksheet(wsName)
+        tmpWsVar = self.wb.add_worksheet(fixMethodObject.name)
         self.fixSheet = tmpWsVar
         self.sheetRow[tmpWsVar] = 1
         self.checkSheetFileCount[tmpWsVar] = 0
 
-        self.fixMethod = functionSelection
-
-
-    def setFolderFixMethod(self, wsName, functionSelection):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, wsName + " count", self.headerFormat)
-
-        tmpWsVar = self.wb.add_worksheet(wsName)
-        self.fixSheet = tmpWsVar
-        self.sheetRow[tmpWsVar] = 1
-        self.checkSheetFileCount[tmpWsVar] = 0
-
-        self.folderFixMethod = functionSelection
-
+        if modify:
+            self.fixMethod = fixMethodObject.modifyMethod
+        else:
+            self.fixMethod = fixMethodObject.logMethod
         
+    def setFolderFixMethod(self, fixMethodObject, modify):
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, fixMethodObject.name + " count", self.headerFormat)
+
+        tmpWsVar = self.wb.add_worksheet(fixMethodObject.name)
+        self.fixSheet = tmpWsVar
+        self.sheetRow[tmpWsVar] = 1
+        self.checkSheetFileCount[tmpWsVar] = 0
+
+        if modify:
+            self.folderFixMethod = fixMethodObject.modifyMethod
+        else:
+            self.folderFixMethod = fixMethodObject.logMethod
+
+
+    def setFixMethodHelper(self, fixMethodObject, modify):
+        if fixMethodObject.isFileFix:
+            self.setFileFixMethod(fixMethodObject, modify)
+        else:
+            self.setFolderFixMethod(fixMethodObject, modify)
+
+        self.setFixMethodFormatting(fixMethodObject.columnName)
+
+    def setFixMethodFormatting(self, columnName):
+        self.fixSheet.freeze_panes(1, 0)
+        self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
+        self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
+        self.fixSheet.write(0, self.MOD_COL, columnName, self.headerFormat)
+
+    
 
     def setFixArg(self, arg: int):
         self.fixArg = arg
@@ -142,14 +161,6 @@ class WorkbookManager:
             wsc.write(0, self.DIR_COL, "Directories", self.headerFormat)
             wsc.write(0, self.ITEM_COL, "Items", self.headerFormat)
             wsc.write(0, self.ERROR_COL, "Error", self.headerFormat)
-
-
-        if (self.isFixSheetSet()):
-            self.fixSheet.freeze_panes(1, 0)
-            self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
-            self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
-            self.fixSheet.write(0, self.ERROR_COL, "Modification" if renamingFiles else "Potential Modification", self.headerFormat)
-
 
         self.summarySheet.set_column(0, 0, 20)
         self.summarySheet.set_column(1, 1, 15)
