@@ -6,7 +6,7 @@ class FindMethod:
         self.postFunction = postFunction
 
 class FixMethod:
-    def __init__(self, name, logFunction, modifyFunction, isFileFix, columnName="Modification", validatorFunction=None, argBoundary=None):
+    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modification"):
         self.name = name
         self.logFunction = logFunction
         self.modifyFunction = modifyFunction
@@ -16,10 +16,20 @@ class FixMethod:
         self.argBoundary = argBoundary
 
 
-def minimumIntegerValidator(arg:int, minimum:int):
+def minimumIntegerValidator(arg:str, minimum:int):
     try:
         arg.strip()
         arg = int(arg)
         if (arg >= minimum): return arg
+    except:
+        return
+    
+def twoStringsValidator(arg:str, separator:str):
+    try:
+        separatorIndex = arg.index(separator)
+        toBeReplaced = arg[0:separatorIndex].strip()
+        replacer = arg[separatorIndex+len(separator):].strip()
+        
+        if toBeReplaced != replacer: return (toBeReplaced, replacer)
     except:
         return

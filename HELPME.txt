@@ -51,3 +51,6 @@ Requires argument. Deletes any file that has not been accessed by argument numbe
 
 - DelEmptyDirs-Fix
 Requires argument. Flags any folder that holds 0 folders and has argument or less number of files. If empty folder, deleted.
+
+- SearchAndReplace-Fix
+Replace a substring with another substring, using a tilde as separator for the argument. Example: With the argument set to "& ~ -and-", all instances of "&" will be replace with "-and-".

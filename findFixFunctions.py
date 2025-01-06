@@ -30,10 +30,8 @@ def setWorkbookManager(newManager: WorkbookManager):
     
 
 def listAll(_:str, itemName:str, ws):
-    # ListAll is a special case in that it wants to return a non-True value so as to not increment the errorCount
-    # As a result, it needs to write the itemName and increment the row itself
     wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1)
-
+    return False
 
 def spaceFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName: 
@@ -87,6 +85,8 @@ def spaceFixHelper(oldItemName) -> str:
     # split() automatically removes leading, trailing, and excess middle whitespace
     newItemNameSansExt = "-".join(oldItemName[0:lastPeriodIndex].replace("-", " ").split())
 
+    # This works because of a double oversight that fixes itself lol
+    # TODO: Should I fix? Ya, probably.
     return newItemNameSansExt + oldItemName[lastPeriodIndex:]
 
 
@@ -260,9 +260,63 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
             try: 
                 os.rmdir(dirAbsolute)
             except:
-                wbm.writeInCell(ws, wbm.ERROR_COL, "0 FILES. COULD NOT DELETE", wbm.errorFormat, 1, 1)
+                wbm.writeInCell(ws, wbm.MOD_COL, "0 FILES. COULD NOT DELETE", wbm.errorFormat, 1, 1)
                 return
-            wbm.writeInCell(ws, wbm.ERROR_COL, "{}".format(fileAmount), wbm.modifyFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(fileAmount), wbm.modifyFormat, 1, 1)
         # Otherwise, just flag as usual
         else:
-            wbm.writeInCell(ws, wbm.ERROR_COL, "{}".format(fileAmount), wbm.logFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(fileAmount), wbm.logFormat, 1, 1)
+
+
+# TODO: This.
+def searchAndReplaceHelper(oldItemName:str):
+    pass
+
+
+def searchAndReplaceLog(_:str, oldItemName:str, ws):
+    toBeReplaced, replacer = wbm.fixArg
+
+    lastPeriodIndex = oldItemName.rfind(".")
+    if lastPeriodIndex == -1:
+        extension = ""
+        oldItemNameSansExt = oldItemName[0:]
+    else:
+        extension = oldItemName[lastPeriodIndex:]
+        oldItemNameSansExt = oldItemName[0:lastPeriodIndex]
+    
+    newItemNameSansExt = oldItemNameSansExt.replace(toBeReplaced, replacer)
+
+    if (oldItemNameSansExt == newItemNameSansExt): return
+
+    newItemName = newItemNameSansExt + extension
+
+    wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
+    wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.logFormat, 1, 1)    
+
+
+def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
+    toBeReplaced, replacer = wbm.fixArg
+
+    lastPeriodIndex = oldItemName.rfind(".")
+    if lastPeriodIndex == -1:
+        extension = ""
+        oldItemNameSansExt = oldItemName[0:]
+    else:
+        extension = oldItemName[lastPeriodIndex:]
+        oldItemNameSansExt = oldItemName[0:lastPeriodIndex]
+    
+    newItemNameSansExt = oldItemNameSansExt.replace(toBeReplaced, replacer)
+
+    if (oldItemNameSansExt == newItemNameSansExt): return
+    
+    newItemName = newItemNameSansExt + extension
+
+    wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
+
+    try:
+        os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
+        wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.modifyFormat, 1, 1)
+    except PermissionError:
+        wbm.writeInCell(ws, wbm.MOD_COL, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
+    except OSError:
+        wbm.writeInCell(ws, wbm.MOD_COL, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)

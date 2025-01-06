@@ -28,7 +28,7 @@ class WorkbookManager:
 
         self.DIR_COL = 0
         self.ITEM_COL = 1
-        self.ERROR_COL, self.MOD_COL = 2
+        self.ERROR_COL = self.MOD_COL = 2
 
         # Default cell styles
         self.dirColFormat = self.wb.add_format({
@@ -194,7 +194,7 @@ class WorkbookManager:
         if self.filesScannedCount == 0: errorPercentage = 0
         else: errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
 
-        if (self.fixArg != None): self.summarySheet.write_number(3, 1, self.fixArg, self.summaryValueFormat)
+        if (self.fixArg != None): self.summarySheet.write_string(3, 1, str(self.fixArg), self.summaryValueFormat)
         
         self.summarySheet.write_number(4, 1, self.filesScannedCount, self.summaryValueFormat)
         self.summarySheet.write_number(5, 1, self.errorCount, self.summaryValueFormat)
