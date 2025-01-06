@@ -1,7 +1,6 @@
 import xlsxwriter
 from typing import List, Tuple, Callable
 from time import time
-from findFixHeader import *
 
 class WorkbookManager:
 
@@ -68,78 +67,62 @@ class WorkbookManager:
         self.summaryValueFormat = self.wb.add_format({
         })
 
-
-    def addStatelessFindMethod(self, ccmName:str, functionSelection: Callable[[str, str], bool]):
-        """Adds a worksheet and corresponding checkMethod"""
-
-        self.concurrentCheckMethods.append(functionSelection)
-        tmpWsVar = self.wb.add_worksheet(ccmName)
-
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, ccmName + " count", self.headerFormat)
-        self.concurrentCheckSheetsList.append(tmpWsVar)
-        self.sheetRow[tmpWsVar] = 1
-        self.checkSheetFileCount[tmpWsVar] = 0
+        # self.FIND_SHEETS = {}
+        # self.ROW = {}
+        # self.SUMMARY_COUNT = {}
 
 
-    def addStatefulFindMethod(self, mcmName:str, functionSelection: Callable):
-        self.miscCheckMethods.append(functionSelection)
-
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, mcmName + " count", self.headerFormat)
-        tmpWsVar = self.wb.add_worksheet(mcmName)
-        self.miscCheckSheetsList.append(tmpWsVar)
-        self.checkSheetFileCount[tmpWsVar] = 0
-        self.sheetRow[tmpWsVar] = 1
-
-
-    def addPostMethod(self, pcmName:str, functionSelection: Callable):
-        self.postCheckMethods.append(functionSelection)
-
-
-    def setFileFixMethod(self, fixMethodObject, modify):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, fixMethodObject.name + " count", self.headerFormat)
-
-        tmpWsVar = self.wb.add_worksheet(fixMethodObject.name)
-        self.fixSheet = tmpWsVar
-        self.sheetRow[tmpWsVar] = 1
-        self.checkSheetFileCount[tmpWsVar] = 0
-
-        if modify:
-            self.fixMethod = fixMethodObject.modifyMethod
-        else:
-            self.fixMethod = fixMethodObject.logMethod
+    def addFindMethod(self, findMethodObject):
+        tmpWsVar = self.wb.add_worksheet(findMethodObject.name)
         
-    def setFolderFixMethod(self, fixMethodObject, modify):
-        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, fixMethodObject.name + " count", self.headerFormat)
+        # #
+        # self.FIND_SHEETS[findMethodObject] = tmpWsVar
+        # self.ROW[findMethodObject] = 1
+        # self.SUMMARY_COUNT[findMethodObject] = 0
+        # #
 
-        tmpWsVar = self.wb.add_worksheet(fixMethodObject.name)
-        self.fixSheet = tmpWsVar
+        if findMethodObject.isStateless:
+            self.concurrentCheckMethods.append(findMethodObject.mainFunction)
+            self.concurrentCheckSheetsList.append(tmpWsVar)
+        else:
+            self.miscCheckMethods.append(findMethodObject.mainFunction)
+            self.miscCheckSheetsList.append(tmpWsVar)
+
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, findMethodObject.name + " count", self.headerFormat)
         self.sheetRow[tmpWsVar] = 1
         self.checkSheetFileCount[tmpWsVar] = 0
 
-        if modify:
-            self.folderFixMethod = fixMethodObject.modifyMethod
-        else:
-            self.folderFixMethod = fixMethodObject.logMethod
-
+        if findMethodObject.postFunction:
+           self.postCheckMethods.append(findMethodObject.postFunction)
 
     def setFixMethodHelper(self, fixMethodObject, modify):
+        self.summarySheet.write(self.sheetRow[self.summarySheet] +len(self.concurrentCheckSheetsList) +len(self.miscCheckSheetsList), 0, fixMethodObject.name + " count", self.headerFormat)
+        tmpWsVar = self.wb.add_worksheet(fixMethodObject.name)
+        self.fixSheet = tmpWsVar
+        self.sheetRow[tmpWsVar] = 1
+        self.checkSheetFileCount[tmpWsVar] = 0
+
         if fixMethodObject.isFileFix:
-            self.setFileFixMethod(fixMethodObject, modify)
+            if modify: self.fixMethod = fixMethodObject.modifyFunction
+            else: self.fixMethod = fixMethodObject.logFunction
         else:
-            self.setFolderFixMethod(fixMethodObject, modify)
+            if modify: self.folderFixMethod = fixMethodObject.modifyFunction
+            else: self.folderFixMethod = fixMethodObject.logFunction
 
-        self.setFixMethodFormatting(fixMethodObject.columnName)
-
-    def setFixMethodFormatting(self, columnName):
         self.fixSheet.freeze_panes(1, 0)
         self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
         self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
-        self.fixSheet.write(0, self.MOD_COL, columnName, self.headerFormat)
+        self.fixSheet.write(0, self.MOD_COL, fixMethodObject.columnName, self.headerFormat)
 
-    
 
-    def setFixArg(self, arg: int):
+    def setFixArg(self, fixMethodObject, unprocessedArg) -> bool:
+        if not fixMethodObject.validatorFunction:
+            return True 
+        if ((arg := fixMethodObject.validatorFunction(unprocessedArg, fixMethodObject.argBoundary)) is None):
+            return False
+
         self.fixArg = arg
+        return True
 
 
     # Lambdas are automatically considered bad functions

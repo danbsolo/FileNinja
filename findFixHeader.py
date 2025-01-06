@@ -1,18 +1,17 @@
 class FindMethod:
-    def __init__(self, name, mainMethod, isStateless, postMethod=None):
+    def __init__(self, name, mainFunction, isStateless, postFunction=None):
         self.name = name
-        self.mainMethod = mainMethod
+        self.mainFunction = mainFunction
         self.isStateless = isStateless
-        self.postMethod = postMethod
+        self.postFunction = postFunction
 
-# Callable[[str, str], bool]
 class FixMethod:
-    def __init__(self, name, logMethod, modifyMethod, columnName, isFileFix, validatorFunction=None, argBoundary=None):
+    def __init__(self, name, logFunction, modifyFunction, isFileFix, columnName="Modification", validatorFunction=None, argBoundary=None):
         self.name = name
-        self.logMethod = logMethod
-        self.modifyMethod = modifyMethod
+        self.logFunction = logFunction
+        self.modifyFunction = modifyFunction
         self.columnName = columnName
-        self.isFileFix = isFileFix
+        self.isFileFix = isFileFix  # If False, isFolderFix
         self.validatorFunction = validatorFunction
         self.argBoundary = argBoundary
 

@@ -1,4 +1,4 @@
-from findFixMethods import *
+from findFixFunctions import *
 from findFixHeader import *
 
 RESULTS_DIRECTORY = "fileCrawlerResults"
@@ -26,7 +26,7 @@ FIND_METHODS = {
 
 FIX_METHODS = {
     NULL_OPTION: None,
-    SPACE_FIX: FixMethod(SPACE_FIX, spaceFixLog, spaceFixModify, "Modification", True),
-    DELETE_OLD_FILES: FixMethod(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, "Days Old", True, minimumIntegerValidator, 1),
-    DELETE_EMPTY_DIRECTORIES_FIX: FixMethod(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, "# Files Contained", False, minimumIntegerValidator, 0)
+    SPACE_FIX: FixMethod(SPACE_FIX, spaceFixLog, spaceFixModify, True),
+    DELETE_OLD_FILES: FixMethod(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, "# Days Last Accessed", minimumIntegerValidator, 1),
+    DELETE_EMPTY_DIRECTORIES_FIX: FixMethod(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, "# Files Contained", minimumIntegerValidator, 0)
 }

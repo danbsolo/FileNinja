@@ -3,10 +3,10 @@ from tkinter import filedialog, messagebox
 import os
 from workbookManager import WorkbookManager
 from datetime import datetime
-from findFixDefs import *
+from defs import *
 
 
-def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMethods:list[str], selectedFixMethod:str, arg:str):
+def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMethods:list[str], selectedFixMethod:str, unprocessedArg:str):
     if (not dirAbsolute): return -2
     
     # Create fileCrawlerResults directory name if does not exist
@@ -30,30 +30,20 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
 
     # Set findMethods and fixMethod
     for fm in selectedFindMethods:
-        findMethodObject = FIND_METHODS[fm] 
-
-        if findMethodObject.isStateless:
-            wbm.addStatelessFindMethod(fm, findMethodObject.mainMethod)
-        else:
-            wbm.addStatefulFindMethod(fm, findMethodObject.mainMethod)
-
-        if findMethodObject.postMethod:
-           wbm.addPostMethod(fm, findMethodObject.postMethod)
-
+        wbm.addFindMethod(FIND_METHODS[fm])
 
     if selectedFixMethod != NULL_OPTION:
         fixMethodObject = FIX_METHODS[selectedFixMethod]
 
-        if fixMethodObject.validatorFunction:
-            arg = fixMethodObject.validatorFunction(arg, fixMethodObject.argBoundary)
-            if (arg is None): return -3
-            else: wbm.setFixArg(arg)
+        if not wbm.setFixArg(fixMethodObject, unprocessedArg):
+            return -3
         
         wbm.setFixMethodHelper(fixMethodObject, modify)
                 
 
     # After sheets have been created, set formatting
     wbm.setDefaultFormatting(dirAbsolute, includeSubfolders, modify)    
+
 
     print("\nCreating " + workbookPathName + "...")
     if (includeSubfolders):
@@ -71,20 +61,20 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
 
         wbm.folderCrawl([(dirAbsolute, dirFolders, dirFiles)])
 
-
     wbm.close()
     print("Opening " + workbookPathName + ".")
     os.startfile(workbookPathName)
     return 0
 
 
+
 def view():
     def launchController():
-        if (renameState.get() and not messagebox.askyesnocancel("Are you sure?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?")):
+        if (modifyState.get() and not messagebox.askyesnocancel("Are you sure?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?")):
             print("Aborted. Continuing selection.")
             return
 
-        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(renameState.get()), 
+        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
                            [findMethodListbox.get(fm) for fm in findMethodListbox.curselection()], fixOption.get(), parameterVar.get())
 
         if (exitCode == 0):
@@ -128,12 +118,12 @@ def view():
     dirAbsoluteVar = tk.StringVar()
     parameterVar = tk.StringVar()
     includeSubFoldersState = tk.IntVar()
-    renameState = tk.IntVar()
+    modifyState = tk.IntVar()
     fixOptionsList = list(FIX_METHODS)
     fixOption = tk.StringVar()
 
     includeSubfoldersCheckbutton = tk.Checkbutton(frame1, text="Subfolders?", variable=includeSubFoldersState, font=fontGeneral)
-    modifyCheckbutton = tk.Checkbutton(frame1, text="Modify?", variable=renameState, font=fontGeneral)
+    modifyCheckbutton = tk.Checkbutton(frame1, text="Modify?", variable=modifyState, font=fontGeneral)
 
     fixOption.set(fixOptionsList[0])
     fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptionsList)

@@ -139,7 +139,7 @@ def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws):
     elif len(fullFilePath) > CHARACTER_LIMIT:
         wbm.writeInCell(ws, wbm.MOD_COL, "{} days but violates charLimit".format(daysOld), wbm.logFormat, 1, 1)
     else:
-        wbm.writeInCell(ws, wbm.MOD_COL, "{} days".format(daysOld), wbm.logFormat, 1, 1)    
+        wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(daysOld), wbm.logFormat, 1, 1)    
 
 
 def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
@@ -158,7 +158,7 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
     else:
         try:
             os.remove(fullFilePath)
-            wbm.writeInCell(ws, wbm.MOD_COL, "{} days".format(daysOld), wbm.modifyFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(daysOld), wbm.modifyFormat, 1, 1)
         except:
             wbm.writeInCell(ws, wbm.MOD_COL, "FAILED TO DELETE", wbm.errorFormat, 1, 1)
             
@@ -240,7 +240,7 @@ def deleteEmptyDirectoriesLog(dirAbsolute, dirFolders, dirFiles, ws):
     # If equal to tooFewAmount or less, then this folder needs to be at least flagged
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.logFormat, 1, 1)
+        wbm.writeInCell(ws, wbm.ERROR_COL, "{}".format(fileAmount), wbm.logFormat, 1, 1)
 
 
 def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
@@ -257,7 +257,7 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
             except:
                 wbm.writeInCell(ws, wbm.ERROR_COL, "0 FILES. COULD NOT DELETE", wbm.errorFormat, 1, 1)
                 return
-            wbm.writeInCell(ws, wbm.ERROR_COL, "{} FILES".format(fileAmount), wbm.modifyFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.ERROR_COL, "{}".format(fileAmount), wbm.modifyFormat, 1, 1)
         # Otherwise, just flag as usual
         else:
-            wbm.writeInCell(ws, wbm.ERROR_COL, "{} files".format(fileAmount), wbm.logFormat, 1, 1)
+            wbm.writeInCell(ws, wbm.ERROR_COL, "{}".format(fileAmount), wbm.logFormat, 1, 1)
