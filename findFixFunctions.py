@@ -319,4 +319,5 @@ def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
     except PermissionError:
         wbm.writeInCell(ws, wbm.MOD_COL, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
     except OSError:
+        # This will happen if attempting to rename to an empty string
         wbm.writeInCell(ws, wbm.MOD_COL, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
