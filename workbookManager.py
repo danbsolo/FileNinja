@@ -28,7 +28,8 @@ class WorkbookManager:
 
         self.DIR_COL = 0
         self.ITEM_COL = 1
-        self.ERROR_COL = self.MOD_COL = 2
+        # used describe either an Error or a Modification, depending on the procedure type
+        self.OUTCOME_COL = 2
 
         # Default cell styles
         self.dirColFormat = self.wb.add_format({
@@ -38,6 +39,7 @@ class WorkbookManager:
 
         # "bg_color": "#FF4444", # reddish
         self.errorFormat = self.wb.add_format({
+            **self.defaultFormat.get_properties(),
             "bold": True
         })
 
@@ -56,7 +58,6 @@ class WorkbookManager:
             "bold": True
         })
 
-        # Nothing so far
         self.summaryValueFormat = self.wb.add_format({
         })
 
@@ -80,7 +81,7 @@ class WorkbookManager:
             tmpWsVar.freeze_panes(1, 0)
             tmpWsVar.write(0, self.DIR_COL, "Directories", self.headerFormat)
             tmpWsVar.write(0, self.ITEM_COL, "Items", self.headerFormat)
-            tmpWsVar.write(0, self.ERROR_COL, "Error", self.headerFormat)
+            tmpWsVar.write(0, self.OUTCOME_COL, "Error", self.headerFormat)
 
 
     def setFixProcedure(self, fixProcedureObject, modify):
@@ -100,7 +101,7 @@ class WorkbookManager:
         self.fixSheet.freeze_panes(1, 0)
         self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
         self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
-        self.fixSheet.write(0, self.MOD_COL, fixProcedureObject.columnName, self.headerFormat)
+        self.fixSheet.write(0, self.OUTCOME_COL, fixProcedureObject.columnName, self.headerFormat)
 
 
     def setFixArg(self, fixProcedureObject, unprocessedArg) -> bool:
@@ -155,16 +156,25 @@ class WorkbookManager:
         self.executionTime = end - start
 
 
-    def writeError(self, ws, text, format=None):
-        self.writeInCell(ws, self.ERROR_COL, text, format)
-    
+    def writeItem(self, ws, text, format=None):
+        self.writeHelper(ws, self.ITEM_COL, text, format)
 
-    def writeInCell(self, ws, col: str, text: str, format=None, rowIncrement=0, fileIncrement=0):
+    def writeItemAndIncrement(self, ws, text, format=None):
+        self.writeItem(ws, text, format)
+        self.incrementRow(ws)
+        self.incrementFileCount(ws)
+
+    def writeOutcome(self, ws, text, format=None):
+        self.writeHelper(ws, self.OUTCOME_COL, text, format)
+
+    def writeOutcomeAndIncrement(self, ws, text, format=None):
+        self.writeOutcome(ws, text, format)
+        self.incrementRow(ws)
+        self.incrementFileCount(ws)
+
+    def writeHelper(self, ws, col: str, text: str, format=None):
         if (format): ws.write_string(self.sheetRows[ws], col, text, format)
         else: ws.write_string(self.sheetRows[ws], col, text)
-
-        self.sheetRows[ws] += rowIncrement
-        self.summaryCounts[ws] += fileIncrement
 
     def incrementRow(self, ws, amount:int=1):
         self.sheetRows[ws] += amount

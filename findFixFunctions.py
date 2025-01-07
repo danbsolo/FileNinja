@@ -30,12 +30,13 @@ def setWorkbookManager(newManager: WorkbookManager):
     
 
 def listAll(_:str, itemName:str, ws):
-    wbm.writeInCell(ws, wbm.ITEM_COL, itemName, rowIncrement=1)
+    wbm.writeItem(ws, itemName)
+    wbm.incrementRow(ws)
     return False
 
 def spaceFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName: 
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.errorFormat, 1, 1)
+        wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
         return True
     return False
     
@@ -43,14 +44,12 @@ def spaceFind(_:str, itemName:str, ws) -> bool:
 def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.errorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT), rowIncrement=1, fileIncrement=1)
+        wbm.writeItem(ws, itemName, wbm.errorFormat)
+        wbm.writeOutcomeAndIncrement(ws, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT))
         return True
     return False
 
-def badCharFind(_:str, itemName:str, ws) -> Set[str]:
-    """Does not check for space characters."""
-    
+def badCharFind(_:str, itemName:str, ws) -> Set[str]:    
     badChars = set()
 
     # If no extension (aka, no period), lastPeriodIndex will equal -1
@@ -69,8 +68,8 @@ def badCharFind(_:str, itemName:str, ws) -> Set[str]:
 
     # if any bad characters were found
     if (badChars):
-        wbm.writeInCell(ws, wbm.ITEM_COL, itemName, wbm.errorFormat)
-        wbm.writeInCell(ws, wbm.ERROR_COL, "".join(badChars), rowIncrement=1, fileIncrement=1)
+        wbm.writeItem(ws, itemName, wbm.errorFormat)
+        wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
         return True
     return False
 
@@ -94,25 +93,27 @@ def spaceFixLog(_:str, oldItemName:str, ws):
     newItemName = spaceFixHelper(oldItemName)
     if (not newItemName): return
 
-    wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName)
-    wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.logFormat, 1, 1)
+    wbm.writeItem(ws, oldItemName)
+    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
 
     
 def spaceFixModify(dirAbsolute:str, oldItemName:str, ws):
     newItemName = spaceFixHelper(oldItemName)
     if (not newItemName): return
 
-    wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName)
+    wbm.writeItem(ws, oldItemName)
 
     # Log newItemName and rename file
     try:
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
-        wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.modifyFormat, 1, 1)
+        wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeInCell(ws, wbm.MOD_COL, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
+        wbm.writeOutcome(ws, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat)
+        wbm.incrementRow(ws)
     except OSError:
-        wbm.writeInCell(ws, wbm.MOD_COL, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
-
+        wbm.writeOutcome(ws, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat)
+        wbm.incrementRow(ws)
+        
 
 def deleteOldFilesHelper(fullFilePath: str) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
@@ -138,14 +139,14 @@ def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws):
     # Either it's actually 0 days old or the fileDate is after the cutOffDate. Either way, don't flag.         
     if (daysOld == 0): return
 
-    wbm.writeInCell(ws, wbm.ITEM_COL, itemName)
+    wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
-        wbm.writeInCell(ws, wbm.MOD_COL, "UNABLE TO READ DATE", wbm.errorFormat, 1, 1) 
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat) 
     elif len(fullFilePath) > CHARACTER_LIMIT:
-        wbm.writeInCell(ws, wbm.MOD_COL, "{} days but violates charLimit".format(daysOld), wbm.logFormat, 1, 1)
+        wbm.writeOutcomeAndIncrement(ws, "{} days but violates charLimit".format(daysOld), wbm.logFormat)    
     else:
-        wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(daysOld), wbm.logFormat, 1, 1)    
+        wbm.writeOutcomeAndIncrement(ws, "{}".format(daysOld), wbm.logFormat)
 
 
 def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
@@ -154,21 +155,20 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
 
     if (daysOld == 0): return
 
-    wbm.writeInCell(ws, wbm.ITEM_COL, itemName)
+    wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
-        wbm.writeInCell(ws, wbm.MOD_COL, "UNABLE TO READ DATE", wbm.errorFormat, 1, 1) 
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat) 
     # If over CHARACTER_LIMIT characters, do not delete as it is not backed up
     elif len(fullFilePath) > CHARACTER_LIMIT:
-        wbm.writeInCell(ws, wbm.MOD_COL, "{} days but violates charLimit".format(daysOld), wbm.logFormat, 1, 1)
+        wbm.writeOutcomeAndIncrement(ws, "{} days but violates charLimit".format(daysOld), wbm.logFormat)
     else:
         try:
             os.remove(fullFilePath)
-            wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(daysOld), wbm.modifyFormat, 1, 1)
+            wbm.writeOutcomeAndIncrement(ws, "{}".format(daysOld), wbm.modifyFormat)
         except:
-            wbm.writeInCell(ws, wbm.MOD_COL, "FAILED TO DELETE", wbm.errorFormat, 1, 1)
+            wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE", wbm.errorFormat)
             
-    
 
 def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
     try: fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
@@ -245,7 +245,7 @@ def deleteEmptyDirectoriesLog(dirAbsolute, dirFolders, dirFiles, ws):
     # If equal to tooFewAmount or less, then this folder needs to be at least flagged
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
-        wbm.writeInCell(ws, wbm.ERROR_COL, "{}".format(fileAmount), wbm.logFormat, 1, 1)
+        wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.logFormat)
 
 
 def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
@@ -259,16 +259,15 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
         if (fileAmount == 0):
             try: 
                 os.rmdir(dirAbsolute)
+                wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.modifyFormat)
             except:
-                wbm.writeInCell(ws, wbm.MOD_COL, "0 FILES. COULD NOT DELETE", wbm.errorFormat, 1, 1)
+                wbm.writeOutcomeAndIncrement(ws, "0 FILES. COULD NOT DELETE", wbm.errorFormat)
                 return
-            wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(fileAmount), wbm.modifyFormat, 1, 1)
         # Otherwise, just flag as usual
         else:
-            wbm.writeInCell(ws, wbm.MOD_COL, "{}".format(fileAmount), wbm.logFormat, 1, 1)
+            wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.logFormat)
 
 
-# TODO: This.
 def searchAndReplaceHelper(oldItemName:str):
     toBeReplaced, replacer = wbm.fixArg
 
@@ -289,20 +288,25 @@ def searchAndReplaceHelper(oldItemName:str):
 def searchAndReplaceLog(_:str, oldItemName:str, ws):
     if not (newItemName := searchAndReplaceHelper(oldItemName)): return
 
-    wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
-    wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.logFormat, 1, 1)    
-
+    # wbm.writeHelper(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
+    # wbm.writeHelper(ws, wbm.OUTCOME_COL, newItemName, wbm.logFormat, 1, 1)    
+    wbm.writeItem(ws, oldItemName, wbm.errorFormat)
+    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)    
+    
 
 def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
     if not (newItemName := searchAndReplaceHelper(oldItemName)): return
 
-    wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
+    # wbm.writeHelper(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
+    wbm.writeItem(ws, oldItemName, wbm.errorFormat)
 
     try:
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
-        wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.modifyFormat, 1, 1)
+        wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeInCell(ws, wbm.MOD_COL, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
+        wbm.writeOutcome(ws, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat)
+        wbm.incrementRow(ws)
     except OSError:
         # This will happen if attempting to rename to an empty string
-        wbm.writeInCell(ws, wbm.MOD_COL, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat, 1, 0)
+        wbm.writeOutcome(ws, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat)
+        wbm.incrementRow(ws)
