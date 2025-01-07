@@ -122,7 +122,7 @@ def deleteOldFilesHelper(fullFilePath: str) -> int:
     # Could double-check that this value is usable each time. Dire consequences if not.
     #  if (daysTooOld <= 0): return -1
     
-    # gets date of file. This *can* error virtue of the library functions, hence try/except
+    # Get date of file. This *can* error virtue of the library functions, hence try/except
     try: fileDate = datetime.fromtimestamp(os.path.getatime(fullFilePath))
     except: return -1
 
@@ -288,8 +288,6 @@ def searchAndReplaceHelper(oldItemName:str):
 def searchAndReplaceLog(_:str, oldItemName:str, ws):
     if not (newItemName := searchAndReplaceHelper(oldItemName)): return
 
-    # wbm.writeHelper(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
-    # wbm.writeHelper(ws, wbm.OUTCOME_COL, newItemName, wbm.logFormat, 1, 1)    
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
     wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)    
     
@@ -297,7 +295,6 @@ def searchAndReplaceLog(_:str, oldItemName:str, ws):
 def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
     if not (newItemName := searchAndReplaceHelper(oldItemName)): return
 
-    # wbm.writeHelper(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
 
     try:
