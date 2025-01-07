@@ -1,11 +1,11 @@
-class FindMethod:
+class FindProcedure:
     def __init__(self, name, mainFunction, isStateless, postFunction=None):
         self.name = name
         self.mainFunction = mainFunction
         self.isStateless = isStateless
         self.postFunction = postFunction
 
-class FixMethod:
+class FixProcedure:
     def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modification"):
         self.name = name
         self.logFunction = logFunction

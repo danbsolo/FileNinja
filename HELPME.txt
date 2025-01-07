@@ -4,14 +4,14 @@ On = Include subfolders. Off = Limit search to current folder.
 - Modify?
 On = Execute modifications. Off = Log would-be modifications.
 
-- Find methods
+- Find procedures
 Flags any file name that falls under the error described. Many can be ran per execution.
 
-- Fix method
+- Fix procedure
 Runs a fix on flagged file names, displaying potential renames or actual renames made. May require an argument. Only one can be ran per execution.
 
 - Argument text box
-Some fix methods require an integer argument to be set. Type here to designate an argument.
+Some fix procedures require an integer argument to be set. Type here to designate an argument.
 
 - Browse
 Select a directory.

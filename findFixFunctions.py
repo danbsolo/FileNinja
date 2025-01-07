@@ -7,7 +7,7 @@ from workbookManager import WorkbookManager
 
 
 # Used by badCharFind().
-# Includes ' ' (space) as there is a separate method for finding that error
+# Includes ' ' (space) as there is a separate procedure for finding that error
 PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 CHARACTER_LIMIT = 200
 
@@ -270,10 +270,6 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
 
 # TODO: This.
 def searchAndReplaceHelper(oldItemName:str):
-    pass
-
-
-def searchAndReplaceLog(_:str, oldItemName:str, ws):
     toBeReplaced, replacer = wbm.fixArg
 
     lastPeriodIndex = oldItemName.rfind(".")
@@ -287,29 +283,18 @@ def searchAndReplaceLog(_:str, oldItemName:str, ws):
     newItemNameSansExt = oldItemNameSansExt.replace(toBeReplaced, replacer)
 
     if (oldItemNameSansExt == newItemNameSansExt): return
+    return newItemNameSansExt + extension
 
-    newItemName = newItemNameSansExt + extension
+
+def searchAndReplaceLog(_:str, oldItemName:str, ws):
+    if not (newItemName := searchAndReplaceHelper(oldItemName)): return
 
     wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
     wbm.writeInCell(ws, wbm.MOD_COL, newItemName, wbm.logFormat, 1, 1)    
 
 
 def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
-    toBeReplaced, replacer = wbm.fixArg
-
-    lastPeriodIndex = oldItemName.rfind(".")
-    if lastPeriodIndex == -1:
-        extension = ""
-        oldItemNameSansExt = oldItemName[0:]
-    else:
-        extension = oldItemName[lastPeriodIndex:]
-        oldItemNameSansExt = oldItemName[0:lastPeriodIndex]
-    
-    newItemNameSansExt = oldItemNameSansExt.replace(toBeReplaced, replacer)
-
-    if (oldItemNameSansExt == newItemNameSansExt): return
-    
-    newItemName = newItemNameSansExt + extension
+    if not (newItemName := searchAndReplaceHelper(oldItemName)): return
 
     wbm.writeInCell(ws, wbm.ITEM_COL, oldItemName, wbm.errorFormat)
 

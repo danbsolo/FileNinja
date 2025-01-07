@@ -6,7 +6,7 @@ from datetime import datetime
 from defs import *
 
 
-def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMethods:list[str], selectedFixMethod:str, unprocessedArg:str):
+def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindProcedures:list[str], selectedFixProcedure:str, unprocessedArg:str):
     if (not dirAbsolute): return -2
     
     # Create fileCrawlerResults directory name if does not exist
@@ -28,17 +28,17 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindMe
     except PermissionError:
         return -1
 
-    # Set findMethods and fixMethod
-    for fm in selectedFindMethods:
-        wbm.addFindMethod(FIND_METHODS[fm])
+    # Set findProcedures and fixProcedure
+    for fm in selectedFindProcedures:
+        wbm.addFindProcedure(FIND_PROCEDURES[fm])
 
-    if selectedFixMethod != NULL_OPTION:
-        fixMethodObject = FIX_METHODS[selectedFixMethod]
+    if selectedFixProcedure != NULL_OPTION:
+        fixProcedureObject = FIX_PROCEDURES[selectedFixProcedure]
 
-        if not wbm.setFixArg(fixMethodObject, unprocessedArg):
+        if not wbm.setFixArg(fixProcedureObject, unprocessedArg):
             return -3
         
-        wbm.setFixMethod(fixMethodObject, modify)
+        wbm.setFixProcedure(fixProcedureObject, modify)
                     
     wbm.styleSummarySheet(dirAbsolute, includeSubfolders, modify)    
 
@@ -72,7 +72,7 @@ def view():
             return
 
         exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
-                           [findMethodListbox.get(fm) for fm in findMethodListbox.curselection()], fixOption.get(), parameterVar.get())
+                           [findProcedureListbox.get(fm) for fm in findProcedureListbox.curselection()], fixOption.get(), parameterVar.get())
 
         if (exitCode == 0):
             pass
@@ -116,7 +116,7 @@ def view():
     parameterVar = tk.StringVar()
     includeSubFoldersState = tk.IntVar()
     modifyState = tk.IntVar()
-    fixOptionsList = list(FIX_METHODS)
+    fixOptionsList = list(FIX_PROCEDURES)
     fixOption = tk.StringVar()
 
     includeSubfoldersCheckbutton = tk.Checkbutton(frame1, text="Subfolders?", variable=includeSubFoldersState, font=fontGeneral)
@@ -126,11 +126,11 @@ def view():
     fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptionsList)
     fixDropdownMenu.config(font=fontGeneral) # set the font of fixDropdownMenu
 
-    findMethodListbox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=7)
+    findProcedureListbox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=7)
     
     # dictionaries are ordered as of Python version 3.7
-    for fm in FIND_METHODS.keys(): findMethodListbox.insert(tk.END, fm)
-    findMethodListbox.select_set(0)  # Hard code to select the first option.
+    for fm in FIND_PROCEDURES.keys(): findProcedureListbox.insert(tk.END, fm)
+    findProcedureListbox.select_set(0)  # Hard code to select the first option.
 
     parameterEntry = tk.Entry(frame1, textvariable=parameterVar, width=7, font=fontGeneral)
 
@@ -144,7 +144,7 @@ def view():
 
     includeSubfoldersCheckbutton.pack(side=tk.LEFT)
     modifyCheckbutton.pack(side=tk.LEFT)
-    findMethodListbox.pack(side=tk.LEFT)
+    findProcedureListbox.pack(side=tk.LEFT)
     fixDropdownMenu.pack(side=tk.LEFT)
     parameterEntry.pack(side=tk.LEFT)
 

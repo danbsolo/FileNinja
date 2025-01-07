@@ -16,19 +16,19 @@ DELETE_OLD_FILES = "DelOldFiles-Fix"
 DELETE_EMPTY_DIRECTORIES_FIX = "DelEmptyDirs-Fix"
 SEARCH_AND_REPLACE = "SearchAndReplace-Fix"
 
-FIND_METHODS = {
-    LIST_ALL: FindMethod(LIST_ALL, listAll, True),
-    CHARACTER_LIMIT_FIND: FindMethod(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
-    BAD_CHARACTER_FIND: FindMethod(BAD_CHARACTER_FIND, badCharFind, True),
-    SPACE_FIND: FindMethod(SPACE_FIND, spaceFind, True),
-    DUPLICATE_FILE_FIND: FindMethod(DUPLICATE_FILE_FIND, duplicateFileConcurrent, False, duplicateFilePost),
-    FILE_EXTENSION_SUMMARY: FindMethod(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost)
+FIND_PROCEDURES = {
+    LIST_ALL: FindProcedure(LIST_ALL, listAll, True),
+    CHARACTER_LIMIT_FIND: FindProcedure(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
+    BAD_CHARACTER_FIND: FindProcedure(BAD_CHARACTER_FIND, badCharFind, True),
+    SPACE_FIND: FindProcedure(SPACE_FIND, spaceFind, True),
+    DUPLICATE_FILE_FIND: FindProcedure(DUPLICATE_FILE_FIND, duplicateFileConcurrent, False, duplicateFilePost),
+    FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost)
 }
 
-FIX_METHODS = {
+FIX_PROCEDURES = {
     NULL_OPTION: None,
-    SPACE_FIX: FixMethod(SPACE_FIX, spaceFixLog, spaceFixModify, True),
-    DELETE_OLD_FILES: FixMethod(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntegerValidator, 1, "# Days Last Accessed"),
-    DELETE_EMPTY_DIRECTORIES_FIX: FixMethod(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntegerValidator, 0, "# Files Contained"),
-    SEARCH_AND_REPLACE: FixMethod(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, "~")
+    SPACE_FIX: FixProcedure(SPACE_FIX, spaceFixLog, spaceFixModify, True),
+    DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntegerValidator, 1, "# Days Last Accessed"),
+    DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntegerValidator, 0, "# Files Contained"),
+    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, "~")
 }
