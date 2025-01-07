@@ -1,10 +1,10 @@
 from typing import Set
 import string
 import os
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 import hashlib
 from workbookManager import WorkbookManager
+import mmap
 
 
 # Used by badCharFind
@@ -24,6 +24,7 @@ NAMES_AND_PATHS = {}
 
 # Used by duplicateContent
 HASH_AND_FILES = {}
+MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
 hashFunc = hashlib.new("sha256")
 hashFunc.update("".encode())
 EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
@@ -172,7 +173,7 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
             
 
 def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
-    try: fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
+    try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
     except: return False
 
     lastPeriodIndex = itemName.rfind(".")
@@ -237,12 +238,23 @@ def duplicateNamePost(ws):
 
 
 def duplicateContentHelper(dirAbsolute:str, itemName:str):
+    try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName)  # Bytes
+    except: fileSize = 0 # TODO: check average size of files that cause this
+    
     hashFunc = hashlib.new("sha256")
     
     try: 
         with open(dirAbsolute+"/"+itemName, "rb") as file:
-            while chunk := file.read(8192):
-                hashFunc.update(chunk)
+            if fileSize > MMAP_THRESHOLD:
+                mmappedFile = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
+                print("Working... MMAP ", fileSize)
+                while chunk := mmappedFile.read(16384):
+                    hashFunc.update(chunk)
+            else:
+                print("Working... REG ", fileSize)
+                while chunk := file.read(8192):
+                    hashFunc.update(chunk)
+
         return hashFunc.hexdigest()
     # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
     except: return
@@ -256,7 +268,6 @@ def duplicateContentConcurrent(dirAbsolute:str, itemName:str, _):
         HASH_AND_FILES[hashCode][0].append(itemName)
         HASH_AND_FILES[hashCode][1].append(dirAbsolute)
     else:
-        print("Working...")
         HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
 
 def duplicateContentPost(ws):
@@ -279,7 +290,7 @@ def duplicateContentPost(ws):
     ws.autofit()
 
 
-def deleteEmptyDirectoriesLog(dirAbsolute, dirFolders, dirFiles, ws):
+def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws):
     tooFewAmount = wbm.fixArg
 
     # If even 1 folder exists, this isn't empty

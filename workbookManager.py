@@ -67,6 +67,14 @@ class WorkbookManager:
             sheets.append(self.fixSheet)
         return sheets
 
+    def getAllProcedureSheetsSansFindStateful(self):
+        sheets = []
+        for findProcedureObject in list(self.findSheets.keys()):
+            if findProcedureObject.isStateless:
+                sheets.append(self.findSheets[findProcedureObject])
+        if self.fixSheet:
+            sheets.append(self.fixSheet)
+        return sheets
 
     def addFindProcedure(self, findProcedureObject):
         tmpWsVar = self.wb.add_worksheet(findProcedureObject.name)
@@ -136,8 +144,8 @@ class WorkbookManager:
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         start = time()
 
-        allSheets = self.getAllProcedureSheets() 
-        
+        allSheets = self.getAllProcedureSheetsSansFindStateful()
+
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
             for ws in allSheets:
                 ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
@@ -247,7 +255,7 @@ class WorkbookManager:
 
 
     def autofitSheets(self):        
-        for ws in self.getAllProcedureSheets():
+        for ws in self.getAllProcedureSheetsSansFindStateful():
             ws.autofit()
             
 
