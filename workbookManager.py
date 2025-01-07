@@ -32,14 +32,13 @@ class WorkbookManager:
         self.OUTCOME_COL = 2
 
         # Default cell styles
-        self.dirColFormat = self.wb.add_format({
+        self.dirFormat = self.wb.add_format({
             "bg_color": "#99CCFF", # blueish
             "bold": True
         })
 
         # "bg_color": "#FF4444", # reddish
         self.errorFormat = self.wb.add_format({
-            **self.defaultFormat.get_properties(),
             "bold": True
         })
 
@@ -141,7 +140,7 @@ class WorkbookManager:
         
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
             for ws in allSheets:
-                ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirColFormat)
+                ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
 
             self.fileCrawl(dirAbsolute, dirFiles)
 

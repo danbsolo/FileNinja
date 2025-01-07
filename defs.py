@@ -8,7 +8,8 @@ CHARACTER_LIMIT_FIND = "CharLimit-Find"
 BAD_CHARACTER_FIND = "BadChar-Find"
 SPACE_FIND = "SPC-Find"
 FILE_EXTENSION_SUMMARY = "FileExt-Summary"
-DUPLICATE_FILE_FIND = "DupFile-Find"
+DUPLICATE_NAME_FIND = "DupName-Find"
+DUPLICATE_CONTENT_FIND = "DupContent-Find"
 
 NULL_OPTION = "..."
 SPACE_FIX = "SPC-Fix"
@@ -21,7 +22,8 @@ FIND_PROCEDURES = {
     CHARACTER_LIMIT_FIND: FindProcedure(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
     BAD_CHARACTER_FIND: FindProcedure(BAD_CHARACTER_FIND, badCharFind, True),
     SPACE_FIND: FindProcedure(SPACE_FIND, spaceFind, True),
-    DUPLICATE_FILE_FIND: FindProcedure(DUPLICATE_FILE_FIND, duplicateFileConcurrent, False, duplicateFilePost),
+    DUPLICATE_NAME_FIND: FindProcedure(DUPLICATE_NAME_FIND, duplicateNameConcurrent, False, duplicateNamePost),
+    DUPLICATE_CONTENT_FIND:FindProcedure(DUPLICATE_CONTENT_FIND, duplicateContentConcurrent, False, duplicateContentPost),
     FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost)
 }
 

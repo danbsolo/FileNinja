@@ -126,7 +126,7 @@ def view():
     fixDropdownMenu = tk.OptionMenu(frame1, fixOption, *fixOptionsList)
     fixDropdownMenu.config(font=fontGeneral) # set the font of fixDropdownMenu
 
-    findProcedureListbox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=7)
+    findProcedureListbox = tk.Listbox(frame1, selectmode="multiple", exportselection=0, height=8)
     
     # dictionaries are ordered as of Python version 3.7
     for fm in FIND_PROCEDURES.keys(): findProcedureListbox.insert(tk.END, fm)
