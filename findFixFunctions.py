@@ -247,11 +247,9 @@ def duplicateContentHelper(dirAbsolute:str, itemName:str):
         with open(dirAbsolute+"/"+itemName, "rb") as file:
             if fileSize > MMAP_THRESHOLD:
                 mmappedFile = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-                print("Working... MMAP ", fileSize)
                 while chunk := mmappedFile.read(16384):
                     hashFunc.update(chunk)
             else:
-                print("Working... REG ", fileSize)
                 while chunk := file.read(8192):
                     hashFunc.update(chunk)
 
