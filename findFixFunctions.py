@@ -238,20 +238,20 @@ def duplicateNamePost(ws):
 
 
 def duplicateContentHelper(dirAbsolute:str, itemName:str):
-    try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName)  # Bytes
-    except: fileSize = 0 # TODO: check average size of files that cause this
+    # try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName)  # Bytes
+    # except: fileSize = 0 # TODO: check average size of files that cause this
     
     hashFunc = hashlib.new("sha256")
     
     try: 
         with open(dirAbsolute+"/"+itemName, "rb") as file:
-            if fileSize > MMAP_THRESHOLD:
-                mmappedFile = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-                while chunk := mmappedFile.read(16384):
-                    hashFunc.update(chunk)
-            else:
-                while chunk := file.read(8192):
-                    hashFunc.update(chunk)
+            # if fileSize > MMAP_THRESHOLD:
+            #     mmappedFile = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
+            #     while chunk := mmappedFile.read(16384):
+            #         hashFunc.update(chunk)
+            # else:
+            while chunk := file.read(8192):
+                hashFunc.update(chunk)
 
         return hashFunc.hexdigest()
     # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
