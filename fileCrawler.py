@@ -73,7 +73,9 @@ def view():
 
         root.title(FILE_CRAWLER + ": CURRENTLY RUNNING...")
         exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
-                           [findListbox.get(fm) for fm in findListbox.curselection()], fixListbox.get(tk.ACTIVE), parameterVar.get())
+                           [findListbox.get(fm) for fm in findListbox.curselection()],
+                           fixListbox.get(tk.ACTIVE) if isAdmin else NULL_OPTION,
+                           parameterVar.get())
         root.title(FILE_CRAWLER)
         
         errorMessage = ""
@@ -109,7 +111,8 @@ def view():
     if (len(argv) <= 1):
         pass
     elif (argv[1] != PASSWORD):
-        tk.messagebox.showinfo("FileCrawler: Wrong", "Wrong.")
+        tk.messagebox.showerror("FileCrawler: INCORRECT", "Incorrect.")
+        return
     else:
         isAdmin = True
     
@@ -117,15 +120,17 @@ def view():
     root = tk.Tk()
     root.title(FILE_CRAWLER)
     root.resizable(0, 0)
-    rootWidth = 500
-    rootHeight = 440 # HARD CODED
+    rootWidth = 500 if isAdmin else 300
+    rootHeight = 430 if isAdmin else 350
     root.geometry("{}x{}".format(rootWidth, rootHeight))
-    root.attributes('-topmost', True)  # keeps root window at top layer
+
+    if isAdmin:
+        root.attributes('-topmost', True)  # keeps root window at top layer
 
     frames = []
     for i in range(8):
         frames.append(tk.Frame(root, bd=0, relief=tk.SOLID))
-        frames[i].pack(fill="x", padx=10, pady=5)
+        frames[i].pack(fill="x", padx=10, pady=3)
 
 
     # aesthetic/layout variables
@@ -133,9 +138,9 @@ def view():
     fontSize = 15
     fontGeneral = (fontType, fontSize)
     fontSmall = (fontType, int(fontSize/3*2))
-    listboxHeight = max(len(FIND_PROCEDURES.keys()), len(FIX_PROCEDURES.keys())) +1
-    listboxWidth = int(rootWidth/16)
-    finalButtonsWidth = 20
+    listboxHeight = max(len(FIND_PROCEDURES.keys()), len(FIX_PROCEDURES.keys()))+1 if isAdmin else len(FIND_PROCEDURES.keys())+1
+    listboxWidth = int(rootWidth/16) if isAdmin else int(rootWidth/10)
+    finalButtonsWidth = 20 if isAdmin else 10
 
     # data variables
     dirAbsoluteVar = tk.StringVar()
@@ -152,37 +157,44 @@ def view():
     dirLabel = tk.Label(frames[1], textvariable=dirAbsoluteVar, font=fontSmall, anchor="e") 
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.LEFT)
-
-
+    
     findLabel = tk.Label(frames[2], text="Find", font=fontGeneral)
-    fixLabel = tk.Label(frames[2], text="Fix", font=fontGeneral)
-    findLabel.pack(side=tk.LEFT, padx=(rootWidth/6, 0))
-    fixLabel.pack(side=tk.RIGHT, padx=(0, rootWidth/6))
-    frames[2].pack(fill="x", padx=10, pady=(5, 0))  # inadvertently packed twice to have less y padding
+    if isAdmin:
+        fixLabel = tk.Label(frames[2], text="Fix", font=fontGeneral)
+        fixLabel.pack(side=tk.RIGHT, padx=(0, rootWidth/6))
+        findLabel.pack(side=tk.LEFT, padx=(rootWidth/6, 0))
+    else:
+        findLabel.pack()
+    frames[2].pack(fill="x", padx=10, pady=(3, 0))  # inadvertently packed twice to have less y padding
 
     findListbox = tk.Listbox(frames[3], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
-    fixListbox = tk.Listbox(frames[3], exportselection=0, width=listboxWidth, height=listboxHeight)
     for findProcedureName in FIND_PROCEDURES.keys():
         findListbox.insert(tk.END, findProcedureName)
-    for fixProcedureName in FIX_PROCEDURES.keys():
-        fixListbox.insert(tk.END, fixProcedureName)
     findListbox.select_set(0)
-    fixListbox.select_set(0)
     findListbox.config(font=fontSmall)
-    fixListbox.config(font=fontSmall)
-    findListbox.pack(side=tk.LEFT)
-    fixListbox.pack(side=tk.RIGHT)
-    frames[3].pack(fill="x", padx=10, pady=(0, 5))
+    if isAdmin:
+        fixListbox = tk.Listbox(frames[3], exportselection=0, width=listboxWidth, height=listboxHeight)
+        for fixProcedureName in FIX_PROCEDURES.keys():
+            fixListbox.insert(tk.END, fixProcedureName)
+        fixListbox.select_set(0)
+        fixListbox.config(font=fontSmall)
+        findListbox.pack(side=tk.LEFT)
+        fixListbox.pack(side=tk.RIGHT)
+    else:
+        findListbox.pack()
+    frames[3].pack(fill="x", padx=10, pady=(0, 3))
 
-    parameterLabel = tk.Label(frames[4], text="Parameter:", font=fontGeneral)
-    argumentEntry = tk.Entry(frames[4], textvariable=parameterVar, width=rootWidth, font=fontSmall)
-    parameterLabel.pack(side=tk.LEFT)
-    argumentEntry.pack(side=tk.LEFT)
+    if isAdmin:
+        parameterLabel = tk.Label(frames[4], text="Parameter:", font=fontGeneral)
+        argumentEntry = tk.Entry(frames[4], textvariable=parameterVar, width=rootWidth, font=fontSmall)
+        parameterLabel.pack(side=tk.LEFT)
+        argumentEntry.pack(side=tk.LEFT)
 
     includeSubfoldersCheckbutton = tk.Checkbutton(frames[5], text="Include Subfolders", variable=includeSubFoldersState, font=fontGeneral)
-    modifyCheckbutton = tk.Checkbutton(frames[5], text="Allow Modify", variable=modifyState, font=fontGeneral)
     includeSubfoldersCheckbutton.pack()
-    modifyCheckbutton.pack(padx=(0, 50))  # HARD CODED PADDING
+    if isAdmin:
+        modifyCheckbutton = tk.Checkbutton(frames[5], text="Allow Modify", variable=modifyState, font=fontGeneral)
+        modifyCheckbutton.pack(padx=(0, 50))  # HARD CODED PADDING
 
     executeButton = tk.Button(frames[6], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()

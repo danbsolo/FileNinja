@@ -3,7 +3,7 @@ from findFixHeader import *
 
 RESULTS_DIRECTORY = "fileCrawlerResults"
 FILE_CRAWLER = "FileCrawler"
-PASSWORD = "testPass"
+PASSWORD = "dwa"
 
 LIST_ALL = "List All Items"
 CHARACTER_LIMIT_FIND = "Character Limit Error"
