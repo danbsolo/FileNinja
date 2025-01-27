@@ -2,20 +2,23 @@ from findFixFunctions import *
 from findFixHeader import *
 
 RESULTS_DIRECTORY = "fileCrawlerResults"
+FILE_CRAWLER = "FileCrawler"
+PASSWORD = "testPass"
 
-LIST_ALL = "ListAll"
-CHARACTER_LIMIT_FIND = "CharLimit-Find"
-BAD_CHARACTER_FIND = "BadChar-Find"
-SPACE_FIND = "SPC-Find"
-FILE_EXTENSION_SUMMARY = "FileExt-Summary"
-DUPLICATE_NAME_FIND = "DupName-Find"
-DUPLICATE_CONTENT_FIND = "DupContent-Find"
+LIST_ALL = "List All Items"
+CHARACTER_LIMIT_FIND = "Character Limit Error"
+BAD_CHARACTER_FIND = "Bad Character Error"
+SPACE_FIND = "Space Error"
+FILE_EXTENSION_SUMMARY = "Summarize File Types"
+DUPLICATE_NAME_FIND = "Find Duplicate Names"
+DUPLICATE_CONTENT_FIND = "Find Identical Files"
 
-NULL_OPTION = "..."
-SPACE_FIX = "SPC-Fix"
-DELETE_OLD_FILES = "DelOldFiles-Fix"
-DELETE_EMPTY_DIRECTORIES_FIX = "DelEmptyDirs-Fix"
-SEARCH_AND_REPLACE = "SearchAndReplace-Fix"
+NULL_OPTION = "---"
+SPACE_FIX = "Replace Space with Hyphen"
+DELETE_OLD_FILES = "Delete Old Files"
+DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories"
+SEARCH_AND_REPLACE = "Search and Replace"
+DELETE_EMPTY_FILES = "Delete Empty Files"
 
 FIND_PROCEDURES = {
     LIST_ALL: FindProcedure(LIST_ALL, listAll, True),
@@ -32,5 +35,6 @@ FIX_PROCEDURES = {
     SPACE_FIX: FixProcedure(SPACE_FIX, spaceFixLog, spaceFixModify, True),
     DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntegerValidator, 1, "# Days Last Accessed"),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntegerValidator, 0, "# Files Contained"),
-    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, "~")
+    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, "~"),
+    # DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesLog, True)
 }
