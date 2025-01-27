@@ -5,7 +5,6 @@ from workbookManager import WorkbookManager
 from datetime import datetime
 from defs import *
 from sys import argv
-import createTooltip
 
 
 def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindProcedures:list[str], selectedFixProcedure:str, unprocessedArg:str):
