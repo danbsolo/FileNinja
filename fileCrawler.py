@@ -216,6 +216,8 @@ def view(isAdmin: bool):
     frames[7].configure(width=rootWidth/2)
     frames[7].pack(side=tk.LEFT, expand=True)
 
+    root.bind('<Control-Key-w>', lambda e: root.destroy())
+
     if isAdmin:
         # root.after(50, addAdminLayout)
         addAdminLayout(35)
