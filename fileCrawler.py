@@ -234,11 +234,11 @@ def view(isAdmin: bool):
 def main():
     if (len(argv) <= 1):
         view(False)
-    elif (argv[1] != PASSWORD):
+    elif (argv[1] == PASSWORD):
+        view(True)
+    else:
         tk.messagebox.showerror("FileCrawler: INCORRECT", "Incorrect.")
         return
-    else:
-        view(True)
 
 
 if __name__ == "__main__":
