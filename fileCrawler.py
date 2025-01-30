@@ -112,6 +112,7 @@ def view(isAdmin: bool):
         if passwordEntryVar.get() == PASSWORD:
             addAdminLayout(includeSubfoldersCheckbutton.winfo_height())
             root.unbind("<Control-Key-p>")
+            root.unbind("<Control-Key-P>")
         else:
             tk.messagebox.showerror("INCORRECT", "Incorrect password.")
         
