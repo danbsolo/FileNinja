@@ -113,7 +113,7 @@ def view(isAdmin: bool):
             addAdminLayout(includeSubfoldersCheckbutton.winfo_height())
             root.unbind("<Control-Key-p>")
         else:
-            tk.messagebox.showerror("FileCrawler: INCORRECT", "Incorrect.")
+            tk.messagebox.showerror("INCORRECT", "Incorrect password.")
         
 
     def inquirePassword(event):
@@ -123,7 +123,7 @@ def view(isAdmin: bool):
 
         # passwordWindow.lift(root)  # -> Put over root
 
-        passwordEntry = tk.Entry(passwordWindow, textvariable=passwordEntryVar, width=30, font=fontGeneral)
+        passwordEntry = tk.Entry(passwordWindow, show="*", textvariable=passwordEntryVar, width=30, font=fontGeneral)
         passwordEntry.pack()
         passwordEntry.focus_set()
 
@@ -218,6 +218,7 @@ def view(isAdmin: bool):
     frames[7].pack(side=tk.LEFT, expand=True)
 
     root.bind('<Control-Key-w>', lambda e: root.destroy())
+    root.bind('<Control-Key-W>', lambda e: root.destroy())
 
     if isAdmin:
         # root.after(50, addAdminLayout)
@@ -225,6 +226,7 @@ def view(isAdmin: bool):
     else:
         passwordEntryVar = tk.StringVar()
         root.bind('<Control-Key-p>', inquirePassword)
+        root.bind('<Control-Key-P>', inquirePassword)
 
     root.mainloop()
         
