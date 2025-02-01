@@ -108,45 +108,21 @@ def view(isAdmin: bool):
             tk.messagebox.showinfo("Directory DNE", "Directory \"" + RESULTS_DIRECTORY + "\" does not exist. Try executing a file crawl first.")
 
 
-    def checkPassword():
-        if passwordEntryVar.get() == PASSWORD:
-            addAdminLayout(includeSubfoldersCheckbutton.winfo_height())
-            root.unbind("<Control-Key-p>")
-            root.unbind("<Control-Key-P>")
-        else:
-            tk.messagebox.showerror("INCORRECT", "Incorrect password.")
-        
+    #
+    listboxHeight = max(len(FIND_PROCEDURES.keys()), len(FIX_PROCEDURES.keys())) +1
 
-    def inquirePassword(event):
-        passwordWindow = tk.Toplevel(root)
-        passwordWindow.title("Type password")
-        passwordWindow.focus_set()
-
-        # passwordWindow.lift(root)  # -> Put over root
-
-        passwordEntry = tk.Entry(passwordWindow, show="*", textvariable=passwordEntryVar, width=30, font=fontGeneral)
-        passwordEntry.pack()
-        passwordEntry.focus_set()
-
-        passwordEntry.bind("<Return>", lambda e: [
-            checkPassword(), passwordEntryVar.set(""), passwordWindow.destroy()])
-    
-
-    def addAdminLayout(extraHeight):
-        root.geometry("{}x{}".format(rootWidth, rootHeight + extraHeight))
-        root.attributes('-topmost', True)  # keeps root window at top layer
-
-        modifyCheckbutton = tk.Checkbutton(frames[5], text="Allow Modify", variable=modifyState, font=fontGeneral)
-        modifyCheckbutton.pack(padx=(0, 50))
-        
-
-    # root stuff
+    # root window stuff
     root = tk.Tk()
     root.title(FILE_CRAWLER)
     root.resizable(0, 0)
-    rootWidth = 500
-    rootHeight = 390
+    rootWidth = 500 if isAdmin else 300
+    rootHeight = (listboxHeight * 18) + (280 if isAdmin else 225)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
+
+    if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
+
+    root.bind('<Control-Key-w>', lambda e: root.destroy())
+    root.bind('<Control-Key-W>', lambda e: root.destroy())
         
     frames = []
     for i in range(8):
@@ -159,9 +135,9 @@ def view(isAdmin: bool):
     fontSize = 15
     fontGeneral = (fontType, fontSize)
     fontSmall = (fontType, int(fontSize/3*2))
-    listboxHeight = max(len(FIND_PROCEDURES.keys()), len(FIX_PROCEDURES.keys())) +1
-    listboxWidth = int(rootWidth/15)
-    finalButtonsWidth = 20
+    # listboxHeight defined above
+    listboxWidth = int(rootWidth/15) if isAdmin else int(rootWidth/10)
+    finalButtonsWidth = 20 if isAdmin else 10 # HARD CODED
 
     # data variables
     dirAbsoluteVar = tk.StringVar()
@@ -180,33 +156,42 @@ def view(isAdmin: bool):
     dirLabel.pack(side=tk.LEFT)
     
     findLabel = tk.Label(frames[2], text="Find", font=fontGeneral)
-    fixLabel = tk.Label(frames[2], text="Fix", font=fontGeneral)
-    fixLabel.pack(side=tk.RIGHT, padx=(0, rootWidth/5))
-    findLabel.pack(side=tk.LEFT, padx=(rootWidth/5, 0))
-
+    if isAdmin:
+        fixLabel = tk.Label(frames[2], text="Fix", font=fontGeneral)
+        fixLabel.pack(side=tk.RIGHT, padx=(0, rootWidth/5))
+        findLabel.pack(side=tk.LEFT, padx=(rootWidth/5, 0))
+    else:
+        findLabel.pack()
     frames[2].pack(fill="x", padx=10, pady=(3, 0))  # inadvertently packed twice to have less y padding
 
     findListbox = tk.Listbox(frames[3], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
-    fixListbox = tk.Listbox(frames[3], exportselection=0, width=listboxWidth, height=listboxHeight)
     for findProcedureName in FIND_PROCEDURES.keys():
         findListbox.insert(tk.END, findProcedureName)
-    for fixProcedureName in FIX_PROCEDURES.keys():
-        fixListbox.insert(tk.END, fixProcedureName)
     findListbox.select_set(0)
-    fixListbox.select_set(0)
     findListbox.config(font=fontSmall)
-    fixListbox.config(font=fontSmall)
-    findListbox.pack(side=tk.LEFT)
-    fixListbox.pack(side=tk.RIGHT)
+    if isAdmin:
+        fixListbox = tk.Listbox(frames[3], exportselection=0, width=listboxWidth, height=listboxHeight)
+        for fixProcedureName in FIX_PROCEDURES.keys():
+            fixListbox.insert(tk.END, fixProcedureName)
+        fixListbox.select_set(0)
+        fixListbox.config(font=fontSmall)
+        fixListbox.pack(side=tk.RIGHT)
+        findListbox.pack(side=tk.LEFT)
+    else:
+        findListbox.pack()
     frames[3].pack(fill="x", padx=10, pady=(0, 3))
 
-    parameterLabel = tk.Label(frames[4], text="Parameter:", font=fontGeneral)
-    argumentEntry = tk.Entry(frames[4], textvariable=parameterVar, width=rootWidth, font=fontSmall)
-    parameterLabel.pack(side=tk.LEFT)
-    argumentEntry.pack(side=tk.LEFT)
+    if isAdmin:
+        parameterLabel = tk.Label(frames[4], text="Parameter:", font=fontGeneral)
+        argumentEntry = tk.Entry(frames[4], textvariable=parameterVar, width=rootWidth, font=fontSmall)
+        parameterLabel.pack(side=tk.LEFT)
+        argumentEntry.pack(side=tk.LEFT)
 
     includeSubfoldersCheckbutton = tk.Checkbutton(frames[5], text="Include Subfolders", variable=includeSubFoldersState, font=fontGeneral)
     includeSubfoldersCheckbutton.pack()
+    if isAdmin:
+        modifyCheckbutton = tk.Checkbutton(frames[5], text="Allow Modify", variable=modifyState, font=fontGeneral)
+        modifyCheckbutton.pack(padx=(0, 50))
 
     executeButton = tk.Button(frames[6], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()
@@ -218,27 +203,12 @@ def view(isAdmin: bool):
     frames[7].configure(width=rootWidth/2)
     frames[7].pack(side=tk.LEFT, expand=True)
 
-    root.bind('<Control-Key-w>', lambda e: root.destroy())
-    root.bind('<Control-Key-W>', lambda e: root.destroy())
-
-    if isAdmin:
-        # root.after(50, addAdminLayout)
-        addAdminLayout(35)
-    else:
-        passwordEntryVar = tk.StringVar()
-        root.bind('<Control-Key-p>', inquirePassword)
-        root.bind('<Control-Key-P>', inquirePassword)
 
     root.mainloop()
         
 
 def main():
-    if (len(argv) <= 1):
-        view(False)
-    elif (argv[1] == PASSWORD):
-        view(True)
-    else:
-        tk.messagebox.showerror("FileCrawler: INCORRECT", "Incorrect.")
+    view(True)
 
 
 if __name__ == "__main__":

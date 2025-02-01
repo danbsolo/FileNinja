@@ -12,8 +12,15 @@ import mmap
 PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 CHARACTER_LIMIT = 200
 
-# Used by deleteOldFiles
+# Used by oldFileFind
+DAYS_TOO_OLD = 365
+
+# Used by oldFileFind and deleteOldFiles
 TODAY = datetime.now()
+
+# Used by emptyDirectoryFind
+VISITED_DIRECTORIES = set()
+EMPTY_DIRECTORIES = []
 
 # Used by fileExtension
 EXTENSION_COUNT = {}
@@ -24,7 +31,7 @@ NAMES_AND_PATHS = {}
 
 # Used by duplicateContent
 HASH_AND_FILES = {}
-MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
+# MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
 hashFunc = hashlib.new("sha256")
 hashFunc.update("".encode())
 EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
@@ -36,9 +43,8 @@ def setWorkbookManager(newManager: WorkbookManager):
     wbm = newManager
     
 
-def listAll(_:str, itemName:str, ws):
-    wbm.writeItem(ws, itemName)
-    wbm.incrementRow(ws)
+def listAll(_:str, itemName:str, ws) -> bool:
+    wbm.writeItemAndIncrement(ws, itemName)
     return False
 
 def spaceFind(_:str, itemName:str, ws) -> bool:
@@ -55,7 +61,7 @@ def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
         return True
     return False
 
-def badCharFind(_:str, itemName:str, ws) -> Set[str]:    
+def badCharFind(_:str, itemName:str, ws) -> bool:
     badChars = set()
 
     # If no extension (aka, no period), lastPeriodIndex will equal -1
@@ -79,6 +85,21 @@ def badCharFind(_:str, itemName:str, ws) -> Set[str]:
         return True
     return False
 
+def oldFileFind(dirAbsolute:str, itemName:str, ws):
+    try:
+        fileDate = datetime.fromtimestamp(os.path.getatime(dirAbsolute + "/" + itemName))
+    except:
+        wbm.writeItem(ws, itemName, wbm.errorFormat)
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat) 
+        return False
+
+    fileDaysAgo = (TODAY - fileDate).days
+
+    if (fileDaysAgo >= DAYS_TOO_OLD):
+        wbm.writeItem(ws, itemName, wbm.errorFormat)
+        wbm.writeOutcomeAndIncrement(ws, "{} days old".format(fileDaysAgo))
+    else:
+        return False
 
 def spaceFixHelper(oldItemName) -> str:
     if (" " not in oldItemName):
@@ -210,12 +231,14 @@ def fileExtensionPost(ws):
     ws.autofit()
 
 
-def duplicateNameConcurrent(dirAbsolute:str, fileName:str, _):
+def duplicateNameConcurrent(dirAbsolute:str, fileName:str, ws):
     if fileName in NAMES_AND_PATHS:
         NAMES_AND_PATHS[fileName].add(dirAbsolute)
+        wbm.incrementFileCount(ws)
+        return True
     else:
         NAMES_AND_PATHS[fileName] = set([dirAbsolute])
-    return False
+        return False
 
 def duplicateNamePost(ws):
     ws.write(0, 0, "Files", wbm.headerFormat)
@@ -226,7 +249,6 @@ def duplicateNamePost(ws):
         # if a fileName is seen more than once, it's a duplicate
         if len(NAMES_AND_PATHS[fileName]) > 1:
             ws.write_string(row, 0, fileName, wbm.errorFormat)
-            wbm.incrementFileCount(ws)
             
             for path in NAMES_AND_PATHS[fileName]:
                 ws.write_string(row, 1, path, wbm.dirFormat)
@@ -246,10 +268,12 @@ def duplicateContentHelper(dirAbsolute:str, itemName:str):
     try: 
         with open(dirAbsolute+"/"+itemName, "rb") as file:
             # if fileSize > MMAP_THRESHOLD:
-            #     mmappedFile = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-            #     while chunk := mmappedFile.read(16384):
-            #         hashFunc.update(chunk)
+                # mmappedFile = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
+                # print(fileSize, "B", sep="", end=" ")
+                # while chunk := mmappedFile.read(16384):
+                    # hashFunc.update(chunk)
             # else:
+            # print(fileSize, "B", sep="", end=" ")
             while chunk := file.read(8192):
                 hashFunc.update(chunk)
 
@@ -257,16 +281,20 @@ def duplicateContentHelper(dirAbsolute:str, itemName:str):
     # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
     except: return
 
-def duplicateContentConcurrent(dirAbsolute:str, itemName:str, _):
+def duplicateContentConcurrent(dirAbsolute:str, itemName:str, ws):
     hashCode = duplicateContentHelper(dirAbsolute, itemName)
 
-    if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE): return
+    if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
+        return False
     
     if hashCode in HASH_AND_FILES:
         HASH_AND_FILES[hashCode][0].append(itemName)
         HASH_AND_FILES[hashCode][1].append(dirAbsolute)
+        wbm.incrementFileCount(ws)
+        return True
     else:
         HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
+        return False
 
 def duplicateContentPost(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
@@ -356,3 +384,17 @@ def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
         # This will happen if attempting to rename to an empty string
         wbm.writeOutcome(ws, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat)
         wbm.incrementRow(ws)
+
+
+EXTENSION_EMPTY_THRESHOLD = {
+    "xlsx" : 8000
+}
+
+def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws):
+    try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName)  # Bytes
+    except: return
+
+    # Stage for deletion
+    if fileSize == 0:
+        wbm.writeItemAndIncrement(ws, itemName, wbm.logFormat)
+        
