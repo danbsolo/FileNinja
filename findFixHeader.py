@@ -1,7 +1,8 @@
 class FindProcedure:
-    def __init__(self, name, mainFunction, isStateless, postFunction=None):
+    def __init__(self, name, mainFunction, isStateless=True, postFunction=None, isFileFind=True):
         self.name = name
         self.mainFunction = mainFunction
+        self.isFileFind = isFileFind # If False, isFolderFind
         self.isStateless = isStateless
         self.postFunction = postFunction
 

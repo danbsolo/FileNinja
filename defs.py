@@ -9,7 +9,7 @@ LIST_ALL = "List All Items"
 SPACE_FIND = "Space Error"
 BAD_CHARACTER_FIND = "Bad Character Error"
 OLD_FILE_FIND = "Old File Error"
-# EMPTY_DIRECTORY_FIND = "Empty Directory"
+EMPTY_DIRECTORY_FIND = "Empty Directory"
 CHARACTER_LIMIT_FIND = "Character Limit Error"
 DUPLICATE_CONTENT_FIND = "Identical Files Error"
 DUPLICATE_NAME_FIND = "Duplicate Names Error"
@@ -27,7 +27,7 @@ FIND_PROCEDURES = {
     SPACE_FIND: FindProcedure(SPACE_FIND, spaceFind, True),
     BAD_CHARACTER_FIND: FindProcedure(BAD_CHARACTER_FIND, badCharFind, True),
     OLD_FILE_FIND: FindProcedure(OLD_FILE_FIND, oldFileFind, True),
-    # EMPTY_DIRECTORY_FIND: FindProcedure(EMPTY_DIRECTORY_FIND, emptyDirectoryConcurrent, False, emptyDirectoryPost),
+    EMPTY_DIRECTORY_FIND: FindProcedure(EMPTY_DIRECTORY_FIND, emptyDirectoryConcurrent, True, emptyDirectoryPost, False),
     CHARACTER_LIMIT_FIND: FindProcedure(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
     DUPLICATE_CONTENT_FIND:FindProcedure(DUPLICATE_CONTENT_FIND, duplicateContentConcurrent, False, duplicateContentPost),
     DUPLICATE_NAME_FIND: FindProcedure(DUPLICATE_NAME_FIND, duplicateNameConcurrent, False, duplicateNamePost),

@@ -18,9 +18,8 @@ DAYS_TOO_OLD = 365
 # Used by oldFileFind and deleteOldFiles
 TODAY = datetime.now()
 
-# Used by emptyDirectoryFind
-VISITED_DIRECTORIES = set()
-EMPTY_DIRECTORIES = []
+# Used by emptyDirectoryConcurrent
+TOO_FEW_AMOUNT = 0
 
 # Used by fileExtension
 EXTENSION_COUNT = {}
@@ -100,6 +99,15 @@ def oldFileFind(dirAbsolute:str, itemName:str, ws):
         wbm.writeOutcomeAndIncrement(ws, "{} days old".format(fileDaysAgo))
     else:
         return False
+
+
+def emptyDirectoryConcurrent(dirAbsolute:str, dirFolders, dirFiles, ws):
+    if len(dirFolders) == 0 and len(dirFiles) <= TOO_FEW_AMOUNT:
+        wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
+
+def emptyDirectoryPost(ws):
+    ws.autofit()
+
 
 def spaceFixHelper(oldItemName) -> str:
     if (" " not in oldItemName):

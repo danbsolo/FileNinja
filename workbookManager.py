@@ -67,10 +67,10 @@ class WorkbookManager:
             sheets.append(self.fixSheet)
         return sheets
 
-    def getAllProcedureSheetsSansFindStateful(self):
+    def getAllProcedureSheetsSansStatefulAndFolderFind(self):
         sheets = []
         for findProcedureObject in list(self.findSheets.keys()):
-            if findProcedureObject.isStateless:
+            if findProcedureObject.isStateless and findProcedureObject.isFileFind:
                 sheets.append(self.findSheets[findProcedureObject])
         if self.fixSheet:
             sheets.append(self.fixSheet)
@@ -132,6 +132,10 @@ class WorkbookManager:
             self.fileFixProcedure(dirAbsolute, itemName, self.fixSheet)
 
             for findProcedureObject in self.findSheets.keys():
+                # BRUTE FORCE. Proof of concept.
+                if not findProcedureObject.isFileFind:
+                    continue
+                #
                 if (findProcedureObject.mainFunction(dirAbsolute, itemName, self.findSheets[findProcedureObject])):
                     if (not alreadyCounted):
                         self.errorCount += 1
@@ -144,7 +148,14 @@ class WorkbookManager:
     def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
         start = time()
 
-        allSheets = self.getAllProcedureSheetsSansFindStateful()
+        allSheets = self.getAllProcedureSheetsSansStatefulAndFolderFind()
+        
+        #
+        folderFindProcedures = []
+        for findProcedureObject in self.findSheets.keys():
+            if not (findProcedureObject.isFileFind):
+                folderFindProcedures.append(findProcedureObject)
+        #
 
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
             for ws in allSheets:
@@ -155,6 +166,11 @@ class WorkbookManager:
             # Folder fix procedure
             self.folderFixProcedure(dirAbsolute, dirFolders, dirFiles, self.fixSheet)
 
+            #
+            for findProcedureObject in folderFindProcedures:
+                findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
+            #
+
         for findProcedureObject in self.findSheets.keys():
             if findProcedureObject.postFunction:
                 findProcedureObject.postFunction(self.findSheets[findProcedureObject])
@@ -162,6 +178,13 @@ class WorkbookManager:
         end = time()
         self.executionTime = end - start
 
+    def writeDir(self, ws, text, format=None):
+        self.writeHelper(ws, self.DIR_COL, text, format)
+    
+    def writeDirAndIncrement(self, ws, text, format=None):
+        self.writeDir(ws, text, format)
+        self.incrementRow(ws)
+        self.incrementFileCount(ws)
 
     def writeItem(self, ws, text, format=None):
         self.writeHelper(ws, self.ITEM_COL, text, format)
@@ -255,7 +278,7 @@ class WorkbookManager:
 
 
     def autofitSheets(self):        
-        for ws in self.getAllProcedureSheetsSansFindStateful():
+        for ws in self.getAllProcedureSheetsSansStatefulAndFolderFind():
             ws.autofit()
             
 
