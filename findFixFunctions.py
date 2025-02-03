@@ -86,10 +86,10 @@ def badCharFind(_:str, itemName:str, ws) -> bool:
 
 def oldFileFind(dirAbsolute:str, itemName:str, ws):
     try:
-        fileDate = datetime.fromtimestamp(os.path.getatime(dirAbsolute + "/" + itemName))
-    except:
+        fileDate = datetime.fromtimestamp(os.path.getatime(dirAbsolute + "\\" + itemName))
+    except Exception as e:
         wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat) 
+        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
         return False
 
     fileDaysAgo = (TODAY - fileDate).days
@@ -141,10 +141,10 @@ def spaceFixModify(dirAbsolute:str, oldItemName:str, ws):
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeOutcome(ws, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat)
+        wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-    except OSError:
-        wbm.writeOutcome(ws, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat)
+    except Exception as e:
+        wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
         
 
@@ -189,7 +189,7 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
     wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat) 
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
     # If over CHARACTER_LIMIT characters, do not delete as it is not backed up
     elif len(fullFilePath) > CHARACTER_LIMIT:
         wbm.writeOutcomeAndIncrement(ws, "{} days but violates charLimit".format(daysOld), wbm.logFormat)
@@ -197,8 +197,10 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
         try:
             os.remove(fullFilePath)
             wbm.writeOutcomeAndIncrement(ws, "{}".format(daysOld), wbm.modifyFormat)
-        except:
-            wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE", wbm.errorFormat)
+        except PermissionError:
+            wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
+        except Exception as e:
+            wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
             
 
 def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
@@ -347,8 +349,8 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
             try: 
                 os.rmdir(dirAbsolute)
                 wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.modifyFormat)
-            except:
-                wbm.writeOutcomeAndIncrement(ws, "0 FILES. COULD NOT DELETE", wbm.errorFormat)
+            except Exception as e:
+                wbm.writeOutcomeAndIncrement(ws, f"0 FILES. UNABLE TO DELETE. {e}", wbm.errorFormat)
                 return
         # Otherwise, just flag as usual
         else:
@@ -386,23 +388,73 @@ def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeOutcome(ws, "FILE LOCKED. MODIFICATION FAILED.", wbm.errorFormat)
+        wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-    except OSError:
+    except Exception as e:
         # This will happen if attempting to rename to an empty string
-        wbm.writeOutcome(ws, "OS ERROR. MODIFICATION FAILED.", wbm.errorFormat)
+        wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
 
-
-EXTENSION_EMPTY_THRESHOLD = {
-    "xlsx" : 8000
-}
 
 def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws):
-    try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName)  # Bytes
-    except: return
+    try:
+        fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) 
+    except PermissionError:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        return
+    except Exception as e:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        return
+
+    if fileSize == 0:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
+        
+
+def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws):
+    """Glitch exists in that the current excel file will be considered empty.
+    However, despite claiming so, the program does not actually delete it.'"""
+
+    fullFilePath =  dirAbsolute + "\\" + itemName
+
+    try:
+        fileSize = os.path.getsize(fullFilePath)  # Bytes
+    except PermissionError:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        return
+    except Exception as e:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        return
 
     # Stage for deletion
     if fileSize == 0:
-        wbm.writeItemAndIncrement(ws, itemName, wbm.logFormat)
-        
+        wbm.writeItem(ws, itemName)
+
+        try:
+            os.remove(fullFilePath)
+            wbm.writeOutcomeAndIncrement(ws, "", wbm.modifyFormat)
+        except PermissionError:
+            wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
+        except Exception as e:
+            wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
+
+
+def emptyFileFind(dirAbsolute:str, itemName:str, ws):
+    try:
+        fileSize = os.path.getsize(dirAbsolute+"\\"+itemName)
+    except PermissionError:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        return False
+    except Exception as e:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        return False
+    
+    if fileSize == 0:
+        wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
+        return True

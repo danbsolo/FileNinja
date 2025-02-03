@@ -129,8 +129,6 @@ class WorkbookManager:
             if (itemName[0:2] == "~$"):
                 continue
 
-            self.fileFixProcedure(dirAbsolute, itemName, self.fixSheet)
-
             for findProcedureObject in self.findSheets.keys():
                 # BRUTE FORCE. Proof of concept.
                 if not findProcedureObject.isFileFind:
@@ -140,6 +138,8 @@ class WorkbookManager:
                     if (not alreadyCounted):
                         self.errorCount += 1
                         alreadyCounted = True
+
+            self.fileFixProcedure(dirAbsolute, itemName, self.fixSheet)
 
             alreadyCounted = False
             self.filesScannedCount += 1                    
