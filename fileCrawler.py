@@ -75,7 +75,7 @@ def view(isAdmin: bool):
         root.title(FILE_CRAWLER + ": CURRENTLY RUNNING...")
         exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
                            [findListbox.get(fm) for fm in findListbox.curselection()],
-                           fixListbox.get(tk.ACTIVE),
+                           fixListbox.get(tk.ACTIVE) if isAdmin else NULL_OPTION,
                            parameterVar.get())
         root.title(FILE_CRAWLER)
         
@@ -208,7 +208,7 @@ def view(isAdmin: bool):
         
 
 def main():
-    view(True)
+    view(False)
 
 
 if __name__ == "__main__":
