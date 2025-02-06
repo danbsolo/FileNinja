@@ -7,7 +7,7 @@ from defs import *
 from sys import argv
 
 
-def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindProcedures:list[str], selectedFixProcedure:str, unprocessedArg:str):
+def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindProcedures:list[str], selectedFixProcedure:str, unprocessedArg:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
     
     # Create fileCrawlerResults directory name if does not exist
@@ -45,7 +45,39 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
 
     # print("\nCreating " + workbookPathName + "...")
     if (includeSubfolders):
-        wbm.folderCrawl(os.walk(dirAbsolute))
+        if (not excludedDirs):
+            wbm.folderCrawl(os.walk(dirAbsolute), [])
+
+        else:
+            # Run checks on excludedDirs
+            for exDir in excludedDirs:
+                # Check dirAbsolute is not an exDir. Check that exDir is a child to dirAbsolute
+                if (exDir == dirAbsolute) or not (exDir.startswith(dirAbsolute)):
+                    return -4
+
+                # Check that no exDir is a subfolder to another exDir
+                for exDir2 in excludedDirs:
+                    if (exDir != exDir2) and (exDir.startswith(exDir2)):
+                        return -4
+                
+
+            walkResults = []
+
+            for subDirAbsolute, subDirFolders, subDirFiles in os.walk(dirAbsolute):
+                isDirIncluded = True
+                subDirAbsolute = subDirAbsolute.replace("\\", "/")
+                
+                for exDir in excludedDirs:
+                    if subDirAbsolute.startswith(exDir):  # exclude by subDirAbsolute to be precise
+                        subDirFolders[:] = []  # stop traversal of this folder and its subfolders
+                        isDirIncluded = False
+                        break
+
+                if isDirIncluded:
+                    walkResults.append((subDirAbsolute, subDirFolders, subDirFiles))
+            
+            wbm.folderCrawl(walkResults, excludedDirs)
+    
     else:
         # mimic os.walk()'s output but only for the current directory
         dirFolders = []
@@ -57,10 +89,9 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
             else:
                 dirFolders.append(item)
 
-        wbm.folderCrawl([(dirAbsolute, dirFolders, dirFiles)])
+        wbm.folderCrawl([(dirAbsolute, dirFolders, dirFiles)], [])
 
     wbm.close()
-    # print("Opening " + workbookPathName + ".")
     os.startfile(workbookPathName)
     return 0
 
@@ -76,7 +107,8 @@ def view(isAdmin: bool):
         exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
                            [findListbox.get(fm) for fm in findListbox.curselection()],
                            fixListbox.get(tk.ACTIVE) if isAdmin else NULL_OPTION,
-                           parameterVar.get())
+                           parameterVar.get(),
+                           excludedDirs)
         root.title(FILE_CRAWLER)
         
         errorMessage = ""
@@ -88,6 +120,8 @@ def view(isAdmin: bool):
             errorMessage = "Invalid directory."
         elif (exitCode == -3):
             errorMessage = "Invalid argument."
+        elif (exitCode == -4):
+            errorMessage = "Invalid excluded directories."
         else:
             errorMessage = "An error has occurred."
 
@@ -95,10 +129,43 @@ def view(isAdmin: bool):
 
 
     def selectDirectory():
-        potentialDirectory = filedialog.askdirectory()
+        potentialDirectory = filedialog.askdirectory(title="Browse to SELECT",
+                                                     initialdir=dirAbsoluteVar.get(),
+                                                     mustexist=True)
 
         if (potentialDirectory):
             dirAbsoluteVar.set(potentialDirectory)
+
+
+    def excludeDirectory():
+        potentialExcludedDirectory = filedialog.askdirectory(title="Browse to EXCLUDE",
+                                                             initialdir=dirAbsoluteVar.get(),
+                                                             mustexist=True)
+
+        if (not potentialExcludedDirectory) or (potentialExcludedDirectory in excludedDirs):
+            return
+
+        excludedDirs.add(potentialExcludedDirectory)
+        excludeListbox.insert(tk.END, potentialExcludedDirectory)
+        
+        newHeight = len(excludedDirs) + 1
+        excludeListbox.config(height = newHeight)
+        root.geometry("{}x{}".format(rootWidth, rootHeight + (newHeight * listboxHeightMultiplier)))
+
+
+    def removeExcludedDirectory():
+        toBeRemovedIndex = excludeListbox.curselection()
+
+        if not toBeRemovedIndex:
+            return
+        
+        excludedDirs.remove(excludeListbox.get(tk.ACTIVE)) # Only supports single removal for now
+        excludeListbox.delete(toBeRemovedIndex)
+
+        newHeight = len(excludedDirs) + 1
+        excludeListbox.config(height = newHeight)
+        root.geometry("{}x{}".format(rootWidth, rootHeight + (newHeight * listboxHeightMultiplier)))
+      
 
         
     def openResultsDirectory():
@@ -107,16 +174,19 @@ def view(isAdmin: bool):
         else:
             tk.messagebox.showinfo("Directory DNE", "Directory \"" + RESULTS_DIRECTORY + "\" does not exist. Try executing a file crawl first.")
 
+    
+    excludedDirs = set()
 
     #
     listboxHeight = max(len(FIND_PROCEDURES.keys()), len(FIX_PROCEDURES.keys())) +1
+    listboxHeightMultiplier = 17
 
     # root window stuff
     root = tk.Tk()
     root.title(FILE_CRAWLER)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 300
-    rootHeight = (listboxHeight * 18) + (280 if isAdmin else 225)
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (350 if isAdmin else 295)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
     if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
@@ -125,7 +195,7 @@ def view(isAdmin: bool):
     root.bind('<Control-Key-W>', lambda e: root.destroy())
         
     frames = []
-    for i in range(8):
+    for i in range(9):
         frames.append(tk.Frame(root, bd=0, relief=tk.SOLID))
         frames[i].pack(fill="x", padx=10, pady=3)
 
@@ -154,23 +224,31 @@ def view(isAdmin: bool):
     dirLabel = tk.Label(frames[1], textvariable=dirAbsoluteVar, font=fontSmall, anchor="e") 
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.LEFT)
+
+    excludeButton = tk.Button(frames[2], text="Browse to Exclude", command=excludeDirectory, font=fontGeneral, width=rootWidth)
+    excludeListbox = tk.Listbox(frames[2], exportselection=0, width=rootWidth, height=0)
+    excludeButton.pack()
+    excludeListbox.pack()
+    excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
+    excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
+
     
-    findLabel = tk.Label(frames[2], text="Find", font=fontGeneral)
+    findLabel = tk.Label(frames[3], text="Find", font=fontGeneral)
     if isAdmin:
-        fixLabel = tk.Label(frames[2], text="Fix", font=fontGeneral)
+        fixLabel = tk.Label(frames[3], text="Fix", font=fontGeneral)
         fixLabel.pack(side=tk.RIGHT, padx=(0, rootWidth/5))
         findLabel.pack(side=tk.LEFT, padx=(rootWidth/5, 0))
     else:
         findLabel.pack()
-    frames[2].pack(fill="x", padx=10, pady=(3, 0))  # inadvertently packed twice to have less y padding
+    frames[3].pack(fill="x", padx=10, pady=(3, 0))  # inadvertently packed twice to have less y padding
 
-    findListbox = tk.Listbox(frames[3], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
+    findListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
     for findProcedureName in FIND_PROCEDURES.keys():
         findListbox.insert(tk.END, findProcedureName)
     findListbox.select_set(0)
     findListbox.config(font=fontSmall)
     if isAdmin:
-        fixListbox = tk.Listbox(frames[3], exportselection=0, width=listboxWidth, height=listboxHeight)
+        fixListbox = tk.Listbox(frames[4], exportselection=0, width=listboxWidth, height=listboxHeight)
         for fixProcedureName in FIX_PROCEDURES.keys():
             fixListbox.insert(tk.END, fixProcedureName)
         fixListbox.select_set(0)
@@ -179,29 +257,29 @@ def view(isAdmin: bool):
         findListbox.pack(side=tk.LEFT)
     else:
         findListbox.pack()
-    frames[3].pack(fill="x", padx=10, pady=(0, 3))
+    frames[4].pack(fill="x", padx=10, pady=(0, 3))
 
     if isAdmin:
-        parameterLabel = tk.Label(frames[4], text="Parameter:", font=fontGeneral)
-        argumentEntry = tk.Entry(frames[4], textvariable=parameterVar, width=rootWidth, font=fontSmall)
+        parameterLabel = tk.Label(frames[5], text="Parameter:", font=fontGeneral)
+        argumentEntry = tk.Entry(frames[5], textvariable=parameterVar, width=rootWidth, font=fontSmall)
         parameterLabel.pack(side=tk.LEFT)
         argumentEntry.pack(side=tk.LEFT)
 
-    includeSubfoldersCheckbutton = tk.Checkbutton(frames[5], text="Include Subfolders", variable=includeSubFoldersState, font=fontGeneral)
+    includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subfolders", variable=includeSubFoldersState, font=fontGeneral)
     includeSubfoldersCheckbutton.pack()
     if isAdmin:
-        modifyCheckbutton = tk.Checkbutton(frames[5], text="Allow Modify", variable=modifyState, font=fontGeneral)
+        modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=modifyState, font=fontGeneral)
         modifyCheckbutton.pack(padx=(0, 50))
 
-    executeButton = tk.Button(frames[6], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
+    executeButton = tk.Button(frames[7], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()
-    frames[6].configure(width=rootWidth/2)
-    frames[6].pack(side=tk.LEFT, expand=True)
-
-    resultsButton = tk.Button(frames[7], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
-    resultsButton.pack()
     frames[7].configure(width=rootWidth/2)
     frames[7].pack(side=tk.LEFT, expand=True)
+
+    resultsButton = tk.Button(frames[8], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
+    resultsButton.pack()
+    frames[8].configure(width=rootWidth/2)
+    frames[8].pack(side=tk.LEFT, expand=True)
 
 
     root.mainloop()

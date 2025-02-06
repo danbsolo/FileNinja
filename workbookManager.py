@@ -11,6 +11,8 @@ class WorkbookManager:
         self.summarySheet = self.wb.add_worksheet("Summary")
         self.summarySheet.activate()  # view this worksheet on startup
 
+        self.excludedDirs = []  # set within folderCrawl()
+
         self.fixSheet = None # initializing for clarity
         self.fileFixProcedure = lambda _1, _2, _3: None  # default dummy function
         self.folderFixProcedure = lambda _1, _2, _3, _4: None
@@ -18,7 +20,7 @@ class WorkbookManager:
 
         self.findSheets = {} # procedureObject : worksheet
         # For summarySheet first 7 rows are used for mainstay metrics. Skip a line, then write variable number of errors.
-        self.sheetRows = {self.summarySheet: 8} # worksheet : Integer
+        self.sheetRows = {self.summarySheet: 9} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
         # Summary metrics
@@ -145,8 +147,10 @@ class WorkbookManager:
             self.filesScannedCount += 1                    
 
 
-    def folderCrawl(self, dirTree: List[Tuple[str, list, list]]):
+    def folderCrawl(self, dirTree: List[Tuple[str, list, list]], excludedDirs):
         start = time()
+
+        self.excludedDirs = excludedDirs
 
         allSheets = self.getAllProcedureSheetsSansStatefulAndFolderFind()
         
@@ -214,20 +218,21 @@ class WorkbookManager:
 
 
     def styleSummarySheet(self, dirAbsolute, includeSubFolders, modify):
-        self.summarySheet.set_column(0, 0, 20)
+        self.summarySheet.set_column(0, 0, 34)
         self.summarySheet.set_column(1, 1, 15)
         
-        self.summarySheet.write(0, 0, "FilePath", self.headerFormat)
-        self.summarySheet.write(1, 0, "Subfolders inclusion", self.headerFormat)
-        self.summarySheet.write(2, 0, "Modify", self.headerFormat)
-        self.summarySheet.write(3, 0, "Argument", self.headerFormat)
-        self.summarySheet.write(4, 0, "File count", self.headerFormat)
-        self.summarySheet.write(5, 0, "Error count / %", self.headerFormat)
-        self.summarySheet.write(6, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(0, 0, "File Path", self.headerFormat)
+        self.summarySheet.write(1, 0, "Excluded Directories", self.headerFormat)
+        self.summarySheet.write(2, 0, "Subfolders inclusion", self.headerFormat)
+        self.summarySheet.write(3, 0, "Modify", self.headerFormat)
+        self.summarySheet.write(4, 0, "Argument", self.headerFormat)
+        self.summarySheet.write(5, 0, "File count", self.headerFormat)
+        self.summarySheet.write(6, 0, "Error count / %", self.headerFormat)
+        self.summarySheet.write(7, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
-        self.summarySheet.write(1, 1, str(includeSubFolders), self.summaryValueFormat)
-        self.summarySheet.write(2, 1, str(modify), self.summaryValueFormat)
+        self.summarySheet.write(2, 1, str(includeSubFolders), self.summaryValueFormat)
+        self.summarySheet.write(3, 1, str(modify), self.summaryValueFormat)
 
 
     def populateSummarySheet(self):
@@ -236,10 +241,15 @@ class WorkbookManager:
 
         if (self.fixArg != None): self.summarySheet.write_string(3, 1, str(self.fixArg), self.summaryValueFormat)
         
-        self.summarySheet.write_number(4, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(5, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(5, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(6, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(5, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(6, 1, self.errorCount, self.summaryValueFormat)
+        self.summarySheet.write(6, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(7, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        
+        i = 1
+        for exDir in self.excludedDirs:
+            self.summarySheet.write_string(1, i, exDir, self.summaryValueFormat)
+            i += 1
 
         i = 0
         for ws in self.getAllProcedureSheets():
