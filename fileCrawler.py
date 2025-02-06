@@ -186,7 +186,7 @@ def view(isAdmin: bool):
     root.title(FILE_CRAWLER)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 300
-    rootHeight = (listboxHeight * listboxHeightMultiplier) + (350 if isAdmin else 295)
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (360 if isAdmin else 305)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
     if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
@@ -226,12 +226,14 @@ def view(isAdmin: bool):
     dirLabel.pack(side=tk.LEFT)
 
     excludeButton = tk.Button(frames[2], text="Browse to Exclude", command=excludeDirectory, font=fontGeneral, width=rootWidth)
-    excludeListbox = tk.Listbox(frames[2], exportselection=0, width=rootWidth, height=0)
-    excludeButton.pack()
-    excludeListbox.pack()
+    excludeScrollbar = tk.Scrollbar(frames[2], orient=tk.HORIZONTAL)
+    excludeListbox = tk.Listbox(frames[2], exportselection=0, width=rootWidth, height=0, xscrollcommand=excludeScrollbar.set)
+    excludeScrollbar.config(command=excludeListbox.xview)
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
-
+    excludeButton.pack()
+    excludeListbox.pack()
+    excludeScrollbar.pack()
     
     findLabel = tk.Label(frames[3], text="Find", font=fontGeneral)
     if isAdmin:
