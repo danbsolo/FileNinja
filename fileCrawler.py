@@ -186,7 +186,7 @@ def view(isAdmin: bool):
     root.title(FILE_CRAWLER)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 300
-    rootHeight = (listboxHeight * listboxHeightMultiplier) + (360 if isAdmin else 305)
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (365 if isAdmin else 310)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
     if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
