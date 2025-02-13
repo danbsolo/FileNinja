@@ -59,3 +59,6 @@ Requires argument. Flags any folder that holds 0 folders and has argument or les
 
 - SearchAndReplace-Fix
 Replace a substring with another substring, using a tilde as separator for the argument. Example: With the argument set to "& ~ -and-", all instances of "&" will be replace with "-and-".
+
+- DeleteEmptyFiles
+Note: will include the current excel file as an empty file, and log as it being deleted. Just ignore that.
