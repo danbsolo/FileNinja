@@ -1,9 +1,9 @@
 class FindProcedure:
-    def __init__(self, name, mainFunction, isStateless=True, postFunction=None, isFileFind=True):
+    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True):
         self.name = name
         self.mainFunction = mainFunction
         self.isFileFind = isFileFind # If False, isFolderFind
-        self.isStateless = isStateless
+        self.isConcurrentOnly = isConcurrentOnly
         self.postFunction = postFunction
 
 class FixProcedure:
@@ -17,17 +17,33 @@ class FixProcedure:
         self.argBoundary = argBoundary
 
 
-def minimumIntegerValidator(arg:str, minimum:int):
+def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
+    try:
+        arg = arg.split("-")
+
+        if len(arg) != 2:  # either too few or too many hyphens (bounds)
+            return minimumIntToInfinityValidator(arg[0], minimum)
+
+        lowerBound = int(arg[0].strip())
+        upperBound = int(arg[1].strip())
+
+        if (minimum <= lowerBound) and (lowerBound <= upperBound):
+            return (lowerBound, upperBound)
+    
+    except:
+        return
+
+def minimumIntToInfinityValidator(arg:str, minimum:int):
     try:
         arg.strip()
         arg = int(arg)
-        if (arg >= minimum): return arg
+        if (arg >= minimum): return (arg,)
     except:
         return
     
 def twoStringsValidator(arg:str, separator:str):
     try:
-        separatorIndex = arg.index(separator)
+        separatorIndex = arg.rfind(separator)
         toBeReplaced = arg[0:separatorIndex].strip()
         replacer = arg[separatorIndex+len(separator):].strip()
         

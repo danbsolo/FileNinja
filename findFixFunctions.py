@@ -4,7 +4,8 @@ import os
 from datetime import datetime
 import hashlib
 from workbookManager import WorkbookManager
-import mmap
+from sys import maxsize as MAXSIZE
+# import mmap
 
 
 # Used by badCharFind
@@ -25,8 +26,8 @@ TOO_FEW_AMOUNT = 0
 EXTENSION_COUNT = {}
 EXTENSION_TOTAL_SIZE = {}
 
-# Used by duplicateName
-NAMES_AND_PATHS = {}
+# # Used by duplicateName
+# NAMES_AND_PATHS = {}
 
 # Used by duplicateContent
 HASH_AND_FILES = {}
@@ -46,36 +47,50 @@ def listAll(_:str, itemName:str, ws) -> bool:
     wbm.writeItemAndIncrement(ws, itemName)
     return False
 
-def spaceFind(_:str, itemName:str, ws) -> bool:
+def spaceFileFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName: 
         wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
         return True
     return False
+
+def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
+    folderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
     
+    if " " in folderName:
+        wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
+
+
 def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
         wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, "{} > {}".format(absoluteItemLength, CHARACTER_LIMIT))
+        wbm.writeOutcomeAndIncrement(ws, "{}".format(absoluteItemLength, CHARACTER_LIMIT))
         return True
     return False
 
-def badCharFind(_:str, itemName:str, ws) -> bool:
+
+def badCharHelper(s:str) -> set:
     badChars = set()
 
     # If no extension (aka, no period), lastPeriodIndex will equal -1
-    lastPeriodIndex = itemName.rfind(".")
+    lastPeriodIndex = s.rfind(".")
 
-    if (lastPeriodIndex == -1): itemNameLength = len(itemName)
-    else: itemNameLength = lastPeriodIndex
+    if (lastPeriodIndex == -1): sLength = len(s)
+    else: sLength = lastPeriodIndex
 
-    for i in range(itemNameLength):
-        if itemName[i] not in PERMISSIBLE_CHARACTERS:
-            badChars.add(itemName[i])
+    for i in range(sLength):
+        if s[i] not in PERMISSIBLE_CHARACTERS:
+            badChars.add(s[i])
         
         # double-dash error
-        elif itemName[i:i+2] == "--":
-            badChars.add(itemName[i])
+        elif s[i:i+2] == "--":
+            badChars.add(s[i])
+
+    return badChars
+
+
+def badCharFileFind(_:str, itemName:str, ws) -> bool:
+    badChars = badCharHelper(itemName)
 
     # if any bad characters were found
     if (badChars):
@@ -83,6 +98,17 @@ def badCharFind(_:str, itemName:str, ws) -> bool:
         wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
         return True
     return False
+
+
+def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
+    folderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
+    badChars = badCharHelper(folderName)
+
+    if (badChars):
+        wbm.writeDir(ws, dirAbsolute, wbm.errorFormat)
+        wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
+
+
 
 def oldFileFind(dirAbsolute:str, itemName:str, ws):
     try:
@@ -92,11 +118,11 @@ def oldFileFind(dirAbsolute:str, itemName:str, ws):
         wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
         return False
 
-    fileDaysAgo = (TODAY - fileDate).days
+    fileDaysAgoLastAccessed = (TODAY - fileDate).days
 
-    if (fileDaysAgo >= DAYS_TOO_OLD):
+    if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD):
         wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, "{} days old".format(fileDaysAgo))
+        wbm.writeOutcomeAndIncrement(ws, "{}".format(fileDaysAgoLastAccessed))
     else:
         return False
 
@@ -105,8 +131,6 @@ def emptyDirectoryConcurrent(dirAbsolute:str, dirFolders, dirFiles, ws):
     if len(dirFolders) == 0 and len(dirFiles) <= TOO_FEW_AMOUNT:
         wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
 
-def emptyDirectoryPost(ws):
-    ws.autofit()
 
 
 def spaceFixHelper(oldItemName) -> str:
@@ -150,10 +174,17 @@ def spaceFixModify(dirAbsolute:str, oldItemName:str, ws):
 
 def deleteOldFilesHelper(fullFilePath: str) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
+
+    daysLowerBound = wbm.fixArg[0]
     
-    daysTooOld = wbm.fixArg
+    # NOTE: This is not well-done code since, over the lifetime of an execution, this will always evaluate one or the other.
+    if len(wbm.fixArg) == 2:
+        daysUpperBound = wbm.fixArg[1]
+    else:
+        daysUpperBound = MAXSIZE
+
     # Could double-check that this value is usable each time. Dire consequences if not.
-    #  if (daysTooOld <= 0): return -1
+    #  if (daysLowerBound <= 0): return -1
     
     # Get date of file. This *can* error virtue of the library functions, hence try/except
     try: fileDate = datetime.fromtimestamp(os.path.getatime(fullFilePath))
@@ -161,22 +192,20 @@ def deleteOldFilesHelper(fullFilePath: str) -> int:
 
     fileDaysAgo = (TODAY - fileDate).days
 
-    if (fileDaysAgo >= daysTooOld): return fileDaysAgo
+    if (daysLowerBound <= fileDaysAgo) and (fileDaysAgo <= daysUpperBound): return fileDaysAgo
     else: return 0
 
 def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws):
     fullFilePath =  dirAbsolute + "\\" + itemName
     daysOld = deleteOldFilesHelper(fullFilePath)
 
-    # Either it's actually 0 days old or the fileDate is after the cutOffDate. Either way, don't flag.         
+    # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.         
     if (daysOld == 0): return
 
     wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
         wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat) 
-    elif len(fullFilePath) > CHARACTER_LIMIT:
-        wbm.writeOutcomeAndIncrement(ws, "{} days but violates charLimit".format(daysOld), wbm.logFormat)    
     else:
         wbm.writeOutcomeAndIncrement(ws, "{}".format(daysOld), wbm.logFormat)
 
@@ -190,9 +219,6 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
 
     if (daysOld == -1):
         wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
-    # If over CHARACTER_LIMIT characters, do not delete as it is not backed up
-    elif len(fullFilePath) > CHARACTER_LIMIT:
-        wbm.writeOutcomeAndIncrement(ws, "{} days but violates charLimit".format(daysOld), wbm.logFormat)
     else:
         try:
             os.remove(fullFilePath)
@@ -241,32 +267,32 @@ def fileExtensionPost(ws):
     ws.autofit()
 
 
-def duplicateNameConcurrent(dirAbsolute:str, fileName:str, ws):
-    if fileName in NAMES_AND_PATHS:
-        NAMES_AND_PATHS[fileName].add(dirAbsolute)
-        wbm.incrementFileCount(ws)
-        return True
-    else:
-        NAMES_AND_PATHS[fileName] = set([dirAbsolute])
-        return False
+# def duplicateNameConcurrent(dirAbsolute:str, fileName:str, ws):
+#     if fileName in NAMES_AND_PATHS:
+#         NAMES_AND_PATHS[fileName].add(dirAbsolute)
+#         wbm.incrementFileCount(ws)
+#         return True
+#     else:
+#         NAMES_AND_PATHS[fileName] = set([dirAbsolute])
+#         return False
 
-def duplicateNamePost(ws):
-    ws.write(0, 0, "Files", wbm.headerFormat)
-    ws.write(0, 1, "Directories", wbm.headerFormat)
+# def duplicateNamePost(ws):
+#     ws.write(0, 0, "Files", wbm.headerFormat)
+#     ws.write(0, 1, "Directories", wbm.headerFormat)
     
-    row = 1
-    for fileName in sorted(NAMES_AND_PATHS.keys()):
-        # if a fileName is seen more than once, it's a duplicate
-        if len(NAMES_AND_PATHS[fileName]) > 1:
-            ws.write_string(row, 0, fileName, wbm.errorFormat)
+#     row = 1
+#     for fileName in sorted(NAMES_AND_PATHS.keys()):
+#         # if a fileName is seen more than once, it's a duplicate
+#         if len(NAMES_AND_PATHS[fileName]) > 1:
+#             ws.write_string(row, 0, fileName, wbm.errorFormat)
             
-            for path in NAMES_AND_PATHS[fileName]:
-                ws.write_string(row, 1, path, wbm.dirFormat)
-                row += 1
+#             for path in NAMES_AND_PATHS[fileName]:
+#                 ws.write_string(row, 1, path, wbm.dirFormat)
+#                 row += 1
 
-    NAMES_AND_PATHS.clear()
-    ws.freeze_panes(1, 0)
-    ws.autofit()
+#     NAMES_AND_PATHS.clear()
+#     ws.freeze_panes(1, 0)
+#     ws.autofit()
 
 
 def duplicateContentHelper(dirAbsolute:str, itemName:str):
@@ -327,7 +353,7 @@ def duplicateContentPost(ws):
 
 
 def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws):
-    tooFewAmount = wbm.fixArg
+    tooFewAmount = wbm.fixArg[0]
 
     # If even 1 folder exists, this isn't empty
     if len(dirFolders) != 0: return
@@ -338,7 +364,7 @@ def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws):
         wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.logFormat)
 
 def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
-    tooFewAmount = wbm.fixArg
+    tooFewAmount = wbm.fixArg[0]
 
     if len(dirFolders) != 0: return
 

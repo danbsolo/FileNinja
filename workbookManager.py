@@ -1,5 +1,5 @@
 import xlsxwriter
-from typing import List, Tuple, Callable
+from typing import List, Tuple
 from time import time
 
 class WorkbookManager:
@@ -19,12 +19,13 @@ class WorkbookManager:
         self.fixArg = None  # initialize fixArg to a dummy value
 
         self.findSheets = {} # procedureObject : worksheet
-        # For summarySheet first 7 rows are used for mainstay metrics. Skip a line, then write variable number of errors.
-        self.sheetRows = {self.summarySheet: 9} # worksheet : Integer
+        # For summarySheet first 8 rows are used for mainstay metrics. Skip a line, then write variable number of errors.
+        self.sheetRows = {self.summarySheet: 10} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
         # Summary metrics
         self.filesScannedCount = 0
+        self.foldersScannedCount = 0
         self.executionTime = 0
         self.errorCount = 0
 
@@ -63,16 +64,19 @@ class WorkbookManager:
         })
 
 
+        self.findProceduresConcurrentOnly = []
+
+
     def getAllProcedureSheets(self):
         sheets = list(self.findSheets.values())
         if self.fixSheet:
             sheets.append(self.fixSheet)
         return sheets
 
-    def getAllProcedureSheetsSansStatefulAndFolderFind(self):
+    def getAllProcedureSheetsSansNonConcurrentAndFolderFind(self):
         sheets = []
         for findProcedureObject in list(self.findSheets.keys()):
-            if findProcedureObject.isStateless and findProcedureObject.isFileFind:
+            if findProcedureObject.isConcurrentOnly and findProcedureObject.isFileFind:
                 sheets.append(self.findSheets[findProcedureObject])
         if self.fixSheet:
             sheets.append(self.fixSheet)
@@ -86,11 +90,13 @@ class WorkbookManager:
         self.sheetRows[tmpWsVar] = 1
         self.summaryCounts[tmpWsVar] = 0
 
-        if findProcedureObject.isStateless:
+        if findProcedureObject.isConcurrentOnly:
             tmpWsVar.freeze_panes(1, 0)
             tmpWsVar.write(0, self.DIR_COL, "Directories", self.headerFormat)
             tmpWsVar.write(0, self.ITEM_COL, "Items", self.headerFormat)
             tmpWsVar.write(0, self.OUTCOME_COL, "Error", self.headerFormat)
+
+            self.findProceduresConcurrentOnly.append(findProcedureObject)
 
 
     def setFixProcedure(self, fixProcedureObject, modify):
@@ -127,8 +133,10 @@ class WorkbookManager:
         alreadyCounted = False
 
         for itemName in dirItems:            
-            # If it's just a temporary file via Microsoft, skip file
-            if (itemName[0:2] == "~$"):
+            # Temporary Microsoft files begin with "~$". If it is so, skip file
+            # Onenote files have a ".one[]" extension. The longest onenote extension is 8 characters long.
+            # Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low 
+            if itemName.startswith("~$") or ".one" in itemName[-8:]:
                 continue
 
             for findProcedureObject in self.findSheets.keys():
@@ -152,7 +160,7 @@ class WorkbookManager:
 
         self.excludedDirs = excludedDirs
 
-        allSheets = self.getAllProcedureSheetsSansStatefulAndFolderFind()
+        allSheets = self.getAllProcedureSheetsSansNonConcurrentAndFolderFind()
         
         #
         folderFindProcedures = []
@@ -169,6 +177,8 @@ class WorkbookManager:
 
             # Folder fix procedure
             self.folderFixProcedure(dirAbsolute, dirFolders, dirFiles, self.fixSheet)
+
+            self.foldersScannedCount += 1
 
             #
             for findProcedureObject in folderFindProcedures:
@@ -226,9 +236,10 @@ class WorkbookManager:
         self.summarySheet.write(2, 0, "Subfolders inclusion", self.headerFormat)
         self.summarySheet.write(3, 0, "Modify", self.headerFormat)
         self.summarySheet.write(4, 0, "Argument", self.headerFormat)
-        self.summarySheet.write(5, 0, "File count", self.headerFormat)
-        self.summarySheet.write(6, 0, "Error count / %", self.headerFormat)
-        self.summarySheet.write(7, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(5, 0, "Folder count", self.headerFormat)
+        self.summarySheet.write(6, 0, "File count", self.headerFormat)
+        self.summarySheet.write(7, 0, "Error count / %", self.headerFormat)
+        self.summarySheet.write(8, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(2, 1, str(includeSubFolders), self.summaryValueFormat)
@@ -239,12 +250,13 @@ class WorkbookManager:
         if self.filesScannedCount == 0: errorPercentage = 0
         else: errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
 
-        if (self.fixArg != None): self.summarySheet.write_string(3, 1, str(self.fixArg), self.summaryValueFormat)
+        if (self.fixArg != None): self.summarySheet.write_string(4, 1, str(self.fixArg), self.summaryValueFormat)
         
-        self.summarySheet.write_number(5, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(6, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(6, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(7, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(5, 1, self.foldersScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(6, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(7, 1, self.errorCount, self.summaryValueFormat)
+        self.summarySheet.write(7, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(8, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 1
         for exDir in self.excludedDirs:
@@ -287,9 +299,13 @@ class WorkbookManager:
         helpMeSheet.autofit()
 
 
-    def autofitSheets(self):        
-        for ws in self.getAllProcedureSheetsSansStatefulAndFolderFind():
-            ws.autofit()
+    def autofitSheets(self):
+        for findProcedureObject in self.findProceduresConcurrentOnly:
+            self.findSheets[findProcedureObject].autofit()
+
+        if self.fixSheet:
+            self.fixSheet.autofit()
+
             
 
     def close(self):

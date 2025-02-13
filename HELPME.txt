@@ -1,3 +1,8 @@
+This is the HELPME file for File Crawler. Wow.
+Multiple lines :D
+Amazing :D
+
+
 - SubFolders?
 On = Include subfolders. Off = Limit search to current folder.
 
