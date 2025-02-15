@@ -147,14 +147,14 @@ def spaceFixHelper(oldItemName) -> str:
     # TODO: Should I fix? Ya, probably.
     return newItemNameSansExt + oldItemName[lastPeriodIndex:]
 
-def spaceFixLog(_:str, oldItemName:str, ws):
+def spaceFixLog(_:str, oldItemName:str, ws, _2):
     newItemName = spaceFixHelper(oldItemName)
     if (not newItemName): return
 
     wbm.writeItem(ws, oldItemName)
     wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
     
-def spaceFixModify(dirAbsolute:str, oldItemName:str, ws):
+def spaceFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
     newItemName = spaceFixHelper(oldItemName)
     if (not newItemName): return
 
@@ -172,14 +172,14 @@ def spaceFixModify(dirAbsolute:str, oldItemName:str, ws):
         wbm.incrementRow(ws)
         
 
-def deleteOldFilesHelper(fullFilePath: str) -> int:
+def deleteOldFilesHelper(fullFilePath: str, arg) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
 
-    daysLowerBound = wbm.fixArg[0]
+    daysLowerBound = arg[0]
     
     # NOTE: This is not well-done code since, over the lifetime of an execution, this will always evaluate one or the other.
-    if len(wbm.fixArg) == 2:
-        daysUpperBound = wbm.fixArg[1]
+    if len(arg) == 2:
+        daysUpperBound = arg[1]
     else:
         daysUpperBound = MAXSIZE
 
@@ -195,9 +195,9 @@ def deleteOldFilesHelper(fullFilePath: str) -> int:
     if (daysLowerBound <= fileDaysAgo) and (fileDaysAgo <= daysUpperBound): return fileDaysAgo
     else: return 0
 
-def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws):
+def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws, arg):
     fullFilePath =  dirAbsolute + "\\" + itemName
-    daysOld = deleteOldFilesHelper(fullFilePath)
+    daysOld = deleteOldFilesHelper(fullFilePath, arg)
 
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.         
     if (daysOld == 0): return
@@ -209,9 +209,9 @@ def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws):
     else:
         wbm.writeOutcomeAndIncrement(ws, "{}".format(daysOld), wbm.logFormat)
 
-def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws):
+def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
     fullFilePath =  dirAbsolute + "\\" + itemName
-    daysOld = deleteOldFilesHelper(fullFilePath)
+    daysOld = deleteOldFilesHelper(fullFilePath, arg)
 
     if (daysOld == 0): return
 
@@ -352,8 +352,8 @@ def duplicateContentPost(ws):
     ws.autofit()
 
 
-def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws):
-    tooFewAmount = wbm.fixArg[0]
+def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
+    tooFewAmount = arg[0]
 
     # If even 1 folder exists, this isn't empty
     if len(dirFolders) != 0: return
@@ -363,8 +363,8 @@ def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws):
     if fileAmount <= tooFewAmount:
         wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.logFormat)
 
-def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
-    tooFewAmount = wbm.fixArg[0]
+def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
+    tooFewAmount = arg[0]
 
     if len(dirFolders) != 0: return
 
@@ -383,8 +383,8 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws):
             wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.logFormat)
 
 
-def searchAndReplaceHelper(oldItemName:str):
-    toBeReplaced, replacer = wbm.fixArg
+def searchAndReplaceHelper(oldItemName:str, arg):
+    toBeReplaced, replacer = arg
 
     lastPeriodIndex = oldItemName.rfind(".")
     if lastPeriodIndex == -1:
@@ -399,14 +399,14 @@ def searchAndReplaceHelper(oldItemName:str):
     if (oldItemNameSansExt == newItemNameSansExt): return
     return newItemNameSansExt + extension
 
-def searchAndReplaceLog(_:str, oldItemName:str, ws):
-    if not (newItemName := searchAndReplaceHelper(oldItemName)): return
+def searchAndReplaceLog(_:str, oldItemName:str, ws, arg):
+    if not (newItemName := searchAndReplaceHelper(oldItemName, arg)): return
 
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
     wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)        
 
-def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
-    if not (newItemName := searchAndReplaceHelper(oldItemName)): return
+def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws, arg):
+    if not (newItemName := searchAndReplaceHelper(oldItemName, arg)): return
 
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
 
@@ -422,7 +422,7 @@ def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws):
         wbm.incrementRow(ws)
 
 
-def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws):
+def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
     try:
         fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) 
     except PermissionError:
@@ -439,7 +439,7 @@ def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws):
         wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
         
 
-def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws):
+def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
     """Glitch exists in that the current excel file will be considered empty.
     However, despite claiming so, the program does not actually delete it.'"""
 

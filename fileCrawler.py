@@ -9,7 +9,7 @@ from idlelib.tooltip import Hovertip
 import threading
 
 
-def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindProcedures:list[str], selectedFixProcedure:str, unprocessedArg:str, excludedDirs:set[str]):
+def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], unprocessedArg:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk output
@@ -28,24 +28,53 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
     wbm = WorkbookManager(workbookPathName)
     setWorkbookManager(wbm)
 
-    # Errors if this file already exists and is currently opened
-    try:
-        fileHandler = open(workbookPathName, 'w')
-        fileHandler.close()
-    except PermissionError:
-        return -1
+    ## Errors if this file already exists and is currently opened
+    # try:
+    #    fileHandler = open(workbookPathName, 'w')
+    #    fileHandler.close()
+    # except PermissionError:
+    #    return -1
 
+    
     # Set findProcedures and fixProcedure
-    for fm in selectedFindProcedures:
-        wbm.addFindProcedure(FIND_PROCEDURES[fm])
+    if modify and len(selectedFixProcedures) > 1:
+        return -5
 
-    if selectedFixProcedure != NULL_OPTION:
-        fixProcedureObject = FIX_PROCEDURES[selectedFixProcedure]
 
-        if not wbm.setFixArg(fixProcedureObject, unprocessedArg):
-            return -3
+    for findProcedureName in selectedFindProcedures:
+        wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName])
+
+
+    splitArgs = unprocessedArg.split("/")
+    splitArgsLen = len(splitArgs)
+    currentArg = 0
+
+    for fixProcedureName in selectedFixProcedures:
+        arg = None
         
-        wbm.setFixProcedure(fixProcedureObject, modify)
+        if FIX_PROCEDURES[fixProcedureName].validatorFunction:
+            if currentArg >= splitArgsLen:
+                return -6
+            
+            arg = splitArgs[currentArg]
+            currentArg += 1
+        
+        if (not wbm.addFixProcedure(FIX_PROCEDURES[fixProcedureName], modify, arg)):
+            return -3
+
+
+    # print(splitArgs)
+    # print(wbm.fixSheetsDict, wbm.fixProcedureArgs, wbm.fixProcedureFunctions, sep="\n"*2, end="\n"*3)
+    # return 0
+
+
+    #if selectedFixProcedure != NULL_OPTION:
+    #    fixProcedureObject = FIX_PROCEDURES[selectedFixProcedure]
+    #
+    #    if not wbm.setFixArg(fixProcedureObject, unprocessedArg):
+    #        return -3
+    #    
+    #    wbm.setFixProcedure(fixProcedureObject, modify)
                     
     wbm.styleSummarySheet(dirAbsolute, includeSubfolders, modify)    
 
@@ -115,7 +144,7 @@ def view(isAdmin: bool):
         
         exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
                     [findListbox.get(fm) for fm in findListbox.curselection()],
-                    fixListbox.get(tk.ACTIVE) if isAdmin else NULL_OPTION,
+                    [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
                     excludedDirs)
 
@@ -147,6 +176,10 @@ def view(isAdmin: bool):
                 errorMessage = "Invalid argument."
             elif (exitCode == -4):
                 errorMessage = "Invalid excluded directories."
+            elif (exitCode == -5):
+                errorMessage = "Invalid settings. Cannot run multiple Fix Procedures when modify is checked."
+            elif (exitCode == -6):
+                errorMessage = "Invalid arguments. Separate with \"/\""
             else:
                 errorMessage = "An error has occurred."
 
@@ -312,10 +345,10 @@ def view(isAdmin: bool):
     findListbox.select_set(0)
     findListbox.config(font=fontSmall)
     if isAdmin:
-        fixListbox = tk.Listbox(frames[4], exportselection=0, width=listboxWidth, height=listboxHeight)
+        fixListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
         for fixProcedureName in FIX_PROCEDURES.keys():
             fixListbox.insert(tk.END, fixProcedureName)
-        fixListbox.select_set(0)
+        # fixListbox.select_set(0)
         fixListbox.config(font=fontSmall)
         fixListbox.pack(side=tk.RIGHT)
         findListbox.pack(side=tk.LEFT)

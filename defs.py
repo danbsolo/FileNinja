@@ -5,7 +5,7 @@ RESULTS_DIRECTORY = "File-Crawler-Results"
 FILE_CRAWLER = "File-Crawler"
 
 # NOTE: Excel worksheet name must be <= 31 characters
-LIST_ALL = "List All Items"
+LIST_ALL = "List All Files"
 SPACE_FILE_FIND = "Space Error (File)"
 SPACE_FOLDER_FIND = "Space (Folder)"
 BAD_CHARACTER_FILE_FIND = "Bad Character Error (File)"
@@ -20,9 +20,9 @@ FILE_EXTENSION_SUMMARY = "Summarize File Types"
 
 NULL_OPTION = "---"
 SPACE_FIX = "Replace Space with Hyphen"
-SEARCH_AND_REPLACE = "Search & Replace Bad Characters"
-DELETE_OLD_FILES = "Delete Old Files"
-DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories"
+SEARCH_AND_REPLACE = "Search & Replace Characters~"
+DELETE_OLD_FILES = "Delete Old Files~"
+DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories~"
 DELETE_EMPTY_FILES = "Delete Empty Files"
 
 FIND_PROCEDURES = {
@@ -43,7 +43,7 @@ FIND_PROCEDURES = {
 FIX_PROCEDURES = {
     NULL_OPTION: None,
     SPACE_FIX: FixProcedure(SPACE_FIX, spaceFixLog, spaceFixModify, True),
-    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, "~"),
+    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, ">"),
     DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed"),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained"),
     DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion")
