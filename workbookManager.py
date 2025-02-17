@@ -14,7 +14,7 @@ class WorkbookManager:
 
         self.excludedDirs = []  # set within initiateCrawl()
 
-        self.findSheets = {} # procedureObject : worksheet
+        self.procedureSheets = {} # procedureObject : worksheet
         self.fixSheets = {}
         self.fixProcedureArgs = {}
         self.fixProcedureFunctions = {}
@@ -73,21 +73,6 @@ class WorkbookManager:
 
     def getAllProcedureSheets(self):
         sheets = list(self.findSheets.values()) + list(self.fixSheets.values())
-        return sheets
-
-
-    def getAllProcedureSheetsSansNonConcurrentAndFolderFind(self):
-        sheets = []
-
-        for findProcedureObject in list(self.findSheets.keys()):
-            if findProcedureObject.isConcurrentOnly and findProcedureObject.isFileFind:
-                sheets.append(self.findSheets[findProcedureObject])
-
-        sheets.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscrimnately
-        
-        #for fixProcedureObject in self.fixSheets.keys():
-        #    sheets.append(self.fixSheets[fixProcedureObject])
-
         return sheets
 
 
@@ -186,10 +171,18 @@ class WorkbookManager:
         start = time()
         self.excludedDirs = excludedDirs
 
-        allSheets = self.getAllProcedureSheetsSansNonConcurrentAndFolderFind()
+        #
+        sheetsSansNonConcurrentAndFolderFind = []
 
+        for findProcedureObject in list(self.findSheets.keys()):
+            if findProcedureObject.isConcurrentOnly and findProcedureObject.isFileFind:
+                sheetsSansNonConcurrentAndFolderFind.append(self.findSheets[findProcedureObject])
+
+        sheetsSansNonConcurrentAndFolderFind.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscrimnately
+
+        #
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
-            for ws in allSheets:
+            for ws in sheetsSansNonConcurrentAndFolderFind:
                 ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
 
             self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
@@ -202,7 +195,6 @@ class WorkbookManager:
 
         end = time()
         self.executionTime = end - start
-
 
 
     def writeDir(self, ws, text, format=None):
