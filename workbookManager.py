@@ -2,7 +2,7 @@ import xlsxwriter
 from typing import List, Tuple
 from time import time
 
-# TEST PUSH
+
 class WorkbookManager:
 
     def __init__(self, workbookPathName: str):
