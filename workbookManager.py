@@ -14,7 +14,7 @@ class WorkbookManager:
 
         self.excludedDirs = []  # set within initiateCrawl()
 
-        self.procedureSheets = {} # procedureObject : worksheet
+        self.findSheets = {} # procedureObject : worksheet
         self.fixSheets = {}
         self.fixProcedureArgs = {}
         self.fixProcedureFunctions = {}
