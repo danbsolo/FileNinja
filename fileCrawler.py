@@ -9,14 +9,13 @@ from idlelib.tooltip import Hovertip
 import threading
 
 
-def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], unprocessedArg:str, excludedDirs:set[str]):
+def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
     
-    # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk output
+    # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
 
-
-    # Create RESULTS directory name if does not exist
+    # Create RESULTS directory if it does not exist
     try: os.mkdir(RESULTS_DIRECTORY)
     except: pass
 
@@ -27,61 +26,40 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
     setWorkbookManager(wbm)
-
-    ## Errors if this file already exists and is currently opened
-    # try:
-    #    fileHandler = open(workbookPathName, 'w')
-    #    fileHandler.close()
-    # except PermissionError:
-    #    return -1
-
     
-    # Set findProcedures and fixProcedure
-    if modify and len(selectedFixProcedures) > 1:
+    # If multiple fix procedures are selected and allowModify is checked, exit
+    if allowModify and len(selectedFixProcedures) > 1:
         return -5
-
-
+    
+    # Add selected findProcedures
     for findProcedureName in selectedFindProcedures:
         wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName])
 
-
-    splitArgs = unprocessedArg.split("/")
-    splitArgsLen = len(splitArgs)
+    # Add selected fixProcedures
+    argsList = argUnprocessed.split("/")
+    argsListLength = len(argsList)
     currentArg = 0
 
     for fixProcedureName in selectedFixProcedures:
         arg = None
         
         if FIX_PROCEDURES[fixProcedureName].validatorFunction:
-            if currentArg >= splitArgsLen:
+            if currentArg >= argsListLength:
                 return -6
             
-            arg = splitArgs[currentArg]
+            arg = argsList[currentArg]
             currentArg += 1
         
-        if (not wbm.addFixProcedure(FIX_PROCEDURES[fixProcedureName], modify, arg)):
+        if (not wbm.addFixProcedure(FIX_PROCEDURES[fixProcedureName], allowModify, arg)):
             return -3
 
-
-    # print(splitArgs)
-    # print(wbm.fixSheetsDict, wbm.fixProcedureArgs, wbm.fixProcedureFunctions, sep="\n"*2, end="\n"*3)
-    # return 0
-
-
-    #if selectedFixProcedure != NULL_OPTION:
-    #    fixProcedureObject = FIX_PROCEDURES[selectedFixProcedure]
     #
-    #    if not wbm.setFixArg(fixProcedureObject, unprocessedArg):
-    #        return -3
-    #    
-    #    wbm.setFixProcedure(fixProcedureObject, modify)
-                    
-    wbm.styleSummarySheet(dirAbsolute, includeSubfolders, modify)    
+    wbm.styleSummarySheet(dirAbsolute, includeSubfolders, allowModify)
 
-    # print("\nCreating " + workbookPathName + "...")
+    #
     if (includeSubfolders):
         if (not excludedDirs):
-            wbm.folderCrawl(os.walk(dirAbsolute), [])
+            wbm.initiateCrawl(os.walk(dirAbsolute), [])
 
         else:
             # Run checks on excludedDirs
@@ -117,7 +95,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
                 else:
                     subDirFolders[:] = []  # stop traversal of this folder and its subfolders
             
-            wbm.folderCrawl(walkResults, excludedDirs)
+            wbm.initiateCrawl(walkResults, excludedDirs)
     
     else:
         # mimic os.walk()'s output but only for the current directory
@@ -130,7 +108,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
             else:
                 dirFolders.append(item)
 
-        wbm.folderCrawl([(dirAbsolute, dirFolders, dirFiles)], [])
+        wbm.initiateCrawl([(dirAbsolute, dirFolders, dirFiles)], [])
 
     wbm.close()
     os.startfile(workbookPathName)
@@ -139,31 +117,29 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
 
 
 def view(isAdmin: bool):
-    def launchControllerWorker():
-        exitCodeList.append("FillerText")
-        
+    def launchControllerWorker():        
+        currentState.set(102)  # The HTTP response code for "Still processing"
+
         exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
                     excludedDirs)
 
-        exitCodeList.append(exitCode)
-
-    def schedule_check(t):
-        root.after(500, check_if_done, t)
+        currentState.set(exitCode)
 
 
-    def check_if_done(t):
+    def scheduleCheckIfDone(t):
+        root.after(500, checkIfDone, t)
+
+
+    def checkIfDone(t):
         # If the thread has finished, re-enable the button and show a message.
         if not t.is_alive():
             root.title(FILE_CRAWLER)
-            
-            executeButton["state"] = "normal"
+            executeButton.config(text="Execute", state="normal")
 
-            exitCodeList.pop(0)
-            exitCode = exitCodeList.pop(0)
-            
+            exitCode = currentState.get()
             
             errorMessage = ""
             if (exitCode == 0):
@@ -183,25 +159,27 @@ def view(isAdmin: bool):
             else:
                 errorMessage = "An error has occurred."
 
-            tk.messagebox.showerror("Error: " + str(exitCode), errorMessage)
+            tk.messagebox.showerror(f"Error: {str(exitCode)}", errorMessage)
             
         else:
             # Otherwise check again the specified number of milliseconds.
-            schedule_check(t)
+            scheduleCheckIfDone(t)
     
+
     def launchController():
         if modifyState.get() and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
             # print("Aborted. Continuing selection.")
             return
             
-        root.title(FILE_CRAWLER + ": CURRENTLY RUNNING...")
+        root.title(FILE_CRAWLER + ": RUNNING...")
 
-        executeButton["state"] = "disabled"
+        executeButton.config(text="RUNNING....", state="disabled")
+
         executionThread = threading.Thread(target=launchControllerWorker)
         executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
         executionThread.start()
 
-        schedule_check(executionThread)
+        scheduleCheckIfDone(executionThread)
 
 
     def selectDirectory():
@@ -243,7 +221,6 @@ def view(isAdmin: bool):
         excludeListbox.config(height = newHeight)
         root.geometry("{}x{}".format(rootWidth, rootHeight + (newHeight * listboxHeightMultiplier)))
       
-
         
     def openResultsDirectory():
         if os.path.exists(RESULTS_DIRECTORY):
@@ -253,30 +230,20 @@ def view(isAdmin: bool):
 
 
     def closeWindow():
-        if not exitCodeList:
-            root.destroy()
+        if currentState.get() == 102:
+            exit()  # Force close
         else:
-            # Force close
-            exit()
-
+            root.destroy()
+            
 
     def onSelectFixlistbox(e):
-        selectedIndices = fixListbox.curselection()
-
-        for selectedIndex in selectedIndices:
-            item = fixListbox.get(selectedIndex)
-            
+        for selectedIndex in fixListbox.curselection():            
             # If the value is an empty string (which is just there for the spacing), deselect it immediately
-            if item == "":
+            if fixListbox.get(selectedIndex) == "":
                 fixListbox.selection_clear(selectedIndex)
 
 
-
-    exitCodeList = []  # super hacky
-    excludedDirs = []
-
-    #
-    listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) +1
+    listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
     listboxHeightMultiplier = 17
 
     # root window stuff
@@ -287,80 +254,69 @@ def view(isAdmin: bool):
     rootHeight = (listboxHeight * listboxHeightMultiplier) + (365 if isAdmin else 310)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
-    # The following line of code breaks Hovertips. I do not know why.
+    # The following line of code breaks Hovertips. It just does.
     # if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
-
-    root.bind('<Control-Key-w>', lambda e: root.destroy())
-    root.bind('<Control-Key-W>', lambda e: root.destroy())
         
     frames = []
     for i in range(9):
         frames.append(tk.Frame(root, bd=0, relief=tk.SOLID))
         frames[i].pack(fill="x", padx=10, pady=3)
 
-
     # aesthetic/layout variables
     fontType = "None"
     fontSize = 15
     fontGeneral = (fontType, fontSize)
     fontSmall = (fontType, int(fontSize/3*2))
-    # listboxHeight defined above
-    listboxWidth = int(rootWidth/15) if isAdmin else int(rootWidth/10)
-    finalButtonsWidth = 20 if isAdmin else 10 # HARD CODED
+    listboxWidth = int(rootWidth/15) if isAdmin else int(rootWidth/10)  # listboxHeight defined above
+    finalButtonsWidth = 20 if isAdmin else 10  # HARD CODED WIDTH
     tooltipHoverDelay = 0
 
     # data variables
     dirAbsoluteVar = tk.StringVar()
     parameterVar = tk.StringVar()
-    includeSubFoldersState = tk.IntVar()
-    modifyState = tk.IntVar()
+    includeSubFoldersState = tk.IntVar(value=1)
+    modifyState = tk.IntVar(value=0)
+    currentState = tk.IntVar(value=0)
+    excludedDirs = []
 
 
-    # widgets
+    # widget layout
     browseButton = tk.Button(frames[0], text="Browse to Select", command=selectDirectory, font=fontGeneral, width=rootWidth)
     browseButton.pack()
-    browseTip = Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay)
-
+    
     dirHeaderLabel = tk.Label(frames[1], text = "Directory:", font=fontGeneral)
-    dirLabel = tk.Label(frames[1], textvariable=dirAbsoluteVar, font=fontSmall, anchor="e") 
+    dirLabel = tk.Label(frames[1], textvariable=dirAbsoluteVar, font=fontSmall, anchor="e")
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.LEFT)
-    dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
     
-
     excludeButton = tk.Button(frames[2], text="Browse to Exclude", command=excludeDirectory, font=fontGeneral, width=rootWidth)
     excludeScrollbar = tk.Scrollbar(frames[2], orient=tk.HORIZONTAL)
     excludeListbox = tk.Listbox(frames[2], exportselection=0, width=rootWidth, height=0, xscrollcommand=excludeScrollbar.set)
     excludeScrollbar.config(command=excludeListbox.xview)
-    excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
-    excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
     excludeButton.pack()
     excludeListbox.pack()
     excludeScrollbar.pack()
-    excludeTip = Hovertip(excludeButton, "Browse to exclude subfolders of currently selected directory.", hover_delay=tooltipHoverDelay)
     
     findLabel = tk.Label(frames[3], text="Find", font=fontGeneral)
     if isAdmin:
         fixLabel = tk.Label(frames[3], text="Fix", font=fontGeneral)
         fixLabel.pack(side=tk.RIGHT, padx=(0, rootWidth/5))
         findLabel.pack(side=tk.LEFT, padx=(rootWidth/5, 0))
-        fixTip = Hovertip(fixLabel, "Run a Fix procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
     else:
         findLabel.pack()
     frames[3].pack(fill="x", padx=10, pady=(3, 0))  # inadvertently packed twice to have less y padding
-    findTip = Hovertip(findLabel, "Run a Find procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
 
     findListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
     for findProcedureName in FIND_PROCEDURES_DISPLAY:
         findListbox.insert(tk.END, findProcedureName)
     findListbox.select_set(0)
     findListbox.config(font=fontSmall)
+
     if isAdmin:
         fixListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
         for fixProcedureName in FIX_PROCEDURES_DISPLAY:
             fixListbox.insert(tk.END, fixProcedureName)
         fixListbox.config(font=fontSmall)
-        fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
         fixListbox.pack(side=tk.RIGHT)
         findListbox.pack(side=tk.LEFT)
     else:
@@ -372,31 +328,45 @@ def view(isAdmin: bool):
         argumentEntry = tk.Entry(frames[5], textvariable=parameterVar, width=rootWidth, font=fontSmall)
         parameterLabel.pack(side=tk.LEFT)
         argumentEntry.pack(side=tk.LEFT)
-        parameterTip = Hovertip(parameterLabel, "Input a number, string, etc. Required for some Fix procedures.", hover_delay=tooltipHoverDelay)
 
     includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subfolders", variable=includeSubFoldersState, font=fontGeneral)
     includeSubfoldersCheckbutton.pack()
     if isAdmin:
         modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=modifyState, font=fontGeneral)
         modifyCheckbutton.pack(padx=(0, 50))
-        modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this feature, leave this off.", hover_delay=tooltipHoverDelay)
-    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subfolders, other than those excluded.", hover_delay=tooltipHoverDelay)
 
     executeButton = tk.Button(frames[7], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()
     frames[7].configure(width=rootWidth/2)
     frames[7].pack(side=tk.LEFT, expand=True)
-    executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)
 
     resultsButton = tk.Button(frames[8], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
     resultsButton.pack()
     frames[8].configure(width=rootWidth/2)
     frames[8].pack(side=tk.LEFT, expand=True)
+
+
+    # tool tips
+    browseTip = Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay)  
+    dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
+    excludeTip = Hovertip(excludeButton, "Browse to exclude subfolders of currently selected directory.", hover_delay=tooltipHoverDelay)
+    findTip = Hovertip(findLabel, "Run a Find procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
+    if isAdmin: 
+        fixTip = Hovertip(fixLabel, "Run a Fix procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
+        parameterTip = Hovertip(parameterLabel, "Input a number, string, etc. Required for some Fix procedures.", hover_delay=tooltipHoverDelay)
+        modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this feature, leave this off.", hover_delay=tooltipHoverDelay)
+    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subfolders, other than those excluded.", hover_delay=tooltipHoverDelay)
+    executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)
     resultsTip = Hovertip(resultsButton, "Open folder containing all excel files of previous executions.", hover_delay=tooltipHoverDelay)
 
 
+    # bindings
+    excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
+    excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
+    fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
+    root.bind('<Control-Key-w>', lambda e: root.destroy())
+    root.bind('<Control-Key-W>', lambda e: root.destroy())
     root.protocol("WM_DELETE_WINDOW", closeWindow)
-    
 
     root.mainloop()
         

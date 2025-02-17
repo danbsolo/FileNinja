@@ -12,17 +12,24 @@ class WorkbookManager:
         self.summarySheet = self.wb.add_worksheet("Summary")
         self.summarySheet.activate()  # view this worksheet on startup
 
-        self.excludedDirs = []  # set within folderCrawl()
-
-        self.fixSheet = None # initializing for clarity
-        self.fileFixProcedure = lambda _1, _2, _3: None  # default dummy function
-        self.folderFixProcedure = lambda _1, _2, _3, _4: None
-        self.fixArg = None  # initialize fixArg to a dummy value
+        self.excludedDirs = []  # set within initiateCrawl()
 
         self.findSheets = {} # procedureObject : worksheet
-        # For summarySheet first 8 rows are used for mainstay metrics. Skip a line, then write variable number of errors.
-        self.sheetRows = {self.summarySheet: 10} # worksheet : Integer
+        self.fixSheets = {}
+        self.fixProcedureArgs = {}
+        self.fixProcedureFunctions = {}
+        # For summarySheet first # rows are used for mainstay metrics. Skip a line, then write variable number of errors.
+        self.sheetRows = {self.summarySheet: 11} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
+
+
+
+        # Lists to avoid many redundant if statements
+        self.findProceduresConcurrentOnly = []
+        self.fileFindProcedures = []
+        self.fileFixProcedures = []
+        self.folderFindProcedures = []
+        self.folderFixProcedures = []
 
         # Summary metrics
         self.filesScannedCount = 0
@@ -32,8 +39,7 @@ class WorkbookManager:
 
         self.DIR_COL = 0
         self.ITEM_COL = 1
-        # used describe either an Error or a Modification, depending on the procedure type
-        self.OUTCOME_COL = 2
+        self.OUTCOME_COL = 2  # describes either an Error or a Modification, depending on the procedure type
 
         # Default cell styles
         self.dirFormat = self.wb.add_format({
@@ -65,16 +71,10 @@ class WorkbookManager:
         })
 
 
-        self.findProceduresConcurrentOnly = []
-
-        self.fixSheetsDict = {}
-        self.fixProcedureArgs = {}
-        self.fixProcedureFunctions = {}
-
-
     def getAllProcedureSheets(self):
-        sheets = list(self.findSheets.values()) + list(self.fixSheetsDict.values())
+        sheets = list(self.findSheets.values()) + list(self.fixSheets.values())
         return sheets
+
 
     def getAllProcedureSheetsSansNonConcurrentAndFolderFind(self):
         sheets = []
@@ -83,19 +83,17 @@ class WorkbookManager:
             if findProcedureObject.isConcurrentOnly and findProcedureObject.isFileFind:
                 sheets.append(self.findSheets[findProcedureObject])
 
-        # ADDS ALL FIX PROCEDURES INDISCRIMINATELY. Could possibly just use extend()?
-        for fixProcedureObject in self.fixSheetsDict.keys():
-            sheets.append(self.fixSheetsDict[fixProcedureObject])
-
+        sheets.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscrimnately
         
-        #if self.fixSheet:
-        #    sheets.append(self.fixSheet)
+        #for fixProcedureObject in self.fixSheets.keys():
+        #    sheets.append(self.fixSheets[fixProcedureObject])
 
         return sheets
 
+
     def addFindProcedure(self, findProcedureObject):
         tmpWsVar = self.wb.add_worksheet(findProcedureObject.name)
-        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()) +len(self.fixSheetsDict.keys()), 0, findProcedureObject.name + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()) +len(self.fixSheets.keys()), 0, findProcedureObject.name + " count", self.headerFormat)
         
         self.findSheets[findProcedureObject] = tmpWsVar
         self.sheetRows[tmpWsVar] = 1
@@ -108,20 +106,30 @@ class WorkbookManager:
             tmpWsVar.write(0, self.OUTCOME_COL, "Error", self.headerFormat)
 
             self.findProceduresConcurrentOnly.append(findProcedureObject)
+        
+        if findProcedureObject.isFileFind:
+            self.fileFindProcedures.append(findProcedureObject)
+        else:
+            self.folderFindProcedures.append(findProcedureObject)
+            
 
-
-    def addFixProcedure(self, fixProcedureObject, modify, arg) -> bool:
+    def addFixProcedure(self, fixProcedureObject, allowModify, arg) -> bool:
         tmpWsVar = self.wb.add_worksheet(fixProcedureObject.name)
-        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()) +len(self.fixSheetsDict.keys()), 0, fixProcedureObject.name + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()) +len(self.fixSheets.keys()), 0, fixProcedureObject.name + " count", self.headerFormat)
 
-        self.fixSheetsDict[fixProcedureObject] = tmpWsVar
+        self.fixSheets[fixProcedureObject] = tmpWsVar
         self.sheetRows[tmpWsVar] = 1
         self.summaryCounts[tmpWsVar] = 0
 
-        if modify:
+        if allowModify:
             self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.modifyFunction
         else:
             self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.logFunction
+        
+        if fixProcedureObject.isFileFix:
+            self.fileFixProcedures.append(fixProcedureObject)
+        else:
+            self.folderFixProcedures.append(fixProcedureObject)
 
         tmpWsVar.freeze_panes(1, 0)
         tmpWsVar.write(0, self.DIR_COL, "Directories", self.headerFormat)
@@ -129,27 +137,6 @@ class WorkbookManager:
         tmpWsVar.write(0, self.OUTCOME_COL, fixProcedureObject.columnName, self.headerFormat)
 
         return self.setFixArg(fixProcedureObject, arg)
-        
-                        
-
-#    def setFixProcedure(self, fixProcedureObject, modify):
-#        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()), 0, fixProcedureObject.name + " count", self.headerFormat)
-#        tmpWsVar = self.wb.add_worksheet(fixProcedureObject.name)
-#        self.fixSheet = tmpWsVar
-#        self.sheetRows[tmpWsVar] = 1
-#        self.summaryCounts[tmpWsVar] = 0
-#
-#        if fixProcedureObject.isFileFix:
-#            if modify: self.fileFixProcedure = fixProcedureObject.modifyFunction
-#            else: self.fileFixProcedure = fixProcedureObject.logFunction
-#        else:
-#            if modify: self.folderFixProcedure = fixProcedureObject.modifyFunction
-#            else: self.folderFixProcedure = fixProcedureObject.logFunction
-
-#        self.fixSheet.freeze_panes(1, 0)
-#        self.fixSheet.write(0, self.DIR_COL, "Directories", self.headerFormat)
-#        self.fixSheet.write(0, self.ITEM_COL, "Items", self.headerFormat)
-#        self.fixSheet.write(0, self.OUTCOME_COL, fixProcedureObject.columnName, self.headerFormat)
 
 
     def setFixArg(self, fixProcedureObject, arg) -> bool:
@@ -172,73 +159,51 @@ class WorkbookManager:
             if itemName.startswith("~$") or ".one" in itemName[-8:]:
                 continue
 
-            for findProcedureObject in self.findSheets.keys():
-                # BRUTE FORCE. Proof of concept.
-                if not findProcedureObject.isFileFind:
-                    continue
-                #
+            for findProcedureObject in self.fileFindProcedures:
                 if (findProcedureObject.mainFunction(dirAbsolute, itemName, self.findSheets[findProcedureObject])):
                     if (not alreadyCounted):
                         self.errorCount += 1
                         alreadyCounted = True
 
-            #
-            for fixProcedureObject in self.fixSheetsDict.keys():
-                if fixProcedureObject.isFileFix:
-                    self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, itemName, self.fixSheetsDict[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
-            #
-
-
-            # self.fileFixProcedure(dirAbsolute, itemName, self.fixSheet)
+            for fixProcedureObject in self.fileFixProcedures:
+                self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, itemName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
 
             alreadyCounted = False
             self.filesScannedCount += 1                    
 
 
-    def folderCrawl(self, dirTree: List[Tuple[str, list, list]], excludedDirs):
-        start = time()
+    def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
+        for findProcedureObject in self.folderFindProcedures:
+            findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
 
+        for fixProcedureObject in self.folderFixProcedures:
+            self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+
+        self.foldersScannedCount += 1
+
+
+    def initiateCrawl(self, dirTree: List[Tuple[str, list, list]], excludedDirs):
+        start = time()
         self.excludedDirs = excludedDirs
 
         allSheets = self.getAllProcedureSheetsSansNonConcurrentAndFolderFind()
-        
-        #
-        folderFindProcedures = []
-        for findProcedureObject in self.findSheets.keys():
-            if not (findProcedureObject.isFileFind):
-                folderFindProcedures.append(findProcedureObject)
-
-        folderFixProcedures = []
-        for fixProcedureObject in self.fixSheetsDict.keys():
-            if not (fixProcedureObject.isFileFix):
-                folderFixProcedures.append(fixProcedureObject)
-        #
 
         for (dirAbsolute, dirFolders, dirFiles) in dirTree:
             for ws in allSheets:
                 ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
 
+            self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
             self.fileCrawl(dirAbsolute, dirFiles)
-
-            # Folder fix procedure
-            # self.folderFixProcedure(dirAbsolute, dirFolders, dirFiles, self.fixSheet)
-
-            self.foldersScannedCount += 1
-
-            #
-            for findProcedureObject in folderFindProcedures:
-                findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
-
-            for fixProcedureObject in folderFixProcedures:
-                self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheetsDict[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
-            #
 
         for findProcedureObject in self.findSheets.keys():
             if findProcedureObject.postFunction:
                 findProcedureObject.postFunction(self.findSheets[findProcedureObject])
 
+
         end = time()
         self.executionTime = end - start
+
+
 
     def writeDir(self, ws, text, format=None):
         self.writeHelper(ws, self.DIR_COL, text, format)
@@ -275,40 +240,39 @@ class WorkbookManager:
         self.summaryCounts[ws] += amount
 
 
-    def styleSummarySheet(self, dirAbsolute, includeSubFolders, modify):
+    def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify):
         self.summarySheet.set_column(0, 0, 34)
         self.summarySheet.set_column(1, 1, 15)
         
         self.summarySheet.write(0, 0, "File Path", self.headerFormat)
         self.summarySheet.write(1, 0, "Excluded Directories", self.headerFormat)
-        self.summarySheet.write(2, 0, "Subfolders inclusion", self.headerFormat)
-        self.summarySheet.write(3, 0, "Modify", self.headerFormat)
-        self.summarySheet.write(4, 0, "Argument", self.headerFormat)
-        self.summarySheet.write(5, 0, "Folder count", self.headerFormat)
-        self.summarySheet.write(6, 0, "File count", self.headerFormat)
-        self.summarySheet.write(7, 0, "Error count / %", self.headerFormat)
-        self.summarySheet.write(8, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(2, 0, "Include Subfolders", self.headerFormat)
+        self.summarySheet.write(3, 0, "Allow Modify", self.headerFormat)
+        self.summarySheet.write(4, 0, "Argument(s)", self.headerFormat)
+        self.summarySheet.write(6, 0, "Folder count", self.headerFormat)
+        self.summarySheet.write(7, 0, "File count", self.headerFormat)
+        self.summarySheet.write(8, 0, "Error count / %", self.headerFormat)
+        self.summarySheet.write(9, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(2, 1, str(includeSubFolders), self.summaryValueFormat)
-        self.summarySheet.write(3, 1, str(modify), self.summaryValueFormat)
+        self.summarySheet.write(3, 1, str(allowModify), self.summaryValueFormat)
 
 
     def populateSummarySheet(self):
         if self.filesScannedCount == 0: errorPercentage = 0
         else: errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
 
-        # if (self.fixArg != None): self.summarySheet.write_string(4, 1, str(self.fixArg), self.summaryValueFormat)
         col = 1
         for fixProcedureObject in self.fixProcedureArgs.keys():
             self.summarySheet.write(4, col, "{} -> {}".format(self.fixProcedureArgs[fixProcedureObject], fixProcedureObject.name), self.summaryValueFormat)
             col += 1
         
-        self.summarySheet.write_number(5, 1, self.foldersScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(6, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(7, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(7, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(8, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(6, 1, self.foldersScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(7, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(8, 1, self.errorCount, self.summaryValueFormat)
+        self.summarySheet.write(8, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(9, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 1
         for exDir in self.excludedDirs:
@@ -355,13 +319,9 @@ class WorkbookManager:
         for findProcedureObject in self.findProceduresConcurrentOnly:
             self.findSheets[findProcedureObject].autofit()
 
-        for fixProcedureSheet in self.fixSheetsDict.values():
+        for fixProcedureSheet in self.fixSheets.values():
             fixProcedureSheet.autofit()
-        
-        #if self.fixSheet:
-        #    self.fixSheet.autofit()
 
-            
 
     def close(self):
         self.populateSummarySheet()
