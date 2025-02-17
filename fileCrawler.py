@@ -11,9 +11,28 @@ import threading
 
 def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
+
+    # If multiple fix procedures are selected and allowModify is checked, exit
+    if allowModify and len(selectedFixProcedures) > 1:
+        return -5
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
+
+    # Run checks on excludedDirs if relevant
+    if (includeSubfolders and excludedDirs):
+        for i in range(len(excludedDirs)):
+            excludedDirs[i] = excludedDirs[i].replace("/", "\\")
+
+        for exDir in excludedDirs:
+            # Check dirAbsolute is not an exDir. Check that exDir is a child to dirAbsolute
+            if (exDir == dirAbsolute) or not (exDir.startswith(dirAbsolute)):
+                return -4
+
+            # Check that no exDir is a subfolder to another exDir
+            for exDir2 in excludedDirs:
+                if (exDir != exDir2) and (exDir.startswith(exDir2)):
+                    return -4
 
     # Create RESULTS directory if it does not exist
     try: os.mkdir(RESULTS_DIRECTORY)
@@ -26,10 +45,6 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, selectedF
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
     setWorkbookManager(wbm)
-    
-    # If multiple fix procedures are selected and allowModify is checked, exit
-    if allowModify and len(selectedFixProcedures) > 1:
-        return -5
     
     # Add selected findProcedures
     for findProcedureName in selectedFindProcedures:
@@ -53,62 +68,8 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, selectedF
         if (not wbm.addFixProcedure(FIX_PROCEDURES[fixProcedureName], allowModify, arg)):
             return -3
 
-    #
-    wbm.styleSummarySheet(dirAbsolute, includeSubfolders, allowModify)
 
-    #
-    if (includeSubfolders):
-        if (not excludedDirs):
-            wbm.initiateCrawl(os.walk(dirAbsolute), [])
-
-        else:
-            # Run checks on excludedDirs
-            for i in range(len(excludedDirs)):
-                excludedDirs[i] = excludedDirs[i].replace("/", "\\")
-
-            for exDir in excludedDirs:
-                # Check dirAbsolute is not an exDir. Check that exDir is a child to dirAbsolute
-                if (exDir == dirAbsolute) or not (exDir.startswith(dirAbsolute)):
-                    return -4
-
-                # Check that no exDir is a subfolder to another exDir
-                for exDir2 in excludedDirs:
-                    if (exDir != exDir2) and (exDir.startswith(exDir2)):
-                        return -4
-                
-
-            walkResults = []
-
-            for subDirAbsolute, subDirFolders, subDirFiles in os.walk(dirAbsolute):
-                isDirIncluded = True
-                # subDirAbsolute = subDirAbsolute.replace("\\", "/")
-                
-                ### NOTE: Should it ignore hidden folders. i.e. folders that begin with "."? Probably.
-
-                for exDir in excludedDirs:
-                    if subDirAbsolute.startswith(exDir):  # exclude by subDirAbsolute to be precise
-                        isDirIncluded = False
-                        break
-
-                if isDirIncluded:
-                    walkResults.append((subDirAbsolute, subDirFolders, subDirFiles))
-                else:
-                    subDirFolders[:] = []  # stop traversal of this folder and its subfolders
-            
-            wbm.initiateCrawl(walkResults, excludedDirs)
-    
-    else:
-        # mimic os.walk()'s output but only for the current directory
-        dirFolders = []
-        dirFiles = []
-        
-        for item in os.listdir(dirAbsolute):
-            if os.path.isfile(os.path.join(dirAbsolute, item)):
-                dirFiles.append(item)
-            else:
-                dirFolders.append(item)
-
-        wbm.initiateCrawl([(dirAbsolute, dirFolders, dirFiles)], [])
+    wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, excludedDirs)
 
     wbm.close()
     os.startfile(workbookPathName)
@@ -118,7 +79,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, selectedF
 
 def view(isAdmin: bool):
     def launchControllerWorker():        
-        currentState.set(102)  # The HTTP response code for "Still processing"
+        currentState.set(102)  # 102 == The HTTP response code for "Still processing"
 
         exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
                     [findListbox.get(fm) for fm in findListbox.curselection()],
@@ -128,13 +89,11 @@ def view(isAdmin: bool):
 
         currentState.set(exitCode)
 
-
     def scheduleCheckIfDone(t):
         root.after(500, checkIfDone, t)
 
-
     def checkIfDone(t):
-        # If the thread has finished, re-enable the button and show a message.
+        # If the thread has finished
         if not t.is_alive():
             root.title(FILE_CRAWLER)
             executeButton.config(text="Execute", state="normal")
@@ -157,18 +116,18 @@ def view(isAdmin: bool):
             elif (exitCode == -6):
                 errorMessage = "Invalid arguments. Separate with \"/\""
             else:
+                exitCode = -999
                 errorMessage = "An error has occurred."
 
             tk.messagebox.showerror(f"Error: {str(exitCode)}", errorMessage)
             
         else:
-            # Otherwise check again the specified number of milliseconds.
+            # Otherwise check again after the specified number of milliseconds.
             scheduleCheckIfDone(t)
     
 
     def launchController():
         if modifyState.get() and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
-            # print("Aborted. Continuing selection.")
             return
             
         root.title(FILE_CRAWLER + ": RUNNING...")
@@ -226,7 +185,7 @@ def view(isAdmin: bool):
         if os.path.exists(RESULTS_DIRECTORY):
             os.startfile(RESULTS_DIRECTORY)
         else:
-            tk.messagebox.showinfo("Directory DNE", "Directory \"" + RESULTS_DIRECTORY + "\" does not exist. Try executing a file crawl first.")
+            tk.messagebox.showinfo("Directory DNE", "Directory \"" + RESULTS_DIRECTORY + "\" does not exist. Try executing the program first.")
 
 
     def closeWindow():

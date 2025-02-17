@@ -72,13 +72,7 @@ def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
 def badCharHelper(s:str) -> set:
     badChars = set()
 
-    # If no extension (aka, no period), lastPeriodIndex will equal -1
-    lastPeriodIndex = s.rfind(".")
-
-    if (lastPeriodIndex == -1): sLength = len(s)
-    else: sLength = lastPeriodIndex
-
-    for i in range(sLength):
+    for i in range(len(s)):
         if s[i] not in PERMISSIBLE_CHARACTERS:
             badChars.add(s[i])
         
@@ -90,7 +84,13 @@ def badCharHelper(s:str) -> set:
 
 
 def badCharFileFind(_:str, itemName:str, ws) -> bool:
-    badChars = badCharHelper(itemName)
+    # If no extension (aka, no period), lastPeriodIndex will equal -1
+    lastPeriodIndex = itemName.rfind(".")
+
+    if (lastPeriodIndex == -1):
+        badChars = badCharHelper(itemName)
+    else:
+        badChars = badCharHelper(itemName[0:lastPeriodIndex])
 
     # if any bad characters were found
     if (badChars):
@@ -107,7 +107,6 @@ def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     if (badChars):
         wbm.writeDir(ws, dirAbsolute, wbm.errorFormat)
         wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
-
 
 
 def oldFileFind(dirAbsolute:str, itemName:str, ws):

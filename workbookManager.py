@@ -1,6 +1,8 @@
 import xlsxwriter
-from typing import List, Tuple
+from typing import List
 from time import time
+import os
+from copy import deepcopy
 
 
 class WorkbookManager:
@@ -18,7 +20,7 @@ class WorkbookManager:
         self.fixSheets = {}
         self.fixProcedureArgs = {}
         self.fixProcedureFunctions = {}
-        # For summarySheet first # rows are used for mainstay metrics. Skip a line, then write variable number of errors.
+        # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write variable number of procedure metrics.
         self.sheetRows = {self.summarySheet: 11} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
@@ -35,43 +37,27 @@ class WorkbookManager:
         self.executionTime = 0
         self.errorCount = 0
 
+        # Constant columns
         self.DIR_COL = 0
         self.ITEM_COL = 1
         self.OUTCOME_COL = 2  # describes either an Error or a Modification, depending on the procedure type
 
         # Default cell styles
-        self.dirFormat = self.wb.add_format({
-            "bg_color": "#99CCFF", # blueish
-            "bold": True
-        })
+        self.dirFormat = self.wb.add_format({"bg_color": "#99CCFF", "bold": True})  # blueish
+        self.errorFormat = self.wb.add_format({"bold": True})  # "bg_color": "#FF4444", # reddish
+        self.modifyFormat = self.wb.add_format({"bg_color": "#00FF80", "bold": True})  # greenish
+        self.logFormat = self.wb.add_format({"bg_color": "#9999FF", "bold": True})  # purplish
+        self.headerFormat = self.wb.add_format({"bg_color": "#C0C0C0", "bold": True})  # grayish
+        self.summaryValueFormat = self.wb.add_format({})
 
-        # "bg_color": "#FF4444", # reddish
-        self.errorFormat = self.wb.add_format({
-            "bold": True
-        })
 
-        self.modifyFormat = self.wb.add_format({
-            "bg_color": "#00FF80", # greenish
-            "bold": True
-        })
-
-        self.logFormat = self.wb.add_format({
-            "bg_color": "#9999FF", # purplish
-            "bold": True
-        })
-
-        self.headerFormat = self.wb.add_format({
-            "bg_color": "#C0C0C0", # grayish
-            "bold": True
-        })
-
-        self.summaryValueFormat = self.wb.add_format({
-        })
+    def getAllProcedureSheets(self):
+        return (list(self.findSheets.values()) + list(self.fixSheets.values()))
 
 
     def addFindProcedure(self, findProcedureObject):
         tmpWsVar = self.wb.add_worksheet(findProcedureObject.name)
-        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()) +len(self.fixSheets.keys()), 0, findProcedureObject.name + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, findProcedureObject.name + " count", self.headerFormat)
         
         self.findSheets[findProcedureObject] = tmpWsVar
         self.sheetRows[tmpWsVar] = 1
@@ -93,7 +79,7 @@ class WorkbookManager:
 
     def addFixProcedure(self, fixProcedureObject, allowModify, arg) -> bool:
         tmpWsVar = self.wb.add_worksheet(fixProcedureObject.name)
-        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.findSheets.keys()) +len(self.fixSheets.keys()), 0, fixProcedureObject.name + " count", self.headerFormat)
+        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, fixProcedureObject.name + " count", self.headerFormat)
 
         self.fixSheets[fixProcedureObject] = tmpWsVar
         self.sheetRows[tmpWsVar] = 1
@@ -160,21 +146,59 @@ class WorkbookManager:
         self.foldersScannedCount += 1
 
 
-    def initiateCrawl(self, dirTree: List[Tuple[str, list, list]], excludedDirs):
+    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, excludedDirs):
         start = time()
+
+        self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify)
         self.excludedDirs = excludedDirs
+        copyOfExcludedDirs = deepcopy(excludedDirs)
 
         #
         sheetsSansNonConcurrentAndFolderFind = []
-
         for findProcedureObject in list(self.findSheets.keys()):
             if findProcedureObject.isConcurrentOnly and findProcedureObject.isFileFind:
                 sheetsSansNonConcurrentAndFolderFind.append(self.findSheets[findProcedureObject])
-
         sheetsSansNonConcurrentAndFolderFind.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscrimnately
 
+        ##
+        walkObject = []
+
+        if (includeSubfolders):
+            if (not excludedDirs):
+                walkObject = os.walk(baseDirAbsolute)
+            else:
+                for dirAbsolute, dirFolders, dirFiles in os.walk(baseDirAbsolute):
+                    isDirIncluded = True
+                    
+                    ### NOTE: Should this ignore hidden folders? i.e. Folders that begin with ".". Probably.
+
+                    for exDir in copyOfExcludedDirs:
+                        if dirAbsolute.startswith(exDir):  # exclude by subDirAbsolute to be precise
+                            isDirIncluded = False
+                            copyOfExcludedDirs.remove(exDir)
+                            break
+
+                    if isDirIncluded:
+                        walkObject.append((dirAbsolute, dirFolders, dirFiles))
+                    else:
+                        dirFolders[:] = []  # stop traversal of this folder and its subfolders
+        
+        else:
+            # mimic os.walk()'s output but only for the current directory
+            dirFolders = []
+            dirFiles = []
+            
+            for item in os.listdir(baseDirAbsolute):
+                if os.path.isfile(os.path.join(baseDirAbsolute, item)):
+                    dirFiles.append(item)
+                else:
+                    dirFolders.append(item)
+
+            walkObject = [(baseDirAbsolute, dirFolders, dirFiles)]
+        ##
+
         #
-        for (dirAbsolute, dirFolders, dirFiles) in dirTree:
+        for (dirAbsolute, dirFolders, dirFiles) in walkObject:
             for ws in sheetsSansNonConcurrentAndFolderFind:
                 ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
 
@@ -236,7 +260,7 @@ class WorkbookManager:
         self.summarySheet.write(4, 0, "Argument(s)", self.headerFormat)
         self.summarySheet.write(6, 0, "Folder count", self.headerFormat)
         self.summarySheet.write(7, 0, "File count", self.headerFormat)
-        self.summarySheet.write(8, 0, "Error count / %", self.headerFormat)
+        self.summarySheet.write(8, 0, "File error count / %", self.headerFormat)
         self.summarySheet.write(9, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
@@ -250,7 +274,9 @@ class WorkbookManager:
 
         col = 1
         for fixProcedureObject in self.fixProcedureArgs.keys():
-            self.summarySheet.write(4, col, "{} -> {}".format(self.fixProcedureArgs[fixProcedureObject], fixProcedureObject.name), self.summaryValueFormat)
+            arg = self.fixProcedureArgs[fixProcedureObject]
+            if arg == None: continue
+            self.summarySheet.write(4, col, f"{arg[0] if len(arg) <= 1 else arg} : {fixProcedureObject.name}", self.summaryValueFormat)
             col += 1
         
         self.summarySheet.write_number(6, 1, self.foldersScannedCount, self.summaryValueFormat)
@@ -265,7 +291,7 @@ class WorkbookManager:
             i += 1
 
         i = 0
-        for ws in (list(self.findSheets.values()) + list(self.fixSheets.values())):
+        for ws in self.getAllProcedureSheets():
             self.summarySheet.write(self.sheetRows[self.summarySheet] + i, 1, self.summaryCounts[ws], self.summaryValueFormat)
             i += 1
 
