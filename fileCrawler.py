@@ -322,7 +322,7 @@ def view(isAdmin: bool):
     # bindings
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
-    fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
+    if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
     root.bind('<Control-Key-w>', lambda e: root.destroy())
     root.bind('<Control-Key-W>', lambda e: root.destroy())
     root.protocol("WM_DELETE_WINDOW", closeWindow)
