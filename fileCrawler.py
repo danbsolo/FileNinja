@@ -105,7 +105,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, modify:bool, selectedFindPr
                 isDirIncluded = True
                 # subDirAbsolute = subDirAbsolute.replace("\\", "/")
                 
-                ### NOTE: Should it ignore hidden folders. i.e. folders that begin with "."?
+                ### NOTE: Should it ignore hidden folders. i.e. folders that begin with "."? Probably.
 
                 for exDir in excludedDirs:
                     if subDirAbsolute.startswith(exDir):  # exclude by subDirAbsolute to be precise
@@ -260,12 +260,23 @@ def view(isAdmin: bool):
             exit()
 
 
+    def onSelectFixlistbox(e):
+        selectedIndices = fixListbox.curselection()
+
+        for selectedIndex in selectedIndices:
+            item = fixListbox.get(selectedIndex)
+            
+            # If the value is an empty string (which is just there for the spacing), deselect it immediately
+            if item == "":
+                fixListbox.selection_clear(selectedIndex)
+
+
 
     exitCodeList = []  # super hacky
     excludedDirs = []
 
     #
-    listboxHeight = max(len(FIND_PROCEDURES.keys()), len(FIX_PROCEDURES.keys())) +1
+    listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) +1
     listboxHeightMultiplier = 17
 
     # root window stuff
@@ -340,16 +351,16 @@ def view(isAdmin: bool):
     findTip = Hovertip(findLabel, "Run a Find procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
 
     findListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
-    for findProcedureName in FIND_PROCEDURES.keys():
+    for findProcedureName in FIND_PROCEDURES_DISPLAY:
         findListbox.insert(tk.END, findProcedureName)
     findListbox.select_set(0)
     findListbox.config(font=fontSmall)
     if isAdmin:
         fixListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
-        for fixProcedureName in FIX_PROCEDURES.keys():
+        for fixProcedureName in FIX_PROCEDURES_DISPLAY:
             fixListbox.insert(tk.END, fixProcedureName)
-        # fixListbox.select_set(0)
         fixListbox.config(font=fontSmall)
+        fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
         fixListbox.pack(side=tk.RIGHT)
         findListbox.pack(side=tk.LEFT)
     else:

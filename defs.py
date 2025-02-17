@@ -18,7 +18,7 @@ DUPLICATE_CONTENT_FIND = "Identical Files Error"
 # DUPLICATE_NAME_FIND = "Duplicate Names Error"
 FILE_EXTENSION_SUMMARY = "Summarize File Types"
 
-NULL_OPTION = "---"
+# NULL_OPTION = ""
 SPACE_FIX = "Replace Space with Hyphen"
 SEARCH_AND_REPLACE = "Search & Replace Characters~"
 DELETE_OLD_FILES = "Delete Old Files~"
@@ -40,11 +40,37 @@ FIND_PROCEDURES = {
     FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost)
 }
 
+# NOTE: The functions that require an argument must still be in the order as set in FIX_PROCEDURES_DISPLAY below
+# This is so the "/" separated list of arguments from the "Parameter" field are properly distributed.
 FIX_PROCEDURES = {
-    NULL_OPTION: None,
     SPACE_FIX: FixProcedure(SPACE_FIX, spaceFixLog, spaceFixModify, True),
-    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, ">"),
     DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed"),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained"),
-    DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion")
+    DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion"),
+    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, ">"),
 }
+
+FIND_PROCEDURES_DISPLAY = [
+    LIST_ALL,
+    OLD_FILE_FIND,
+    DUPLICATE_CONTENT_FIND,
+    EMPTY_FILE_FIND,
+    EMPTY_DIRECTORY_FIND,
+    SPACE_FILE_FIND,
+    SPACE_FOLDER_FIND,
+    BAD_CHARACTER_FILE_FIND,
+    BAD_CHARACTER_FOLDER_FIND,
+    CHARACTER_LIMIT_FIND,
+    FILE_EXTENSION_SUMMARY
+]
+
+FIX_PROCEDURES_DISPLAY = [
+    "",
+    DELETE_OLD_FILES,
+    "",
+    DELETE_EMPTY_FILES,
+    DELETE_EMPTY_DIRECTORIES_FIX,
+    SPACE_FIX,
+    "",
+    SEARCH_AND_REPLACE,
+]
