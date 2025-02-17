@@ -22,8 +22,6 @@ class WorkbookManager:
         self.sheetRows = {self.summarySheet: 11} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
-
-
         # Lists to avoid many redundant if statements
         self.findProceduresConcurrentOnly = []
         self.fileFindProcedures = []
@@ -69,11 +67,6 @@ class WorkbookManager:
 
         self.summaryValueFormat = self.wb.add_format({
         })
-
-
-    def getAllProcedureSheets(self):
-        sheets = list(self.findSheets.values()) + list(self.fixSheets.values())
-        return sheets
 
 
     def addFindProcedure(self, findProcedureObject):
@@ -272,7 +265,7 @@ class WorkbookManager:
             i += 1
 
         i = 0
-        for ws in self.getAllProcedureSheets():
+        for ws in (list(self.findSheets.values()) + list(self.fixSheets.values())):
             self.summarySheet.write(self.sheetRows[self.summarySheet] + i, 1, self.summaryCounts[ws], self.summaryValueFormat)
             i += 1
 
