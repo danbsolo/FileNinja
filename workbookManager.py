@@ -146,7 +146,8 @@ class WorkbookManager:
                         alreadyCounted = True
 
             for fixProcedureObject in self.fileFixProcedures:
-                self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, itemName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+                if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, itemName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
+                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
 
             alreadyCounted = False
             self.filesScannedCount += 1
@@ -155,13 +156,18 @@ class WorkbookManager:
 
 
     def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
+        needsFolderWritten = set()
+
         for findProcedureObject in self.folderFindProcedures:
             findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
 
         for fixProcedureObject in self.folderFixProcedures:
-            self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+            if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
+                needsFolderWritten.add(self.fixSheets[fixProcedureObject])
 
         self.foldersScannedCount += 1
+        
+        return needsFolderWritten
 
 
     def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, excludedDirs):
@@ -223,9 +229,8 @@ class WorkbookManager:
                 # ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
                 initialRows[ws] = self.sheetRows[ws]
 
-            self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
-            
-            needsFolderWritten = self.fileCrawl(dirAbsolute, dirFiles)
+            # union operator usage lol
+            needsFolderWritten = self.fileCrawl(dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)

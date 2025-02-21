@@ -149,14 +149,15 @@ def spaceFixHelper(oldItemName) -> str:
 
 def spaceFixLog(_:str, oldItemName:str, ws, _2):
     newItemName = spaceFixHelper(oldItemName)
-    if (not newItemName): return
+    if (not newItemName): return False
 
     wbm.writeItem(ws, oldItemName)
     wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
+    return True
     
 def spaceFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
     newItemName = spaceFixHelper(oldItemName)
-    if (not newItemName): return
+    if (not newItemName): return False
 
     wbm.writeItem(ws, oldItemName)
 
@@ -170,6 +171,7 @@ def spaceFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
     except Exception as e:
         wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
+    return True
         
 
 def deleteOldFilesHelper(fullFilePath: str, arg) -> int:
@@ -200,20 +202,21 @@ def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws, arg):
     daysOld = deleteOldFilesHelper(fullFilePath, arg)
 
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.         
-    if (daysOld == 0): return
+    if (daysOld == 0): return False
 
     wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat) 
+        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat)
     else:
-        wbm.writeOutcomeAndIncrement(ws, "{}".format(daysOld), wbm.logFormat)
+        wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
+    return True
 
 def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
     fullFilePath =  dirAbsolute + "\\" + itemName
     daysOld = deleteOldFilesHelper(fullFilePath, arg)
 
-    if (daysOld == 0): return
+    if (daysOld == 0): return False
 
     wbm.writeItem(ws, itemName)
 
@@ -222,12 +225,12 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
     else:
         try:
             os.remove(fullFilePath)
-            wbm.writeOutcomeAndIncrement(ws, "{}".format(daysOld), wbm.modifyFormat)
+            wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
         except PermissionError:
             wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
         except Exception as e:
             wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
-            
+    return True
 
 def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
     try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
@@ -356,17 +359,19 @@ def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
     tooFewAmount = arg[0]
 
     # If even 1 folder exists, this isn't empty
-    if len(dirFolders) != 0: return
+    if len(dirFolders) != 0: return False
 
     # If equal to tooFewAmount or less, then this folder needs to be at least flagged
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
-        wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.logFormat)
-
+        wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
+        return True
+    return False
+    
 def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     tooFewAmount = arg[0]
 
-    if len(dirFolders) != 0: return
+    if len(dirFolders) != 0: return False
 
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
@@ -374,13 +379,15 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
         if (fileAmount == 0):
             try: 
                 os.rmdir(dirAbsolute)
-                wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.modifyFormat)
+                wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.modifyFormat)
             except Exception as e:
                 wbm.writeOutcomeAndIncrement(ws, f"0 FILES. UNABLE TO DELETE. {e}", wbm.errorFormat)
-                return
+            return True
         # Otherwise, just flag as usual
         else:
-            wbm.writeOutcomeAndIncrement(ws, "{}".format(fileAmount), wbm.logFormat)
+            wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
+            return True
+    return False
 
 
 def searchAndReplaceHelper(oldItemName:str, arg):
@@ -400,13 +407,14 @@ def searchAndReplaceHelper(oldItemName:str, arg):
     return newItemNameSansExt + extension
 
 def searchAndReplaceLog(_:str, oldItemName:str, ws, arg):
-    if not (newItemName := searchAndReplaceHelper(oldItemName, arg)): return
+    if not (newItemName := searchAndReplaceHelper(oldItemName, arg)): return False
 
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
-    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)        
+    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
+    return True
 
 def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws, arg):
-    if not (newItemName := searchAndReplaceHelper(oldItemName, arg)): return
+    if not (newItemName := searchAndReplaceHelper(oldItemName, arg)): return False
 
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
 
@@ -420,7 +428,7 @@ def searchAndReplaceModify(dirAbsolute:str, oldItemName:str, ws, arg):
         # This will happen if attempting to rename to an empty string
         wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
-
+    return True
 
 def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
     try:
@@ -428,16 +436,16 @@ def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
-        return
+        return False
     except Exception as e:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
-        return
+        return False
 
     if fileSize == 0:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
-        
+        return True
 
 def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
     """Glitch exists in that the current excel file will be considered empty.
@@ -450,11 +458,11 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
-        return
+        return False
     except Exception as e:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
-        return
+        return False
 
     # Stage for deletion
     if fileSize == 0:
@@ -467,6 +475,7 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
             wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
         except Exception as e:
             wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
+        return True
 
 
 def emptyFileFind(dirAbsolute:str, itemName:str, ws):
