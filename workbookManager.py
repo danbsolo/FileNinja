@@ -264,15 +264,21 @@ class WorkbookManager:
         self.incrementFileCount(ws)
 
     def writeHelper(self, ws, col: str, text: str, format=None):
-        if (format): ws.write_string(self.sheetRows[ws], col, text, format)
-        else: ws.write_string(self.sheetRows[ws], col, text)
+        if (format): ws.write(self.sheetRows[ws], col, text, format)
+        else: ws.write(self.sheetRows[ws], col, text)
 
+
+## TODO: Change these all to hard-coded 1. There's never a time where anything more than 1 is selected.
     def incrementRow(self, ws, amount:int=1):
         self.sheetRows[ws] += amount
 
     def incrementFileCount(self, ws, amount:int=1):
         self.summaryCounts[ws] += amount
 
+    #def incrementRowAndFileCount(self, ws):
+    #    self.incrementRow(ws)
+    #    self.incrementFileCount(ws)
+        
 
     def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify):
         self.summarySheet.set_column(0, 0, 34)

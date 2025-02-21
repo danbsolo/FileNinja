@@ -64,7 +64,7 @@ def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
         wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, "{}".format(absoluteItemLength, CHARACTER_LIMIT))
+        wbm.writeOutcomeAndIncrement(ws, absoluteItemLength)
         return True
     return False
 
