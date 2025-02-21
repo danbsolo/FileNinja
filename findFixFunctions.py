@@ -122,6 +122,7 @@ def oldFileFind(dirAbsolute:str, itemName:str, ws):
     if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD):
         wbm.writeItem(ws, itemName, wbm.errorFormat)
         wbm.writeOutcomeAndIncrement(ws, "{}".format(fileDaysAgoLastAccessed))
+        return True
     else:
         return False
 
