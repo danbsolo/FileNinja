@@ -114,6 +114,7 @@ class WorkbookManager:
         
 
     def fileCrawl(self, dirAbsolute, dirItems: List[str]):
+        needsFolderWritten = set()
         alreadyCounted = False
 
         for itemName in dirItems:            
@@ -124,7 +125,22 @@ class WorkbookManager:
                 continue
 
             for findProcedureObject in self.fileFindProcedures:
-                if (findProcedureObject.mainFunction(dirAbsolute, itemName, self.findSheets[findProcedureObject])):
+                result = findProcedureObject.mainFunction(dirAbsolute, itemName, self.findSheets[findProcedureObject])
+
+                if (result == True):
+                    needsFolderWritten.add(self.findSheets[findProcedureObject])
+                    
+                    if (not alreadyCounted):
+                        self.errorCount += 1
+                        alreadyCounted = True
+
+                elif (result == False):
+                    pass
+
+                elif (result == 2): # List All Files special case
+                    needsFolderWritten.add(self.findSheets[findProcedureObject])
+                
+                elif (result == 3): # Identical Files Error special case
                     if (not alreadyCounted):
                         self.errorCount += 1
                         alreadyCounted = True
@@ -133,7 +149,9 @@ class WorkbookManager:
                 self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, itemName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
 
             alreadyCounted = False
-            self.filesScannedCount += 1                    
+            self.filesScannedCount += 1
+
+        return needsFolderWritten                  
 
 
     def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
@@ -198,12 +216,19 @@ class WorkbookManager:
         ##
 
         #
+        initialRows = {}
         for (dirAbsolute, dirFolders, dirFiles) in walkObject:
+            initialRows.clear()
             for ws in sheetsSansNonConcurrentAndFolderFind:
-                ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
+                # ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
+                initialRows[ws] = self.sheetRows[ws]
 
             self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
-            self.fileCrawl(dirAbsolute, dirFiles)
+            
+            needsFolderWritten = self.fileCrawl(dirAbsolute, dirFiles)
+
+            for ws in needsFolderWritten:
+                ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
 
         for findProcedureObject in self.findSheets.keys():
             if findProcedureObject.postFunction:

@@ -45,7 +45,7 @@ def setWorkbookManager(newManager: WorkbookManager):
 
 def listAll(_:str, itemName:str, ws) -> bool:
     wbm.writeItemAndIncrement(ws, itemName)
-    return False
+    return 2  # SPECIAL CASE
 
 def spaceFileFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName: 
@@ -327,7 +327,7 @@ def duplicateContentConcurrent(dirAbsolute:str, itemName:str, ws):
         HASH_AND_FILES[hashCode][0].append(itemName)
         HASH_AND_FILES[hashCode][1].append(dirAbsolute)
         wbm.incrementFileCount(ws)
-        return True
+        return 3  # SPECIAL CASE
     else:
         HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
         return False
