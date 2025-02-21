@@ -13,7 +13,7 @@ Flags any errant files or folders based on the selection. Any find procedure tha
 If "Allow Modify" is unchecked, flags any errant files or folders based on the selection, showing would-be fixes. If "Allow Modify" is checked, executes said fixes.
 
 - Parameter (ADMIN ONLY)
-Fix Procedures that end in "~" require an argument. Input their arguments here. If "Allow Modify" is unchecked and running multiple fix procedures, separate arguments using "/". Any fix procedures that do not require an argument are ignored. Arguments are assigned 1-1 from top to bottom of the selected fix procedures, left to right of the parameter field. For example, if running "Replace Space with Hyphen", "Search & Replace Characters<", "Delete Old Files<", and "Delete Empty Directories<" at once, you may type (without the quotes) "& > and / 1000 / 1".
+Fix Procedures that end in "~" require an argument. Input their arguments here. If "Allow Modify" is unchecked and running multiple fix procedures, separate arguments using "/". Any fix procedures that do not require an argument are ignored. Arguments are assigned 1-1 from top to bottom of the selected fix procedures, left to right of the parameter field. For example, if running "Replace Space with Hyphen", "Search & Replace Characters~", "Delete Old Files~", and "Delete Empty Directories~" at once, you may type (without the quotes) "& > -and- / 1000 / 1".
 
 - Include Subfolders
 If checked, will also traverse through all subfolders. Otherwise, will only traverse the selected directory. Read "Browse to Exclude".
@@ -25,7 +25,7 @@ If checked, executes all changes irreversibly. If unsure, ALWAYS leave this unch
 Execute operations given the settings.
 
 - Results
-Open results folder, containing Excel files of previous executions. File names follow the convention "<<SelectedFolderName>>-YY-mm-DD--HH-MM-SS.xlsx".
+Open results folder, containing Excel files of previous executions. File names follow the convention "<<SelectedFolderName>>-YY-mm-DD-HH-MM-SS.xlsx".
 
 - Summary
 Various metrics regarding the execution.
