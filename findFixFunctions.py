@@ -132,8 +132,43 @@ def emptyDirectoryConcurrent(dirAbsolute:str, dirFolders, dirFiles, ws):
         wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
 
 
+def spaceFolderFixHelper(oldFolderName) -> str:
+    if (" " not in oldFolderName): return
+    return "-".join(oldFolderName.replace("-", " ").split())
 
-def spaceFixHelper(oldItemName) -> str:
+def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
+    oldFolderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
+    newFolderName = spaceFolderFixHelper(oldFolderName)
+
+    if (not newFolderName): return
+    
+    wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
+    wbm.writeItem(ws, oldFolderName, wbm.errorCount)
+    wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
+
+def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
+    lastSlashIndex = dirAbsolute.rfind("\\")
+    oldFolderName = dirAbsolute[lastSlashIndex +1:]
+    directoryOfFolder = dirAbsolute[0:lastSlashIndex]
+    newFolderName = spaceFolderFixHelper(oldFolderName)
+
+    if (not newFolderName): return
+
+    wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
+    wbm.writeItem(ws, oldFolderName, wbm.errorCount)
+
+    try:
+        os.rename(dirAbsolute, directoryOfFolder + "\\" + newFolderName)
+        wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.modifyFormat)
+    except PermissionError:
+        wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.incrementRow(ws)
+    except Exception as e:
+        wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
+        wbm.incrementRow(ws)
+
+
+def spaceFileFixHelper(oldItemName) -> str:
     if (" " not in oldItemName):
         return
 
@@ -147,16 +182,16 @@ def spaceFixHelper(oldItemName) -> str:
     # TODO: Should I fix? Ya, probably.
     return newItemNameSansExt + oldItemName[lastPeriodIndex:]
 
-def spaceFixLog(_:str, oldItemName:str, ws, _2):
-    newItemName = spaceFixHelper(oldItemName)
+def spaceFileFixLog(_:str, oldItemName:str, ws, _2):
+    newItemName = spaceFileFixHelper(oldItemName)
     if (not newItemName): return False
 
     wbm.writeItem(ws, oldItemName)
     wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
     return True
     
-def spaceFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
-    newItemName = spaceFixHelper(oldItemName)
+def spaceFileFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
+    newItemName = spaceFileFixHelper(oldItemName)
     if (not newItemName): return False
 
     wbm.writeItem(ws, oldItemName)
@@ -167,7 +202,7 @@ def spaceFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
         wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
-        wbm.incrementRow(ws)
+        wbm.incrementRow(ws)  # To increment the ROW but not the FILE COUNT
     except Exception as e:
         wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)

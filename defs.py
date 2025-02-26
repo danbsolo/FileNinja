@@ -19,11 +19,12 @@ DUPLICATE_CONTENT_FIND = "Identical Files Error"
 FILE_EXTENSION_SUMMARY = "Summarize File Extensions"
 
 # NULL_OPTION = ""
-SPACE_FIX = "Replace Space with Hyphen"
+SPACE_FILE_FIX = "Replace Space with Hyphen (File)"
 SEARCH_AND_REPLACE = "Search & Replace Characters~"
 DELETE_OLD_FILES = "Delete Old Files~"
 DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories~"
 DELETE_EMPTY_FILES = "Delete Empty Files"
+SPACE_FOLDER_FIX = "Replace Space with Hyphen (Dir)"
 
 
 FIND_PROCEDURES = {
@@ -59,11 +60,12 @@ FIND_PROCEDURES_DISPLAY = [
 # NOTE: The functions that require an argument must still be in the order as set in FIX_PROCEDURES_DISPLAY below
 # This is so the "/" separated list of arguments from the "Parameter" field are properly distributed.
 FIX_PROCEDURES = {
-    SPACE_FIX: FixProcedure(SPACE_FIX, spaceFixLog, spaceFixModify, True),
+    SPACE_FILE_FIX: FixProcedure(SPACE_FILE_FIX, spaceFileFixLog, spaceFileFixModify, True),
     DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed"),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained"),
     DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion"),
     SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, ">"),
+    SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False)
 }
 
 FIX_PROCEDURES_DISPLAY = [
@@ -72,7 +74,7 @@ FIX_PROCEDURES_DISPLAY = [
     "",
     DELETE_EMPTY_FILES,
     DELETE_EMPTY_DIRECTORIES_FIX,
-    SPACE_FIX,
-    "",
+    SPACE_FILE_FIX,
+    SPACE_FOLDER_FIX,
     SEARCH_AND_REPLACE,
 ]
