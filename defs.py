@@ -20,12 +20,12 @@ FILE_EXTENSION_SUMMARY = "Summarize File Extensions"
 
 # NULL_OPTION = ""
 SPACE_FILE_FIX = "Replace Space with Hyphen (File)"
-SEARCH_AND_REPLACE_FILE = "S&R Characters (File)~"
+SEARCH_AND_REPLACE_FILE = "Replace Characters (File)~"
 DELETE_OLD_FILES = "Delete Old Files~"
 DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories~"
 DELETE_EMPTY_FILES = "Delete Empty Files"
 SPACE_FOLDER_FIX = "Replace Space with Hyphen (Dir)"
-SEARCH_AND_REPLACE_FOLDER = "S&R Characters (Dir)~"
+SEARCH_AND_REPLACE_FOLDER = "Replace Characters (Dir)~"
 
 
 

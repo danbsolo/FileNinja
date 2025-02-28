@@ -330,12 +330,14 @@ def fileExtensionPost(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)
     ws.write(0, 1, "Count", wbm.headerFormat)
     ws.write(0, 2, "Avg Size (MB)", wbm.headerFormat)
+    ws.write(0, 3, "Total Size (MB)", wbm.headerFormat)
 
     row = 1
     for extension in sorted(EXTENSION_COUNT.keys()):
         ws.write_string(row, 0, extension)
         ws.write_number(row, 1, EXTENSION_COUNT[extension])
         ws.write_number(row, 2, round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1))
+        ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
         wbm.incrementFileCount(ws)
         row += 1
 
