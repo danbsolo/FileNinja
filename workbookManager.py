@@ -239,7 +239,12 @@ class WorkbookManager:
             if findProcedureObject.postFunction:
                 findProcedureObject.postFunction(self.findSheets[findProcedureObject])
 
-
+        #
+        for fixProcedureObject in self.fixSheets.keys():
+            if fixProcedureObject.postFunction:
+                fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
+        #
+        
         end = time()
         self.executionTime = end - start
 

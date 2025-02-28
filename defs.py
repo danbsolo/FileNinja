@@ -20,11 +20,13 @@ FILE_EXTENSION_SUMMARY = "Summarize File Extensions"
 
 # NULL_OPTION = ""
 SPACE_FILE_FIX = "Replace Space with Hyphen (File)"
-SEARCH_AND_REPLACE = "Search & Replace Characters~"
+SEARCH_AND_REPLACE_FILE = "Search & Replace Characters~"
 DELETE_OLD_FILES = "Delete Old Files~"
 DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories~"
 DELETE_EMPTY_FILES = "Delete Empty Files"
 SPACE_FOLDER_FIX = "Replace Space with Hyphen (Dir)"
+# SEARCH_AND_REPLACE_FOLDER = "S&R Characters (Dir)~"
+
 
 
 FIND_PROCEDURES = {
@@ -64,8 +66,9 @@ FIX_PROCEDURES = {
     DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed"),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained"),
     DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion"),
-    SEARCH_AND_REPLACE: FixProcedure(SEARCH_AND_REPLACE, searchAndReplaceLog, searchAndReplaceModify, True, twoStringsValidator, ">"),
-    SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False)
+    SEARCH_AND_REPLACE_FILE: FixProcedure(SEARCH_AND_REPLACE_FILE, searchAndReplaceFileLog, searchAndReplaceFileModify, True, twoStringsValidator, ">"),
+    SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False, postFunction=spaceFolderFixPost),
+    # SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, twoStringsValidator, ">")
 }
 
 FIX_PROCEDURES_DISPLAY = [
@@ -76,5 +79,6 @@ FIX_PROCEDURES_DISPLAY = [
     DELETE_EMPTY_DIRECTORIES_FIX,
     SPACE_FILE_FIX,
     SPACE_FOLDER_FIX,
-    SEARCH_AND_REPLACE,
+    SEARCH_AND_REPLACE_FILE,
+    # SEARCH_AND_REPLACE_FOLDER
 ]

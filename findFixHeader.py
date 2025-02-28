@@ -7,7 +7,7 @@ class FindProcedure:
         self.postFunction = postFunction
 
 class FixProcedure:
-    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modification"):
+    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modification", postFunction=None):
         self.name = name
         self.logFunction = logFunction
         self.modifyFunction = modifyFunction
@@ -15,6 +15,7 @@ class FixProcedure:
         self.isFileFix = isFileFix  # If False, isFolderFix
         self.validatorFunction = validatorFunction
         self.argBoundary = argBoundary
+        self.postFunction = postFunction
 
 
 def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
@@ -47,6 +48,7 @@ def twoStringsValidator(arg:str, separator:str):
         toBeReplaced = arg[0:separatorIndex].strip()
         replacer = arg[separatorIndex+len(separator):].strip()
         
-        if toBeReplaced != replacer: return (toBeReplaced, replacer)
+        # toBeReplaced will be stripped (via strip()) to an empty string if it was just whitespace
+        if (toBeReplaced) and (toBeReplaced != replacer): return (toBeReplaced, replacer)
     except:
         return
