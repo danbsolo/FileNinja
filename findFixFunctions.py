@@ -36,7 +36,7 @@ hashFunc = hashlib.new("sha256")
 hashFunc.update("".encode())
 EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
 
-# Used by spaceFolderFixModify (not log)
+# Used by spaceFolderFixModify or searchAndReplaceFolderModify (not logs)
 FOLDER_RENAMES = []
 
 
@@ -161,11 +161,12 @@ def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     directoryOfFolder = dirAbsolute[0:lastSlashIndex]
     FOLDER_RENAMES.append((directoryOfFolder, oldFolderName, newFolderName))
 
-
-
 def spaceFolderFixPost(ws):
-    # in reverse order so the directoryOfFolder is never invalid; deepest folders are renamed first
-    for i in range(len(FOLDER_RENAMES)-1, -1, -1):
+    frListLength = len(FOLDER_RENAMES)
+
+    # in reverse order so the directoryOfFolder is never invalid; deepest folders are renamed first    
+    for i in range(frListLength-1, -1, -1):
+        row = i+1
         directoryOfFolder = FOLDER_RENAMES[i][0]
         oldFolderName = FOLDER_RENAMES[i][1]
         newFolderName = FOLDER_RENAMES[i][2]
@@ -173,18 +174,35 @@ def spaceFolderFixPost(ws):
         # not correct directory necesssarily cause parent folders may get edited
         newDirAbsolute = f"{directoryOfFolder}\\{newFolderName}"
 
-        wbm.writeDir(ws, newDirAbsolute, wbm.dirFormat)
-        wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
-        
+        #wbm.writeDir(ws, newDirAbsolute, wbm.dirFormat)
+        #wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
+        # ws.write(row, wbm.DIR_COL, newDirAbsolute, wbm.dirFormat)
+        ws.write(row, wbm.ITEM_COL, oldFolderName, wbm.errorFormat)
+
         try:
             os.rename(oldDirAbsolute, newDirAbsolute)
-            wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.modifyFormat)
+            #wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.modifyFormat)
+            ws.write(row, wbm.OUTCOME_COL, newFolderName, wbm.modifyFormat)
+            wbm.incrementRow(ws)
+            wbm.incrementFileCount(ws)
         except PermissionError:
-            wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+            #wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+            ws.write(row, wbm.OUTCOME_COL, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
             wbm.incrementRow(ws)
         except Exception as e:
-            wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
+            #wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
+            ws.write(row, wbm.OUTCOME_COL, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
             wbm.incrementRow(ws)
+    
+    # Now write the directories. The directoryOfFolder would be updated if a parent folder was renamed
+    for i in range(frListLength):
+        directoryOfFolder = FOLDER_RENAMES[i][0]
+        newFolderName = FOLDER_RENAMES[i][2]
+        newDirAbsolute = f"{directoryOfFolder}\\{newFolderName}"
+
+        ws.write(i+1, wbm.DIR_COL, newDirAbsolute, wbm.dirFormat)
+
+    FOLDER_RENAMES.clear()
 
 
 
@@ -445,46 +463,57 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     return False
 
 
-# def searchAndReplaceFolderHelper(oldFolderName:str, arg):
-#     toBeReplaced, replacer = arg
-#     newFolderName = oldFolderName.replace(toBeReplaced, replacer)
+def searchAndReplaceFolderHelper(oldFolderName:str, arg):
+    toBeReplaced, replacer = arg
+    newFolderName = oldFolderName.replace(toBeReplaced, replacer)
 
-#     if (oldFolderName == newFolderName): return
-#     return newFolderName
+    if (oldFolderName == newFolderName): return
+    return newFolderName
 
-# def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
-#     oldFolderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
+def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
+    oldFolderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
 
-#     if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
-#         return
+    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
+        return
     
-#     wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
-#     wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
-#     wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
+    wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
+    wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
+    wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
 
-# def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
-#     lastSlashIndex = dirAbsolute.rfind("\\")
-#     oldFolderName = dirAbsolute[lastSlashIndex +1:]
-#     newFolderName = spaceFolderFixHelper(oldFolderName)
+def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
+    lastSlashIndex = dirAbsolute.rfind("\\")
+    oldFolderName = dirAbsolute[lastSlashIndex +1:]
 
-#     if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)): return
+    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)): return
     
-#     directoryOfFolder = dirAbsolute[0:lastSlashIndex]
-#     newDirAbsolute = directoryOfFolder + "\\" + newFolderName
+    directoryOfFolder = dirAbsolute[0:lastSlashIndex]
+    FOLDER_RENAMES.append((directoryOfFolder, oldFolderName, newFolderName))
+
+def searchAndReplaceFolderPost(ws):
+    """# Literally the exact same code as spaceFolderFixPost, but in the context of this program, having it as a separate function makes sense.
+        Individual procedures are not meant to be coupled at all."""
     
-#     wbm.writeDir(ws, newDirAbsolute, wbm.dirFormat)
-#     wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
+    for i in range(len(FOLDER_RENAMES)-1, -1, -1):
+        directoryOfFolder = FOLDER_RENAMES[i][0]
+        oldFolderName = FOLDER_RENAMES[i][1]
+        newFolderName = FOLDER_RENAMES[i][2]
+        oldDirAbsolute = f"{directoryOfFolder}\\{oldFolderName}"
+        newDirAbsolute = f"{directoryOfFolder}\\{newFolderName}"
 
-#     try:
-#         os.rename(dirAbsolute, newDirAbsolute)
-#         wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.modifyFormat)
-#     except PermissionError:
-#         wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
-#         wbm.incrementRow(ws)
-#     except Exception as e:
-#         wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
-#         wbm.incrementRow(ws)
+        wbm.writeDir(ws, newDirAbsolute, wbm.dirFormat)
+        wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
 
+        try:
+            os.rename(oldDirAbsolute, newDirAbsolute)
+            wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.modifyFormat)
+        except PermissionError:
+            wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+            wbm.incrementRow(ws)
+        except Exception as e:
+            wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
+            wbm.incrementRow(ws)
+
+    FOLDER_RENAMES.clear()
 
 
 def searchAndReplaceFileHelper(oldItemName:str, arg):

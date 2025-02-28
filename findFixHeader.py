@@ -7,7 +7,7 @@ class FindProcedure:
         self.postFunction = postFunction
 
 class FixProcedure:
-    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modification", postFunction=None):
+    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modifications", postFunction=None):
         self.name = name
         self.logFunction = logFunction
         self.modifyFunction = modifyFunction

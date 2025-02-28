@@ -224,6 +224,9 @@ class WorkbookManager:
         #
         initialRows = {}
         for (dirAbsolute, dirFolders, dirFiles) in walkObject:
+            # Ignore specifically OneNote_RecycleBin folders. Assumes these NEVER have subfolders.
+            if (dirAbsolute.endswith("OneNote_RecycleBin")): continue
+
             initialRows.clear()
             for ws in sheetsSansNonConcurrentAndFolderFind:
                 # ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
@@ -338,8 +341,11 @@ class WorkbookManager:
 
         
     def createHelpMeSheet(self):
-        try: helpMeFile = open("HELPME.txt", "r")
-        except FileNotFoundError: return
+        # If it exists, open HELPME-Admin.txt. If it doesn't, try HELPME-Lite.txt. And if that doesn't exist, do nothing.
+        try: helpMeFile = open("HELPME-Admin.txt", "r")
+        except FileNotFoundError:
+            try: helpMeFile = open("HELPME-Lite.txt", "r")
+            except FileNotFoundError: return
         
         termDict = {}
         lines = helpMeFile.readlines()

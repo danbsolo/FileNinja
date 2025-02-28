@@ -1,0 +1,61 @@
+This is the File-Crawler HELPME file.
+
+
+- Browse to Select
+Select a directory to execute operations on.
+
+- Browse to Exclude
+Select subfolders of the main directory to exclude from operation. Only relevant if "Include Subfolders" is checked. To remove a previously added excluded directory, either double-click or right click it.
+
+- Find procedures
+Flags any errant files or folders based on the selection. Any find procedure that ends in "Error" adds to the error count on the summary sheet.
+
+- Include Subfolders
+If checked, will also traverse through all subfolders. Otherwise, will only traverse the selected directory. Read "Browse to Exclude".
+
+- Execute
+Execute operations given the settings.
+
+- Results
+Open results folder, containing Excel files of previous executions. File names follow the convention "<<SelectedFolderName>>-YY-mm-DD-HH-MM-SS.xlsx".
+
+- Summary
+Various metrics regarding the execution.
+
+
+
+FIND PROCEDURES
+Note: Any Find Procedure that ends in "Error" adds to the error count on the summary sheet.
+
+- List All Files
+Lists all files. Folders are only listed if they are not empty.
+
+- Space Error (File)
+Flags file names with spaces.
+
+- Bad Character Error (File)
+Flags file names with bad characters. A bad character is any character that is either not alphanumeric, not a hyphen (-), or is a double hyphen (--).
+
+- Old File Error
+Flags any file that has not been accessed in over 365 days. Note: windows has a glitch regarding the "last accessed" stat for a file, in that a file may be considered accessed even if it was not explicitly opened. This is not workaroundable, so run this find procedure and keep the resulting excel file handy before perusing through your files.
+
+- Empty Directory
+Flags and folder that has 0 folders and 0 files within.
+
+- Empty File Error
+Flags any file that is 0 bytes. Note: Some file types may be empty but are not 0 bytes, such as most Microsoft files. Example: an empty excel file is still roughly 6kb in size. This is not workaroundable.
+
+- Space (Folder)
+Flags folder names with spaces.
+
+- Bad Character (Folder)
+Flags folder names with bad characters. A bad character is any character that is either not alphanumeric, not a hyphen (-), or is a double hyphen (--).
+
+- Character Limit Error
+Flags file paths over 200 characters. These files are not backed up.
+
+- Identical Files Error
+Flags files that are completely identical. Note: this is a very long, computationally expensive operation.
+
+- Summarize File Types
+List all file extensions found, along with their count and average size.

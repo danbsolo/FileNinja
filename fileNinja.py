@@ -95,7 +95,7 @@ def view(isAdmin: bool):
     def checkIfDone(t):
         # If the thread has finished
         if not t.is_alive():
-            root.title(FILE_CRAWLER)
+            root.title(FILE_NINJA)
             executeButton.config(text="Execute", state="normal")
 
             exitCode = currentState.get()
@@ -130,7 +130,7 @@ def view(isAdmin: bool):
         if modifyState.get() and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
             return
             
-        root.title(FILE_CRAWLER + ": RUNNING...")
+        root.title(FILE_NINJA + ": RUNNING...")
 
         executeButton.config(text="RUNNING....", state="disabled")
 
@@ -207,7 +207,7 @@ def view(isAdmin: bool):
 
     # root window stuff
     root = tk.Tk()
-    root.title(FILE_CRAWLER)
+    root.title(FILE_NINJA)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 300
     rootHeight = (listboxHeight * listboxHeightMultiplier) + (365 if isAdmin else 310)

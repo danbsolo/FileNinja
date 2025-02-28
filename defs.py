@@ -1,8 +1,8 @@
 from findFixFunctions import *
 from findFixHeader import *
 
-RESULTS_DIRECTORY = "File-Crawler-Results"
-FILE_CRAWLER = "File-Crawler"
+RESULTS_DIRECTORY = "File-Ninja-Results"
+FILE_NINJA = "File-Ninja"
 
 # NOTE: Excel worksheet name must be <= 31 characters
 LIST_ALL = "List All Files"
@@ -25,7 +25,7 @@ DELETE_OLD_FILES = "Delete Old Files~"
 DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories~"
 DELETE_EMPTY_FILES = "Delete Empty Files"
 SPACE_FOLDER_FIX = "Replace Space with Hyphen (Dir)"
-# SEARCH_AND_REPLACE_FOLDER = "S&R Characters (Dir)~"
+SEARCH_AND_REPLACE_FOLDER = "S&R Characters (Dir)~"
 
 
 
@@ -68,7 +68,7 @@ FIX_PROCEDURES = {
     DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion"),
     SEARCH_AND_REPLACE_FILE: FixProcedure(SEARCH_AND_REPLACE_FILE, searchAndReplaceFileLog, searchAndReplaceFileModify, True, twoStringsValidator, ">"),
     SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False, postFunction=spaceFolderFixPost),
-    # SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, twoStringsValidator, ">")
+    SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, twoStringsValidator, ">", postFunction=searchAndReplaceFolderPost)
 }
 
 FIX_PROCEDURES_DISPLAY = [
@@ -80,5 +80,5 @@ FIX_PROCEDURES_DISPLAY = [
     SPACE_FILE_FIX,
     SPACE_FOLDER_FIX,
     SEARCH_AND_REPLACE_FILE,
-    # SEARCH_AND_REPLACE_FOLDER
+    SEARCH_AND_REPLACE_FOLDER
 ]
