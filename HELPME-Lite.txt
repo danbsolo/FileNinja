@@ -41,16 +41,16 @@ Note: Any Find Procedure that ends in "Error" adds to the error count on the sum
 Lists all files. Folders are only listed if they are not empty.
 
 - List All Files (Owner)
-Same as "List All Files" except it includes an owner column. Due to the extra operation, runs slower.
+Same as "List All Files" except it includes an owner column. Due to the extra operation, runs slower. Includes owner column.
 
 - Old File Error
-Flags any file that has not been accessed in over 365 days. Note: windows has a glitch regarding the "last accessed" stat for a file, in that a file may be considered accessed even if it was not explicitly opened. This is not workaroundable, so run this find procedure and keep the resulting excel file handy before perusing through your files.
+Flags any file that has not been accessed in over 365 days. Note: windows has a glitch regarding the "last accessed" stat for a file, in that a file may be considered accessed even if it was not explicitly opened. This is not workaroundable, so run this find procedure and keep the resulting excel file handy before perusing through your files. Includes owner column.
 
 - Identical Files Error
-Flags files that are completely identical. Note: this is a very long, computationally expensive operation.
+Flags files that are completely identical. Note: this is a very long, computationally expensive operation. Includes owner column.
 
 - Empty File Error
-Flags any file that is 0 bytes. Note: Some file types may be empty but are not 0 bytes, such as most Microsoft files. Example: an empty excel file is still roughly 6kb in size. This is not workaroundable.
+Flags any file that is 0 bytes. Note: Some file types may be empty but are not 0 bytes, such as most Microsoft files. Example: an empty excel file is still roughly 6kb in size. This is not workaroundable. Includes owner column.
 
 - Empty Directory
 Flags and folder that has 0 folders and 0 files within.
