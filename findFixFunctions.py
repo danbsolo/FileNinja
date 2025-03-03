@@ -6,6 +6,7 @@ import hashlib
 from workbookManager import WorkbookManager
 from sys import maxsize as MAXSIZE
 from importlib import import_module
+from findOwner import getOwnerCatch
 # import mmap
 
 
@@ -54,6 +55,8 @@ def importModuleDynamically(moduleName, attributes):
         globals()[attr] = getattr(moduleLoaded, attr)  # globalize all attributes imported
 
 def importGetOwner():
+    # IS CRASHING
+    return
     importModuleDynamically("findOwner", ["getOwnerCatch"])  # from findOwner import getOwnerCatch
     # could add "getOwner" if don't want automatic catch
 
