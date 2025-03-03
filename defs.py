@@ -32,18 +32,18 @@ SEARCH_AND_REPLACE_FOLDER = "Replace Characters (Dir)~"
 
 FIND_PROCEDURES = {
     LIST_ALL: FindProcedure(LIST_ALL, listAll, True),
-    LIST_ALL_OWNER: FindProcedure(LIST_ALL_OWNER, listAllOwner, True, startFunction=listAllOwnerStart),
     SPACE_FILE_FIND: FindProcedure(SPACE_FILE_FIND, spaceFileFind, True),
     BAD_CHARACTER_FILE_FIND: FindProcedure(BAD_CHARACTER_FILE_FIND, badCharFileFind, True),
-    OLD_FILE_FIND: FindProcedure(OLD_FILE_FIND, oldFileFind, True),
+    OLD_FILE_FIND: FindProcedure(OLD_FILE_FIND, oldFileFind, True, startFunction=getOwnerStartFunction),
     EMPTY_DIRECTORY_FIND: FindProcedure(EMPTY_DIRECTORY_FIND, emptyDirectoryConcurrent, True, isFileFind=False),
-    EMPTY_FILE_FIND: FindProcedure(EMPTY_FILE_FIND, emptyFileFind, True),
+    EMPTY_FILE_FIND: FindProcedure(EMPTY_FILE_FIND, emptyFileFind, True, startFunction=getOwnerStartFunction),
     SPACE_FOLDER_FIND: FindProcedure(SPACE_FOLDER_FIND, spaceFolderFind, True, isFileFind=False),
     BAD_CHARACTER_FOLDER_FIND: FindProcedure(BAD_CHARACTER_FOLDER_FIND, badCharFolderFind, True, isFileFind=False),
     CHARACTER_LIMIT_FIND: FindProcedure(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
     DUPLICATE_CONTENT_FIND:FindProcedure(DUPLICATE_CONTENT_FIND, duplicateContentConcurrent, False, duplicateContentPost),
     # DUPLICATE_NAME_FIND: FindProcedure(DUPLICATE_NAME_FIND, duplicateNameConcurrent, False, duplicateNamePost),
-    FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost)
+    FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost),
+    LIST_ALL_OWNER: FindProcedure(LIST_ALL_OWNER, listAllOwner, True, startFunction=getOwnerStartFunction),
 }
 
 FIND_PROCEDURES_DISPLAY = [
@@ -75,6 +75,7 @@ FIX_PROCEDURES = {
 }
 
 FIX_PROCEDURES_DISPLAY = [
+    "",
     "",
     DELETE_OLD_FILES,
     "",

@@ -156,21 +156,30 @@ def get_file_security(filename, request=_DEFAULT_SECURITY_INFORMATION):
         raise ctypes.WinError(error)
     return pSD
 
+
 def getOwner(dirAbsolute):
     if isinstance(dirAbsolute, bytes):
         if hasattr(os, 'fsdecode'):
             dirAbsolute = os.fsdecode(dirAbsolute)
         else:
-            dirAbsolute = dirAbsolute.decode(getfilesystemencoding())
+            dirAbsolute = dirAbsolute.decode(sys.getfilesystemencoding())
 
     pSD = get_file_security(dirAbsolute)
     owner_name, owner_domain, owner_sid_type = pSD.get_owner()
     if owner_domain:
-        return '{}\\{}'.format(owner_domain, owner_name)
+        return '{}\\{} ({})'.format(owner_domain, owner_name, owner_sid_type)
 
     #print("Path : {}".format(filename))
     #print("Owner: {} ({})".format(owner_name, owner_sid_type))
     #print("SID  : {}".format(pSD.pOwner))
+
+def getOwnerCatch(dirAbsolute):
+    try:
+        ownerOutput = getOwner(dirAbsolute)
+    except Exception as e:
+        ownerOutput = "GET OWNER FAILED: {}".format(e)
+    
+    return ownerOutput
 
 
 if __name__ == '__main__':

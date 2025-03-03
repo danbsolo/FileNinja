@@ -41,6 +41,7 @@ class WorkbookManager:
         self.DIR_COL = 0
         self.ITEM_COL = 1
         self.OUTCOME_COL = 2  # describes either an Error or a Modification, depending on the procedure type
+        self.AUXILIARY_COL = 3
 
         # Default cell styles
         self.dirFormat = self.wb.add_format({"bg_color": "#99CCFF", "bold": True})  # blueish
@@ -283,6 +284,14 @@ class WorkbookManager:
         self.writeHelper(ws, self.OUTCOME_COL, text, format)
 
     def writeOutcomeAndIncrement(self, ws, text, format=None):
+        self.writeOutcome(ws, text, format)
+        self.incrementRow(ws)
+        self.incrementFileCount(ws)
+
+    def writeAuxiliary(self, ws, text, format=None):
+        self.writeHelper(ws, self.AUXILIARY_COL, text, format)
+
+    def writeAuxiliaryAndIncrement(self, ws, text, format=None):
         self.writeOutcome(ws, text, format)
         self.incrementRow(ws)
         self.incrementFileCount(ws)

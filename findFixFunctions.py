@@ -5,6 +5,7 @@ from datetime import datetime
 import hashlib
 from workbookManager import WorkbookManager
 from sys import maxsize as MAXSIZE
+from importlib import import_module
 # import mmap
 
 
@@ -45,29 +46,32 @@ def setWorkbookManager(newManager: WorkbookManager):
     # Globally declare the WorkboookManager object
     global wbm
     wbm = newManager
+
+def importModuleDynamically(moduleName, attributes):
+    moduleLoaded = import_module(moduleName)  # dynamically import module
     
+    for attr in attributes:
+        globals()[attr] = getattr(moduleLoaded, attr)  # globalize all attributes imported
+
+def importGetOwner():
+    importModuleDynamically("findOwner", ["getOwnerCatch"])  # from findOwner import getOwnerCatch
+    # could add "getOwner" if don't want automatic catch
+
+def getOwnerStartFunction(ws):
+    importGetOwner()
+    ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
+
 
 def listAll(_:str, itemName:str, ws) -> bool:
     wbm.writeItemAndIncrement(ws, itemName)
     return 2  # SPECIAL CASE
 
-def importFindOwnerStuff():
-    global getOwner
-    global getfilesystemencoding
-    from sys import getfilesystemencoding
-    from findOwner import getOwner
 
 def listAllOwner(dirAbsolute:str, itemName:str, ws) -> bool:
     wbm.writeItem(ws, itemName)
-    try:
-        wbm.writeOutcomeAndIncrement(ws, getOwner(dirAbsolute))
-    except Exception as e:
-        wbm.writeOutcomeAndIncrement(ws, "ERROR: {}".format(e))
-    return 2  # SPECIAL CASE
+    wbm.writeAuxiliaryAndIncrement(ws, getOwnerCatch(dirAbsolute))
 
-def listAllOwnerStart(ws):
-    importFindOwnerStuff()
-    ws.write(0, wbm.OUTCOME_COL, "Owner", wbm.headerFormat)
+    return 2  # SPECIAL CASE
 
 
 def spaceFileFind(_:str, itemName:str, ws) -> bool:
@@ -143,6 +147,7 @@ def oldFileFind(dirAbsolute:str, itemName:str, ws):
     fileDaysAgoLastAccessed = (TODAY - fileDate).days
 
     if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD):
+        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))    
         wbm.writeItem(ws, itemName, wbm.errorFormat)
         wbm.writeOutcomeAndIncrement(ws, "{}".format(fileDaysAgoLastAccessed))
         return True
@@ -432,7 +437,7 @@ def duplicateContentConcurrent(dirAbsolute:str, itemName:str, ws):
         return False
 
 def duplicateContentPost(ws):
-    importFindOwnerStuff()
+    importGetOwner()
 
     ws.write(0, 0, "Separator", wbm.headerFormat)
     ws.write(0, 1, "Files", wbm.headerFormat)
@@ -447,9 +452,8 @@ def duplicateContentPost(ws):
             for i in range(numOfFiles):
                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
                 ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
-                
-                try: ws.write(row, 3, getOwner(HASH_AND_FILES[hashCode][1][i]))
-                except Exception as e: ws.write(row, 3, "ERROR: {}".format(e))
+                ws.write(row, 3, getOwnerCatch(HASH_AND_FILES[hashCode][1][i]))
+
                 
                 row += 1
                 
@@ -622,5 +626,6 @@ def emptyFileFind(dirAbsolute:str, itemName:str, ws):
         return False
     
     if fileSize == 0:
+        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
         wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
         return True
