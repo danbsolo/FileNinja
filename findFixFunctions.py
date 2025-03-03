@@ -51,6 +51,25 @@ def listAll(_:str, itemName:str, ws) -> bool:
     wbm.writeItemAndIncrement(ws, itemName)
     return 2  # SPECIAL CASE
 
+def importFindOwnerStuff():
+    global getOwner
+    global getfilesystemencoding
+    from sys import getfilesystemencoding
+    from findOwner import getOwner
+
+def listAllOwner(dirAbsolute:str, itemName:str, ws) -> bool:
+    wbm.writeItem(ws, itemName)
+    try:
+        wbm.writeOutcomeAndIncrement(ws, getOwner(dirAbsolute))
+    except Exception as e:
+        wbm.writeOutcomeAndIncrement(ws, "ERROR: {}".format(e))
+    return 2  # SPECIAL CASE
+
+def listAllOwnerStart(ws):
+    importFindOwnerStuff()
+    ws.write(0, wbm.OUTCOME_COL, "Owner", wbm.headerFormat)
+
+
 def spaceFileFind(_:str, itemName:str, ws) -> bool:
     if " " in itemName: 
         wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
@@ -413,9 +432,12 @@ def duplicateContentConcurrent(dirAbsolute:str, itemName:str, ws):
         return False
 
 def duplicateContentPost(ws):
+    importFindOwnerStuff()
+
     ws.write(0, 0, "Separator", wbm.headerFormat)
     ws.write(0, 1, "Files", wbm.headerFormat)
     ws.write(0, 2, "Directories", wbm.headerFormat)
+    ws.write(0, 3, "Owner", wbm.headerFormat)
 
     row = 1
     for hashCode in HASH_AND_FILES.keys():
@@ -424,7 +446,11 @@ def duplicateContentPost(ws):
 
             for i in range(numOfFiles):
                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
-                ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)    
+                ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
+                
+                try: ws.write(row, 3, getOwner(HASH_AND_FILES[hashCode][1][i]))
+                except Exception as e: ws.write(row, 3, "ERROR: {}".format(e))
+                
                 row += 1
                 
     HASH_AND_FILES.clear()

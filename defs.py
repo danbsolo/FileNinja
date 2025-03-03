@@ -17,6 +17,7 @@ CHARACTER_LIMIT_FIND = "Character Limit Error"
 DUPLICATE_CONTENT_FIND = "Identical Files Error"
 # DUPLICATE_NAME_FIND = "Duplicate Names Error"
 FILE_EXTENSION_SUMMARY = "Summarize File Extensions"
+LIST_ALL_OWNER = "List All Files (include owner)"
 
 # NULL_OPTION = ""
 SPACE_FILE_FIX = "Replace Space with Hyphen (File)"
@@ -31,6 +32,7 @@ SEARCH_AND_REPLACE_FOLDER = "Replace Characters (Dir)~"
 
 FIND_PROCEDURES = {
     LIST_ALL: FindProcedure(LIST_ALL, listAll, True),
+    LIST_ALL_OWNER: FindProcedure(LIST_ALL_OWNER, listAllOwner, True, startFunction=listAllOwnerStart),
     SPACE_FILE_FIND: FindProcedure(SPACE_FILE_FIND, spaceFileFind, True),
     BAD_CHARACTER_FILE_FIND: FindProcedure(BAD_CHARACTER_FILE_FIND, badCharFileFind, True),
     OLD_FILE_FIND: FindProcedure(OLD_FILE_FIND, oldFileFind, True),
@@ -46,6 +48,7 @@ FIND_PROCEDURES = {
 
 FIND_PROCEDURES_DISPLAY = [
     LIST_ALL,
+    LIST_ALL_OWNER,
     OLD_FILE_FIND,
     DUPLICATE_CONTENT_FIND,
     EMPTY_FILE_FIND,

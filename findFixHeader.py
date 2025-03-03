@@ -1,10 +1,11 @@
 class FindProcedure:
-    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True):
+    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None):
         self.name = name
         self.mainFunction = mainFunction
         self.isFileFind = isFileFind # If False, isFolderFind
         self.isConcurrentOnly = isConcurrentOnly
         self.postFunction = postFunction
+        self.startFunction = startFunction
 
 class FixProcedure:
     def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modifications", postFunction=None):

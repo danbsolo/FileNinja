@@ -221,6 +221,17 @@ class WorkbookManager:
             walkObject = [(baseDirAbsolute, dirFolders, dirFiles)]
         ##
 
+        ###
+        for findProcedureObject in self.findSheets.keys():
+            if findProcedureObject.startFunction:
+                findProcedureObject.startFunction(self.findSheets[findProcedureObject])
+
+        #
+        #for fixProcedureObject in self.fixSheets.keys():
+        #    if fixProcedureObject.startFunction:
+        #        fixProcedureObject.startFunction(self.fixSheets[fixProcedureObject])
+        ###
+
         #
         initialRows = {}
         for (dirAbsolute, dirFolders, dirFiles) in walkObject:
