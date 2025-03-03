@@ -227,10 +227,9 @@ class WorkbookManager:
             if findProcedureObject.startFunction:
                 findProcedureObject.startFunction(self.findSheets[findProcedureObject])
 
-        #
-        #for fixProcedureObject in self.fixSheets.keys():
-        #    if fixProcedureObject.startFunction:
-        #        fixProcedureObject.startFunction(self.fixSheets[fixProcedureObject])
+        for fixProcedureObject in self.fixSheets.keys():
+           if fixProcedureObject.startFunction:
+               fixProcedureObject.startFunction(self.fixSheets[fixProcedureObject])
         ###
 
         #
@@ -292,7 +291,7 @@ class WorkbookManager:
         self.writeHelper(ws, self.AUXILIARY_COL, text, format)
 
     def writeAuxiliaryAndIncrement(self, ws, text, format=None):
-        self.writeOutcome(ws, text, format)
+        self.writeAuxiliary(ws, text, format)
         self.incrementRow(ws)
         self.incrementFileCount(ws)
 

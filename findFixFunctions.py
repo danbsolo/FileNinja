@@ -141,7 +141,8 @@ def oldFileFind(dirAbsolute:str, itemName:str, ws):
         fileDate = datetime.fromtimestamp(os.path.getatime(dirAbsolute + "\\" + itemName))
     except Exception as e:
         wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
+        wbm.writeOutcome(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
+        wbm.incrementRow(ws)
         return False
 
     fileDaysAgoLastAccessed = (TODAY - fileDate).days
@@ -165,6 +166,7 @@ def spaceFolderFixHelper(oldFolderName) -> str:
     if (" " not in oldFolderName): return
     return "-".join(oldFolderName.replace("-", " ").split())
 
+
 def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
     newFolderName = spaceFolderFixHelper(oldFolderName)
@@ -172,7 +174,7 @@ def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
     if (not newFolderName): return
     
     wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
-    wbm.writeItem(ws, oldFolderName, wbm.errorCount)
+    wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
     wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
 
 def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
@@ -306,8 +308,10 @@ def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws, arg):
     wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE", wbm.errorFormat)
+        wbm.writeOutcome(ws, "UNABLE TO READ DATE", wbm.errorFormat)
+        wbm.incrementRow(ws)
     else:
+        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
         wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
     return True
 
@@ -320,9 +324,11 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
     wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
+        wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
+        wbm.incrementRow(ws)
     else:
         try:
+            wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
             os.remove(fullFilePath)
             wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
         except PermissionError:
@@ -570,15 +576,18 @@ def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
         fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) 
     except PermissionError:
         wbm.writeItem(ws, itemName)
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.incrementRow(ws)
         return False
     except Exception as e:
         wbm.writeItem(ws, itemName)
-        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        wbm.incrementRow(ws)
         return False
 
     if fileSize == 0:
         wbm.writeItem(ws, itemName)
+        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
         wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
         return True
 
@@ -592,11 +601,13 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
         fileSize = os.path.getsize(fullFilePath)  # Bytes
     except PermissionError:
         wbm.writeItem(ws, itemName)
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.incrementRow(ws)
         return False
     except Exception as e:
         wbm.writeItem(ws, itemName)
-        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        wbm.incrementRow(ws)
         return False
 
     # Stage for deletion
@@ -604,6 +615,7 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
         wbm.writeItem(ws, itemName)
 
         try:
+            wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
             os.remove(fullFilePath)
             wbm.writeOutcomeAndIncrement(ws, "", wbm.modifyFormat)
         except PermissionError:
@@ -618,11 +630,13 @@ def emptyFileFind(dirAbsolute:str, itemName:str, ws):
         fileSize = os.path.getsize(dirAbsolute+"\\"+itemName)
     except PermissionError:
         wbm.writeItem(ws, itemName)
-        wbm.writeOutcomeAndIncrement(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.incrementRow(ws)
         return False
     except Exception as e:
         wbm.writeItem(ws, itemName)
-        wbm.writeOutcomeAndIncrement(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        wbm.incrementRow(ws)
         return False
     
     if fileSize == 0:

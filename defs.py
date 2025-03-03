@@ -6,27 +6,27 @@ FILE_NINJA = "File-Ninja"
 
 # NOTE: Excel worksheet name must be <= 31 characters
 LIST_ALL = "List All Files"
-SPACE_FILE_FIND = "Space Error (File)"
-SPACE_FOLDER_FIND = "Space (Directory)"
-BAD_CHARACTER_FILE_FIND = "Bad Character Error (File)"
-BAD_CHARACTER_FOLDER_FIND = "Bad Character (Directory)"
-OLD_FILE_FIND = "Old File Error"
+LIST_ALL_OWNER = "List All Files (Owner)"  # @
+SPACE_FILE_FIND = "Space Error"
+SPACE_FOLDER_FIND = "Space (Dir)"
+BAD_CHARACTER_FILE_FIND = "Bad Character Error"
+BAD_CHARACTER_FOLDER_FIND = "Bad Character (Dir)"
+OLD_FILE_FIND = "Old File Error"  # @
 EMPTY_DIRECTORY_FIND = "Empty Directory"
-EMPTY_FILE_FIND = "Empty File Error"
+EMPTY_FILE_FIND = "Empty File Error"  # @
 CHARACTER_LIMIT_FIND = "Character Limit Error"
 DUPLICATE_CONTENT_FIND = "Identical Files Error"
 # DUPLICATE_NAME_FIND = "Duplicate Names Error"
 FILE_EXTENSION_SUMMARY = "Summarize File Extensions"
-LIST_ALL_OWNER = "List All Files (include owner)"
 
 # NULL_OPTION = ""
-SPACE_FILE_FIX = "Replace Space with Hyphen (File)"
-SEARCH_AND_REPLACE_FILE = "Replace Characters (File)~"
-DELETE_OLD_FILES = "Delete Old Files~"
-DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories~"
-DELETE_EMPTY_FILES = "Delete Empty Files"
+SPACE_FILE_FIX = "Replace Space with Hyphen"
+SEARCH_AND_REPLACE_FILE = "Replace Characters#"
+DELETE_OLD_FILES = "Delete Old Files#"  # @
+DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories#"
+DELETE_EMPTY_FILES = "Delete Empty Files"  # @
 SPACE_FOLDER_FIX = "Replace Space with Hyphen (Dir)"
-SEARCH_AND_REPLACE_FOLDER = "Replace Characters (Dir)~"
+SEARCH_AND_REPLACE_FOLDER = "Replace Characters (Dir)#"
 
 
 
@@ -66,9 +66,9 @@ FIND_PROCEDURES_DISPLAY = [
 # This is so the "/" separated list of arguments from the "Parameter" field are properly distributed.
 FIX_PROCEDURES = {
     SPACE_FILE_FIX: FixProcedure(SPACE_FILE_FIX, spaceFileFixLog, spaceFileFixModify, True),
-    DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed"),
+    DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed", startFunction=getOwnerStartFunction),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained"),
-    DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion"),
+    DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion", startFunction=getOwnerStartFunction),
     SEARCH_AND_REPLACE_FILE: FixProcedure(SEARCH_AND_REPLACE_FILE, searchAndReplaceFileLog, searchAndReplaceFileModify, True, twoStringsValidator, ">"),
     SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False, postFunction=fixfolderModifyPost),
     SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, twoStringsValidator, ">", postFunction=fixfolderModifyPost)

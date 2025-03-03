@@ -8,7 +8,7 @@ class FindProcedure:
         self.startFunction = startFunction
 
 class FixProcedure:
-    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modifications", postFunction=None):
+    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modifications", postFunction=None, startFunction=None):
         self.name = name
         self.logFunction = logFunction
         self.modifyFunction = modifyFunction
@@ -17,6 +17,7 @@ class FixProcedure:
         self.validatorFunction = validatorFunction
         self.argBoundary = argBoundary
         self.postFunction = postFunction
+        self.startFunction = startFunction
 
 
 def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
