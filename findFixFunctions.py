@@ -166,7 +166,8 @@ def emptyDirectoryConcurrent(dirAbsolute:str, dirFolders, dirFiles, ws):
 
 
 def spaceFolderFixHelper(oldFolderName) -> str:
-    if (" " not in oldFolderName): return
+    if (" " not in oldFolderName) and ("--" not in oldFolderName):
+        return
     return "-".join(oldFolderName.replace("-", " ").split())
 
 
@@ -238,7 +239,8 @@ def fixfolderModifyPost(ws):
 
 
 def spaceFileFixHelper(oldItemName) -> str:
-    if (" " not in oldItemName):
+    # Also fixes double dashes, even if no space is present
+    if (" " not in oldItemName) and ("--" not in oldItemName):
         return
 
     lastPeriodIndex = oldItemName.rfind(".")
