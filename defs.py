@@ -1,8 +1,9 @@
 from findFixFunctions import *
 from findFixHeader import *
 
-RESULTS_DIRECTORY = "File-Ninja-Results"
 FILE_NINJA = "File-Ninja"
+RESULTS_DIRECTORY = FILE_NINJA + "-Results"
+HCS_FILE_NINJA_PATH = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\"
 
 # NOTE: Excel worksheet name must be <= 31 characters
 LIST_ALL = "List All Files"

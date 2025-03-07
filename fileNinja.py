@@ -185,7 +185,7 @@ def view(isAdmin: bool):
         if os.path.exists(RESULTS_DIRECTORY):
             os.startfile(RESULTS_DIRECTORY)
         else:
-            tk.messagebox.showinfo("Directory DNE", "Directory \"" + RESULTS_DIRECTORY + "\" does not exist. Try executing the program first.")
+            tk.messagebox.showinfo("Directory DNE", "Directory \"" + RESULTS_DIRECTORY + "\" does not exist in current directory. Try executing the program first.")
 
 
     def closeWindow():
@@ -201,6 +201,17 @@ def view(isAdmin: bool):
             if fixListbox.get(selectedIndex) == "":
                 fixListbox.selection_clear(selectedIndex)
 
+    
+    def openHelpMe():
+        if isAdmin and os.path.exists("HELPME-Admin.txt"):
+            os.startfile("HELPME-Admin.txt")
+        elif os.path.exists("HELPME-Lite.txt"):
+            os.startfile("HELPME-Lite.txt")
+
+        tk.messagebox.showinfo("HELPME DNE", "HELPME file does not exist in current directory.")
+
+        
+
 
     listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
     listboxHeightMultiplier = 17
@@ -209,8 +220,8 @@ def view(isAdmin: bool):
     root = tk.Tk()
     root.title(FILE_NINJA)
     root.resizable(0, 0)
-    rootWidth = 500 if isAdmin else 300
-    rootHeight = (listboxHeight * listboxHeightMultiplier) + (365 if isAdmin else 310)
+    rootWidth = 500 if isAdmin else 310
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (345 if isAdmin else 310)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
     # The following line of code breaks Hovertips. It just does.
@@ -289,10 +300,12 @@ def view(isAdmin: bool):
         argumentEntry.pack(side=tk.LEFT)
 
     includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subfolders", variable=includeSubFoldersState, font=fontGeneral)
-    includeSubfoldersCheckbutton.pack()
+    includeSubfoldersCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
         modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=modifyState, font=fontGeneral)
-        modifyCheckbutton.pack(padx=(0, 50))
+        modifyCheckbutton.pack(side=tk.LEFT)  # , padx=(0, 50)
+    helpMeButton = tk.Button(frames[6], text="HELPME", command=openHelpMe, width=rootWidth, font=fontGeneral)
+    helpMeButton.pack(side=tk.LEFT)
 
     executeButton = tk.Button(frames[7], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()
@@ -315,6 +328,7 @@ def view(isAdmin: bool):
         parameterTip = Hovertip(parameterLabel, "Input a number, string, etc. Required for some Fix procedures.", hover_delay=tooltipHoverDelay)
         modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this feature, leave this off.", hover_delay=tooltipHoverDelay)
     includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subfolders, other than those excluded.", hover_delay=tooltipHoverDelay)
+    helpMeTip = Hovertip(helpMeButton, "Open HELPME file.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)
     resultsTip = Hovertip(resultsButton, "Open folder containing all excel files of previous executions.", hover_delay=tooltipHoverDelay)
 
@@ -329,7 +343,7 @@ def view(isAdmin: bool):
 
 
     # set icon image (if available)
-    logoPath = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\Assets\\File-Ninja-Logo-Square.png"
+    logoPath = HCS_FILE_NINJA_PATH + "Assets\\File-Ninja-Logo-Square.png"
     if os.path.exists(logoPath):
         logoImg = tk.PhotoImage(file=logoPath)
         root.iconphoto(False, logoImg)
