@@ -327,6 +327,14 @@ def view(isAdmin: bool):
     root.bind('<Control-Key-W>', lambda e: root.destroy())
     root.protocol("WM_DELETE_WINDOW", closeWindow)
 
+
+    # set icon image (if available)
+    logoPath = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\Assets\\File-Ninja-Logo-Square.png"
+    if os.path.exists(logoPath):
+        logoImg = tk.PhotoImage(file=logoPath)
+        root.iconphoto(False, logoImg)
+
+
     root.mainloop()
         
 
