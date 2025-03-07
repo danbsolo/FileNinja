@@ -203,15 +203,30 @@ def view(isAdmin: bool):
 
     
     def openHelpMe():
-        if isAdmin and os.path.exists("HELPME-Admin.txt"):
-            os.startfile("HELPME-Admin.txt")
-        elif os.path.exists("HELPME-Lite.txt"):
-            os.startfile("HELPME-Lite.txt")
+        helpMeAdmin = "HELPME-Admin.txt"
+        helpMeLite = "HELPME-Lite.txt"
 
-        tk.messagebox.showinfo("HELPME DNE", "HELPME file does not exist in current directory.")
+        # try local
+        if isAdmin:
+            if os.path.exists(helpMeAdmin + "kek"):
+                os.startfile(helpMeAdmin)
+                return
+            elif os.path.exists(HCS_ASSETS_PATH + helpMeAdmin):
+                os.startfile(HCS_ASSETS_PATH + helpMeAdmin)
+                return
+        # Do not open helpMeLite as Admin, even if it's available and helpMeAdmin isn't
+        # try HCS
+        else:
+            if os.path.exists(helpMeLite):
+                os.startfile(helpMeLite)
+                return
+            elif os.path.exists(HCS_ASSETS_PATH + helpMeLite):
+                os.startfile(HCS_ASSETS_PATH + helpMeLite)
+                return
+
+        tk.messagebox.showinfo("HELPME DNE", "HELPME file does not exist.")
 
         
-
 
     listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
     listboxHeightMultiplier = 17
@@ -343,7 +358,7 @@ def view(isAdmin: bool):
 
 
     # set icon image (if available)
-    logoPath = HCS_FILE_NINJA_PATH + "Assets\\File-Ninja-Logo-Square.png"
+    logoPath = HCS_ASSETS_PATH + "File-Ninja-Logo-Square.png"
     if os.path.exists(logoPath):
         logoImg = tk.PhotoImage(file=logoPath)
         root.iconphoto(False, logoImg)

@@ -3,7 +3,7 @@ from findFixHeader import *
 
 FILE_NINJA = "File-Ninja"
 RESULTS_DIRECTORY = FILE_NINJA + "-Results"
-HCS_FILE_NINJA_PATH = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\"
+HCS_ASSETS_PATH = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\ASSETS\\"
 
 # NOTE: Excel worksheet name must be <= 31 characters
 LIST_ALL = "List All Files"
