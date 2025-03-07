@@ -146,7 +146,7 @@ def oldFileFind(dirAbsolute:str, itemName:str, ws):
         wbm.writeItem(ws, itemName, wbm.errorFormat)
         wbm.writeOutcome(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
         wbm.incrementRow(ws)
-        return False
+        return 2
 
     fileDaysAgoLastAccessed = (TODAY - fileDate).days
 
@@ -216,14 +216,14 @@ def fixfolderModifyPost(ws):
         try:
             os.rename(oldDirAbsolute, newDirAbsolute)
             ws.write(row, wbm.OUTCOME_COL, newFolderName, wbm.modifyFormat)
-            wbm.incrementRow(ws)
+            # Since row is manually tracked here, do not need to call wbm.incrementRow()
             wbm.incrementFileCount(ws)
         except PermissionError:
             ws.write(row, wbm.OUTCOME_COL, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
-            wbm.incrementRow(ws)
+            wbm.incrementFileCount(ws)
         except Exception as e:
             ws.write(row, wbm.OUTCOME_COL, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
-            wbm.incrementRow(ws)
+            wbm.incrementFileCount(ws)
     
     # Now write the directories. The directoryOfFolder would be updated if a parent folder was renamed
     for i in range(frListLength):
@@ -270,11 +270,9 @@ def spaceFileFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
-        wbm.incrementRow(ws)  # To increment the ROW but not the FILE COUNT
+        wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
     except Exception as e:
-        wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
-        wbm.incrementRow(ws)
+        wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
     return True
         
 
@@ -408,31 +406,22 @@ def fileExtensionPost(ws):
 #     ws.autofit()
 
 
-def duplicateContentHelper(dirAbsolute:str, itemName:str):
-    # try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName)  # Bytes
-    # except: fileSize = 0 # TODO: check average size of files that cause this
-    
+def duplicateContentHelper(dirAbsolute:str, itemName:str):    
     hashFunc = hashlib.new("sha256")
     
-    try: 
-        with open(dirAbsolute+"/"+itemName, "rb") as file:
-            # if fileSize > MMAP_THRESHOLD:
-                # mmappedFile = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-                # print(fileSize, "B", sep="", end=" ")
-                # while chunk := mmappedFile.read(16384):
-                    # hashFunc.update(chunk)
-            # else:
-            # print(fileSize, "B", sep="", end=" ")
-            while chunk := file.read(8192):
-                hashFunc.update(chunk)
+    with open(dirAbsolute+"/"+itemName, "rb") as file:
+        while chunk := file.read(8192):
+            hashFunc.update(chunk)
 
-        return hashFunc.hexdigest()
-    # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
-    except: return
+    return hashFunc.hexdigest()
 
 def duplicateContentConcurrent(dirAbsolute:str, itemName:str, ws):
-    hashCode = duplicateContentHelper(dirAbsolute, itemName)
-
+    try:
+        hashCode = duplicateContentHelper(dirAbsolute, itemName)
+    except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
+        # Unlike other procedures, this won't print out the error; it'll just assume it's not a duplicate.
+        return False
+    
     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
         return False
     
@@ -566,12 +555,9 @@ def searchAndReplaceFileModify(dirAbsolute:str, oldItemName:str, ws, arg):
         os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeOutcome(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
-        wbm.incrementRow(ws)
+        wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
     except Exception as e:
-        # This will happen if attempting to rename to an empty string
-        wbm.writeOutcome(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
-        wbm.incrementRow(ws)
+        wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
     return True
 
 def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
@@ -581,12 +567,12 @@ def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return False
+        return True
     except Exception as e:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return False
+        return True
 
     if fileSize == 0:
         wbm.writeItem(ws, itemName)
@@ -606,12 +592,12 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return False
+        return True
     except Exception as e:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return False
+        return True
 
     # Stage for deletion
     if fileSize == 0:
@@ -635,12 +621,12 @@ def emptyFileFind(dirAbsolute:str, itemName:str, ws):
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return False
+        return 2
     except Exception as e:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return False
+        return 2
     
     if fileSize == 0:
         wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))

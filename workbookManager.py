@@ -138,10 +138,10 @@ class WorkbookManager:
                 elif (result == False):
                     pass
 
-                elif (result == 2): # List All Files special case
+                elif (result == 2):  # Special case (ex: Used by List All Files)
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
                 
-                elif (result == 3): # Identical Files Error special case
+                elif (result == 3):  # Special case (ex: used by Identical Files Error)
                     if (not alreadyCounted):
                         self.errorCount += 1
                         alreadyCounted = True
