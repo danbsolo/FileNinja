@@ -106,7 +106,7 @@ Replaces all instances of spaces within file names with a hyphen and fixes bad h
 Replaces all instances of spaces within folder names with a hyphen and fixes bad hyphen usage.
 
 - Replace Characters#
-For file names, replaces substring with another substring, using a ">" as separator. Requires argument. For instance, with the argument set to "& > -and-", all instances of "&" will be replaced with "-and-".
+For file names, replaces substring with another substring, using a ">" as separator between the replacer and replace pair, and "*" as a separator between pairs. Requires argument. WARNING: If running multiple pairs of arguments, one pair's replacer can undo the work of an earlier pair's replace; order can matter if not careful. Always double-check your output if unsure. Example 1: With the argument set to "& > -and-", all instances of "&" will be replaced with "-and-". Example 2: With the argument set to "@>-at- * &-and-", all instances of "@" will become "-at-", and all instances of "&" will become "-and-".
 
 - Replace Characters (Dir)#
 Same as the file version, except for directories. Note: if "Allow Modify" is checked and any find procedures are ran, the directory values in the find procedure sheets may be invalid. To circumvent this, when "Allow Modify" is checked, run this fix procedure separately.

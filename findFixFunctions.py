@@ -506,8 +506,10 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
 
 
 def searchAndReplaceFolderHelper(oldFolderName:str, arg):
-    toBeReplaced, replacer = arg
-    newFolderName = oldFolderName.replace(toBeReplaced, replacer)
+    newFolderName = oldFolderName
+    for argPair in arg:
+        toBeReplaced, replacer = argPair
+        newFolderName = newFolderName.replace(toBeReplaced, replacer)
 
     if (oldFolderName == newFolderName): return
     return newFolderName
@@ -534,8 +536,6 @@ def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
 
 
 def searchAndReplaceFileHelper(oldItemName:str, arg):
-    toBeReplaced, replacer = arg
-
     lastPeriodIndex = oldItemName.rfind(".")
     if lastPeriodIndex == -1:
         extension = ""
@@ -544,7 +544,11 @@ def searchAndReplaceFileHelper(oldItemName:str, arg):
         extension = oldItemName[lastPeriodIndex:]
         oldItemNameSansExt = oldItemName[0:lastPeriodIndex]
     
-    newItemNameSansExt = oldItemNameSansExt.replace(toBeReplaced, replacer)
+    # Order of argument pairs given matters.
+    newItemNameSansExt = oldItemNameSansExt
+    for argPair in arg:
+        toBeReplaced, replacer = argPair
+        newItemNameSansExt = newItemNameSansExt.replace(toBeReplaced, replacer)
 
     if (oldItemNameSansExt == newItemNameSansExt): return
     return newItemNameSansExt + extension

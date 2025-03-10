@@ -43,8 +43,8 @@ def minimumIntToInfinityValidator(arg:str, minimum:int):
         if (arg >= minimum): return (arg,)
     except:
         return
-    
-def twoStringsValidator(arg:str, separator:str):
+
+def pairOfStringsValidator(arg:str, separator:str):
     try:
         separatorIndex = arg.rfind(separator)
         toBeReplaced = arg[0:separatorIndex].strip()
@@ -52,5 +52,18 @@ def twoStringsValidator(arg:str, separator:str):
         
         # toBeReplaced will be stripped (via strip()) to an empty string if it was just whitespace
         if (toBeReplaced) and (toBeReplaced != replacer): return (toBeReplaced, replacer)
+    except:
+        return
+
+def multiplePairsOfStringsValidator(arg:str, separator:str):
+    multiplePairs = tuple()
+
+    try:
+        multiplePairs = arg.split("*")
+
+        for i in range(len(multiplePairs)):
+            multiplePairs[i] = pairOfStringsValidator(multiplePairs[i], separator)
+        
+        return multiplePairs
     except:
         return
