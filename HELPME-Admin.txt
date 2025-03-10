@@ -1,4 +1,4 @@
-This is the File-Ninja HELPME file.
+This is the File-Ninja-Admin HELPME file.
 
 
 BASICS:
@@ -56,7 +56,7 @@ Lists all files. Folders are only listed if they are not empty.
 Same as "List All Files" except it includes an owner column. Due to the extra operation, runs slower.
 
 - Old File Error
-Flags any file that has not been accessed in over 365 days. Note: windows has a glitch regarding the "last accessed" stat for a file, in that a file may be considered accessed even if it was not explicitly opened. This is not workaroundable, so run this find procedure and keep the resulting excel file handy before perusing through your files. Includes owner column.
+Flags any file that has not been accessed in over 1095 days (i.e. 3 years). Note: windows has a glitch regarding the "last accessed" stat for a file, in that a file may be considered accessed even if it was not explicitly opened. This is not workaroundable, so run this find procedure and keep the resulting excel file handy before perusing through your files. Includes owner column.
 
 - Identical Files Error
 Flags files that are completely identical. Note: this is a very long, computationally expensive operation. Includes owner column.
@@ -82,8 +82,8 @@ Flags folder names with bad characters. A bad character is any character that is
 - Character Limit Error
 Flags file paths over 200 characters. These files are not backed up.
 
-- Summarize File Extensions
-List all file extensions found, along with their count and average size.
+- Large File Size
+List all file extensions found, along with their count and average size. Any file extension with an average size over 100MB is flagged.
 
 
 

@@ -5,7 +5,7 @@ from datetime import datetime
 import hashlib
 from workbookManager import WorkbookManager
 from sys import maxsize as MAXSIZE
-from importlib import import_module
+# from importlib import import_module
 from findOwner import getOwnerCatch
 # import mmap
 
@@ -16,7 +16,7 @@ PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 CHARACTER_LIMIT = 200
 
 # Used by oldFileFind
-DAYS_TOO_OLD = 365
+DAYS_TOO_OLD = 1095
 
 # Used by oldFileFind and deleteOldFiles
 TODAY = datetime.now()
@@ -27,6 +27,7 @@ TOO_FEW_AMOUNT = 0
 # Used by fileExtension
 EXTENSION_COUNT = {}
 EXTENSION_TOTAL_SIZE = {}
+TOO_LARGE_SIZE_MB = 100
 
 # # Used by duplicateName
 # NAMES_AND_PATHS = {}
@@ -48,20 +49,20 @@ def setWorkbookManager(newManager: WorkbookManager):
     global wbm
     wbm = newManager
 
-def importModuleDynamically(moduleName, attributes):
-    moduleLoaded = import_module(moduleName)  # dynamically import module
+# def importModuleDynamically(moduleName, attributes):
+#     moduleLoaded = import_module(moduleName)  # dynamically import module
     
-    for attr in attributes:
-        globals()[attr] = getattr(moduleLoaded, attr)  # globalize all attributes imported
+#     for attr in attributes:
+#         globals()[attr] = getattr(moduleLoaded, attr)  # globalize all attributes imported
 
-def importGetOwner():
-    # IS CRASHING
-    return
-    importModuleDynamically("findOwner", ["getOwnerCatch"])  # from findOwner import getOwnerCatch
-    # could add "getOwner" if don't want automatic catch
+# def importGetOwner():
+#     # IS CRASHING
+#     return
+#     importModuleDynamically("findOwner", ["getOwnerCatch"])  # from findOwner import getOwnerCatch
+#     # could add "getOwner" if don't want automatic catch
 
 def getOwnerStartFunction(ws):
-    importGetOwner()
+    # importGetOwner()
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 
 
@@ -367,11 +368,18 @@ def fileExtensionPost(ws):
 
     row = 1
     for extension in sorted(EXTENSION_COUNT.keys()):
-        ws.write_string(row, 0, extension)
+        averageSize = round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1)
+
+        # only count as an error if the average size is above a threshold
+        if (averageSize >= TOO_LARGE_SIZE_MB):
+            ws.write_string(row, 0, extension, wbm.warningFormat)
+            wbm.incrementFileCount(ws)
+        else:
+            ws.write_string(row, 0, extension)
+
         ws.write_number(row, 1, EXTENSION_COUNT[extension])
-        ws.write_number(row, 2, round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1))
+        ws.write_number(row, 2, averageSize)
         ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
-        wbm.incrementFileCount(ws)
         row += 1
 
     EXTENSION_COUNT.clear()

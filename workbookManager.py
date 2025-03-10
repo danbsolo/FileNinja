@@ -50,6 +50,7 @@ class WorkbookManager:
         self.logFormat = self.wb.add_format({"bg_color": "#9999FF", "bold": True})  # purplish
         self.headerFormat = self.wb.add_format({"bg_color": "#C0C0C0", "bold": True})  # grayish
         self.summaryValueFormat = self.wb.add_format({})
+        self.warningFormat = self.wb.add_format({"bg_color": "#F7B900", "bold": True})  # yellowish
 
 
     def getAllProcedureSheets(self):

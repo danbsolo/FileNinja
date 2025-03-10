@@ -18,7 +18,7 @@ EMPTY_FILE_FIND = "Empty File Error"  # @owner
 CHARACTER_LIMIT_FIND = "Character Limit Error"
 DUPLICATE_CONTENT_FIND = "Identical Files Error"
 # DUPLICATE_NAME_FIND = "Duplicate Names Error"
-FILE_EXTENSION_SUMMARY = "Summarize File Extensions"
+FILE_EXTENSION_SUMMARY = "Large File Size"
 
 # NULL_OPTION = ""
 SPACE_FILE_FIX = "Replace Space with Hyphen"
