@@ -140,9 +140,16 @@ def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
         wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
 
 
+def addLongPathPrefix(dirAbsolute):
+    if dirAbsolute.startswith('\\\\'):
+        return '\\\\?\\UNC' + dirAbsolute[1:]
+    else:
+        return '\\\\?\\' + dirAbsolute
+
+
 def oldFileFind(dirAbsolute:str, itemName:str, ws):
     try:
-        fileDate = datetime.fromtimestamp(os.path.getatime(dirAbsolute + "\\" + itemName))
+        fileDate = datetime.fromtimestamp(os.path.getatime(addLongPathPrefix(dirAbsolute) + "\\" + itemName))
     except Exception as e:
         wbm.writeItem(ws, itemName, wbm.errorFormat)
         wbm.writeOutcome(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
@@ -216,7 +223,7 @@ def fixfolderModifyPost(ws):
         ws.write(row, wbm.ITEM_COL, oldFolderName, wbm.errorFormat)
 
         try:
-            os.rename(oldDirAbsolute, newDirAbsolute)
+            os.rename(addLongPathPrefix(oldDirAbsolute), addLongPathPrefix(newDirAbsolute))
             ws.write(row, wbm.OUTCOME_COL, newFolderName, wbm.modifyFormat)
             # Since row is manually tracked here, do not need to call wbm.incrementRow()
             wbm.incrementFileCount(ws)
@@ -270,7 +277,7 @@ def spaceFileFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
 
     # Log newItemName and rename file
     try:
-        os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
+        os.rename(addLongPathPrefix(dirAbsolute) + "\\" + oldItemName, addLongPathPrefix(dirAbsolute) + "\\" + newItemName)
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
         wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
@@ -294,7 +301,7 @@ def deleteOldFilesHelper(fullFilePath: str, arg) -> int:
     #  if (daysLowerBound <= 0): return -1
     
     # Get date of file. This *can* error virtue of the library functions, hence try/except
-    try: fileDate = datetime.fromtimestamp(os.path.getatime(fullFilePath))
+    try: fileDate = datetime.fromtimestamp(os.path.getatime(addLongPathPrefix(fullFilePath)))
     except: return -1
 
     fileDaysAgo = (TODAY - fileDate).days
@@ -333,7 +340,7 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
     else:
         try:
             wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
-            os.remove(fullFilePath)
+            os.remove(addLongPathPrefix(fullFilePath))
             wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
         except PermissionError:
             wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
@@ -342,7 +349,7 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
     return True
 
 def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
-    try: fileSize = os.path.getsize(dirAbsolute+"/"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
+    try: fileSize = os.path.getsize(addLongPathPrefix(dirAbsolute)+"\\"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
     except: return False
 
     lastPeriodIndex = itemName.rfind(".")
@@ -419,7 +426,7 @@ def fileExtensionPost(ws):
 def duplicateContentHelper(dirAbsolute:str, itemName:str):    
     hashFunc = hashlib.new("sha256")
     
-    with open(dirAbsolute+"/"+itemName, "rb") as file:
+    with open(addLongPathPrefix(dirAbsolute)+"\\"+itemName, "rb") as file:
         while chunk := file.read(8192):
             hashFunc.update(chunk)
 
@@ -491,7 +498,7 @@ def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
         # If it specifically has 0 files, delete the folder
         if (fileAmount == 0):
             try: 
-                os.rmdir(dirAbsolute)
+                os.rmdir(addLongPathPrefix(dirAbsolute))
                 wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.modifyFormat)
             except Exception as e:
                 wbm.writeOutcomeAndIncrement(ws, f"0 FILES. UNABLE TO DELETE. {e}", wbm.errorFormat)
@@ -564,7 +571,7 @@ def searchAndReplaceFileModify(dirAbsolute:str, oldItemName:str, ws, arg):
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
 
     try:
-        os.rename(dirAbsolute + "/" + oldItemName, dirAbsolute + "/" + newItemName)
+        os.rename(addLongPathPrefix(dirAbsolute) + "\\" + oldItemName, addLongPathPrefix(dirAbsolute) + "\\" + newItemName)
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
         wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
@@ -574,7 +581,7 @@ def searchAndReplaceFileModify(dirAbsolute:str, oldItemName:str, ws, arg):
 
 def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
     try:
-        fileSize = os.path.getsize(dirAbsolute+"\\"+itemName) 
+        fileSize = os.path.getsize(addLongPathPrefix(dirAbsolute)+"\\"+itemName) 
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
@@ -599,7 +606,7 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
     fullFilePath =  dirAbsolute + "\\" + itemName
 
     try:
-        fileSize = os.path.getsize(fullFilePath)  # Bytes
+        fileSize = os.path.getsize(addLongPathPrefix(fullFilePath))  # Bytes
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
@@ -617,7 +624,7 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
 
         try:
             wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
-            os.remove(fullFilePath)
+            os.remove(addLongPathPrefix(fullFilePath))
             wbm.writeOutcomeAndIncrement(ws, "", wbm.modifyFormat)
         except PermissionError:
             wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
@@ -628,7 +635,7 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
 
 def emptyFileFind(dirAbsolute:str, itemName:str, ws):
     try:
-        fileSize = os.path.getsize(dirAbsolute+"\\"+itemName)
+        fileSize = os.path.getsize(addLongPathPrefix(dirAbsolute)+"\\"+itemName)
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)

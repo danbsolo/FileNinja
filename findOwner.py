@@ -174,6 +174,11 @@ def getOwner(dirAbsolute):
     #print("SID  : {}".format(pSD.pOwner))
 
 def getOwnerCatch(dirAbsolute):
+    if dirAbsolute.startswith('\\\\'):
+        dirAbsolute = '\\\\?\\UNC' + dirAbsolute[1:]
+    else:
+        dirAbsolute = '\\\\?\\' + dirAbsolute
+
     try:
         ownerOutput = getOwner(dirAbsolute)
     except Exception as e:
