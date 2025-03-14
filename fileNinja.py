@@ -208,7 +208,7 @@ def view(isAdmin: bool):
 
         # try local
         if isAdmin:
-            if os.path.exists(helpMeAdmin + "kek"):
+            if os.path.exists(helpMeAdmin):
                 os.startfile(helpMeAdmin)
                 return
             elif os.path.exists(HCS_ASSETS_PATH + helpMeAdmin):
