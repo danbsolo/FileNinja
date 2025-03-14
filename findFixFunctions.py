@@ -445,8 +445,6 @@ def duplicateContentConcurrent(dirAbsolute:str, itemName:str, ws):
         return False
 
 def duplicateContentPost(ws):
-    importGetOwner()
-
     ws.write(0, 0, "Separator", wbm.headerFormat)
     ws.write(0, 1, "Files", wbm.headerFormat)
     ws.write(0, 2, "Directories", wbm.headerFormat)

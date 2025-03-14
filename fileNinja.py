@@ -368,7 +368,7 @@ def view(isAdmin: bool):
         
 
 def main():
-    view(False)
+    view(True)
 
 
 if __name__ == "__main__":
