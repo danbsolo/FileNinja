@@ -3,7 +3,7 @@ from typing import List
 from time import time
 import os
 from copy import deepcopy
-
+import stat
 
 class WorkbookManager:
 
@@ -115,19 +115,21 @@ class WorkbookManager:
         return True
         
 
-    def fileCrawl(self, dirAbsolute, dirItems: List[str]):
+    def fileCrawl(self, dirAbsolute, longDirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
         alreadyCounted = False
 
-        for itemName in dirItems:            
-            # Temporary Microsoft files begin with "~$". If it is so, skip file
-            # Onenote files have a ".one[]" extension. The longest onenote extension is 8 characters long.
-            # Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low 
-            if itemName.startswith("~$") or ".one" in itemName[-8:]:
-                continue
+        for fileName in dirFiles:
+            longFileAbsolute = longDirAbsolute + "\\" + fileName
 
+            # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
+            # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
+            # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
+            if bool(os.stat(longFileAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN) or ".one" in fileName[-8:]:
+                continue
+            
             for findProcedureObject in self.fileFindProcedures:
-                result = findProcedureObject.mainFunction(dirAbsolute, itemName, self.findSheets[findProcedureObject])
+                result = findProcedureObject.mainFunction(dirAbsolute, fileName, self.findSheets[findProcedureObject])
 
                 if (result == True):
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
@@ -148,7 +150,7 @@ class WorkbookManager:
                         alreadyCounted = True
 
             for fixProcedureObject in self.fileFixProcedures:
-                if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, itemName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
+                if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
 
             alreadyCounted = False
@@ -173,6 +175,13 @@ class WorkbookManager:
 
 
     def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, excludedDirs):
+        def addLongPathPrefix(dirAbsolute):
+            if dirAbsolute.startswith('\\\\'):
+                return '\\\\?\\UNC' + dirAbsolute[1:]
+            else:
+                return '\\\\?\\' + dirAbsolute
+
+
         start = time()
 
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify)
@@ -196,8 +205,6 @@ class WorkbookManager:
                 for dirAbsolute, dirFolders, dirFiles in os.walk(baseDirAbsolute):
                     isDirIncluded = True
                     
-                    ### NOTE: Should this ignore hidden folders? i.e. Folders that begin with ".". Probably.
-
                     for exDir in copyOfExcludedDirs:
                         if dirAbsolute.startswith(exDir):  # exclude by subDirAbsolute to be precise
                             isDirIncluded = False
@@ -239,13 +246,19 @@ class WorkbookManager:
             # Ignore specifically OneNote_RecycleBin folders. Assumes these NEVER have subfolders.
             if (dirAbsolute.endswith("OneNote_RecycleBin")): continue
 
+            # Get "long file path"
+            longDirAbsolute = addLongPathPrefix(dirAbsolute)
+
+            # If this is a hidden folder, ignore it. Anything within a hidden folder is inadvertently ignored
+            if bool(os.stat(longDirAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN):
+                continue
+
             initialRows.clear()
             for ws in sheetsSansNonConcurrentAndFolderFind:
-                # ws.write(self.sheetRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
                 initialRows[ws] = self.sheetRows[ws]
 
             # union operator usage lol
-            needsFolderWritten = self.fileCrawl(dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+            needsFolderWritten = self.fileCrawl(dirAbsolute, longDirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
@@ -260,8 +273,7 @@ class WorkbookManager:
                 fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
         #
         
-        end = time()
-        self.executionTime = end - start
+        self.executionTime = time() - start
 
 
     def writeDir(self, ws, text, format=None):
