@@ -6,7 +6,7 @@ BASICS:
 Select a directory to execute operations on.
 
 - Browse to Exclude
-Select subfolders of the main directory to exclude from operation. Only relevant if "Include Subfolders" is checked. To remove a previously added excluded directory, either double-click or right click it.
+Select subfolders of the main directory to exclude from operation. Hidden folders are automatically excluded. Only relevant if "Include Subfolders" is checked. To remove a previously added excluded directory, either double-click or right click it.
 
 - Find procedures
 Flags any errant files or folders based on the selection. Any find procedure that ends in "Error" adds to the error count on the summary sheet.

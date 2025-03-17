@@ -4,6 +4,8 @@ from time import time
 import os
 from copy import deepcopy
 import stat
+from defs import *
+
 
 class WorkbookManager:
 
@@ -113,7 +115,11 @@ class WorkbookManager:
 
         self.fixProcedureArgs[fixProcedureObject] = arg
         return True
-        
+    
+
+    def isHidden(self, longItemAbsolute):
+        return bool(os.stat(longItemAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+
 
     def fileCrawl(self, dirAbsolute, longDirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
@@ -125,7 +131,7 @@ class WorkbookManager:
             # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
             # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
             # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
-            if bool(os.stat(longFileAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN) or ".one" in fileName[-8:]:
+            if fileName.startswith("~$") or ".one" in fileName[-8:]:
                 continue
             
             for findProcedureObject in self.fileFindProcedures:
@@ -149,14 +155,18 @@ class WorkbookManager:
                         self.errorCount += 1
                         alreadyCounted = True
 
-            for fixProcedureObject in self.fileFixProcedures:
-                if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
-                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-
             alreadyCounted = False
             self.filesScannedCount += 1
 
-        return needsFolderWritten                  
+            for fixProcedureObject in self.fileFixProcedures:
+                # If file is hidden, ignore it. Fix procedures do not have access to hidden files
+                if bool(os.stat(longFileAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN):
+                    break
+
+                if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
+                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+
+        return needsFolderWritten            
 
 
     def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
@@ -249,7 +259,7 @@ class WorkbookManager:
             # Get "long file path"
             longDirAbsolute = addLongPathPrefix(dirAbsolute)
 
-            # If this is a hidden folder, ignore it. Anything within a hidden folder is inadvertently ignored
+            # If folder is hidden, ignore it. Anything within a hidden folder is inadvertently ignored
             if bool(os.stat(longDirAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN):
                 continue
 
@@ -373,12 +383,14 @@ class WorkbookManager:
 
         
     def createHelpMeSheet(self):
-        # If it exists, open HELPME-Admin.txt. If it doesn't, try HELPME-Lite.txt. And if that doesn't exist, do nothing.
-        try: helpMeFile = open("HELPME-Admin.txt", "r")
+        # If it exists, open HELPME-Admin. If it doesn't, try HELPME-Lite. And if that doesn't exist, do nothing.
+        # Only tries locally, not through network
+        try: helpMeFile = open(HELPME_ADMIN, "r")
         except FileNotFoundError:
-            try: helpMeFile = open("HELPME-Lite.txt", "r")
+            try: helpMeFile = open(HELPME_LITE, "r")
             except FileNotFoundError: return
-        
+
+
         termDict = {}
         lines = helpMeFile.readlines()
         linesLength = len(lines)
@@ -406,9 +418,8 @@ class WorkbookManager:
 
 
     def autofitSheets(self):
-        for findProcedureObject in self.findProceduresConcurrentOnly:
-            self.findSheets[findProcedureObject].autofit()
-
+        for findProcedureSheet in self.findSheets.values():
+            findProcedureSheet.autofit()
         for fixProcedureSheet in self.fixSheets.values():
             fixProcedureSheet.autofit()
 

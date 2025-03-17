@@ -3,6 +3,7 @@ from tkinter import filedialog
 import os
 from workbookManager import WorkbookManager
 from datetime import datetime
+from procedureDefinitions import *
 from defs import *
 from sys import exit
 from idlelib.tooltip import Hovertip
@@ -203,25 +204,22 @@ def view(isAdmin: bool):
 
     
     def openHelpMe():
-        helpMeAdmin = "HELPME-Admin.txt"
-        helpMeLite = "HELPME-Lite.txt"
-
         # try local
         if isAdmin:
-            if os.path.exists(helpMeAdmin):
-                os.startfile(helpMeAdmin)
+            if os.path.exists(HELPME_ADMIN):
+                os.startfile(HELPME_ADMIN)
                 return
-            elif os.path.exists(HCS_ASSETS_PATH + helpMeAdmin):
-                os.startfile(HCS_ASSETS_PATH + helpMeAdmin)
+            elif os.path.exists(HCS_ASSETS_PATH + HELPME_ADMIN):
+                os.startfile(HCS_ASSETS_PATH + HELPME_ADMIN)
                 return
         # Do not open helpMeLite as Admin, even if it's available and helpMeAdmin isn't
         # try HCS
         else:
-            if os.path.exists(helpMeLite):
-                os.startfile(helpMeLite)
+            if os.path.exists(HELPME_LITE):
+                os.startfile(HELPME_LITE)
                 return
-            elif os.path.exists(HCS_ASSETS_PATH + helpMeLite):
-                os.startfile(HCS_ASSETS_PATH + helpMeLite)
+            elif os.path.exists(HCS_ASSETS_PATH + HELPME_LITE):
+                os.startfile(HCS_ASSETS_PATH + HELPME_LITE)
                 return
 
         tk.messagebox.showinfo("HELPME DNE", "HELPME file does not exist.")

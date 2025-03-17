@@ -6,7 +6,7 @@ BASICS:
 Select a directory to execute operations on.
 
 - Browse to Exclude
-Select subfolders of the main directory to exclude from operation. Only relevant if "Include Subfolders" is checked. To remove a previously added excluded directory, either double-click or right click it.
+Select subfolders of the main directory to exclude from operation. Hidden folders are automatically excluded. Only relevant if "Include Subfolders" is checked. To remove a previously added excluded directory, either double-click or right click it.
 
 - Find procedures
 Flags any errant files or folders based on the selection. Any find procedure that ends in "Error" adds to the error count on the summary sheet.
@@ -88,7 +88,9 @@ List all file extensions found, along with their count and average size. Any fil
 
 
 FIX PROCEDURES (ADMIN ONLY)
-Note: If you are unsure, always leave "Allow Modify" unchecked.
+Note:
+> If you are unsure, always leave "Allow Modify" unchecked.
+> Hidden files are ignored.
 
 - Delete Old Files#
 Deletes any files that has not been accessed in a set number of days or in a range. Read "Old File Error" find procedure for more information. Requires argument. Includes owner column. Example 1: With the argument set to "500", any file that has not been accessed in 500 days or more will get deleted. Example 2: With the argument set to "100-120", any file that has not been accessed between 100 and 120 days (inclusive) will get deleted.

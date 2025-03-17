@@ -61,9 +61,11 @@ def setWorkbookManager(newManager: WorkbookManager):
 #     importModuleDynamically("findOwner", ["getOwnerCatch"])  # from findOwner import getOwnerCatch
 #     # could add "getOwner" if don't want automatic catch
 
-def getOwnerStartFunction(ws):
+def writeOwnerHeader(ws):
     # importGetOwner()
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
+
+
 
 
 def listAll(_:str, itemName:str, ws) -> bool:
@@ -392,7 +394,6 @@ def fileExtensionPost(ws):
     EXTENSION_COUNT.clear()
     EXTENSION_TOTAL_SIZE.clear()
     ws.freeze_panes(1, 0)
-    ws.autofit()
 
 
 # def duplicateNameConcurrent(dirAbsolute:str, fileName:str, ws):
@@ -472,7 +473,6 @@ def duplicateContentPost(ws):
                 
     HASH_AND_FILES.clear()
     ws.freeze_panes(1, 0)
-    ws.autofit()
 
 
 def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
