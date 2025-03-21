@@ -363,9 +363,9 @@ def view(isAdmin: bool):
 
 
     # set icon image (if available)
-    logoPath = HCS_ASSETS_PATH + "File-Ninja-Logo-Square.png"
-    if os.path.exists(logoPath):
-        logoImg = tk.PhotoImage(file=logoPath)
+
+    if os.path.exists(LOGO_PATH):
+        logoImg = tk.PhotoImage(file=LOGO_PATH)
         root.iconphoto(False, logoImg)
 
 
