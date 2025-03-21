@@ -10,7 +10,7 @@ from idlelib.tooltip import Hovertip
 import threading
 
 
-def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
+def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHiddenFiles:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
 
     # If multiple fix procedures are selected and allowModify is checked, exit
@@ -70,7 +70,8 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, selectedF
             return -3
 
 
-    wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, excludedDirs)
+
+    wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs)
 
     wbm.close()
     os.startfile(workbookPathName)
@@ -82,7 +83,7 @@ def view(isAdmin: bool):
     def launchControllerWorker():        
         currentState.set(102)  # 102 == The HTTP response code for "Still processing"
 
-        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), 
+        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), bool(includeHiddenFilesState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
@@ -234,14 +235,14 @@ def view(isAdmin: bool):
     root.title(FILE_NINJA)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 310
-    rootHeight = (listboxHeight * listboxHeightMultiplier) + (345 if isAdmin else 310)
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (385 if isAdmin else 310) # 345, 310
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
     # The following line of code breaks Hovertips. It just does.
     # if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
         
     frames = []
-    for i in range(9):
+    for i in range(10):
         frames.append(tk.Frame(root, bd=0, relief=tk.SOLID))
         frames[i].pack(fill="x", padx=10, pady=3)
 
@@ -259,6 +260,7 @@ def view(isAdmin: bool):
     parameterVar = tk.StringVar()
     includeSubFoldersState = tk.IntVar(value=1)
     modifyState = tk.IntVar(value=0)
+    includeHiddenFilesState = tk.IntVar(value=isAdmin)
     currentState = tk.IntVar(value=0)
     excludedDirs = []
 
@@ -320,15 +322,19 @@ def view(isAdmin: bool):
     helpMeButton = tk.Button(frames[6], text="HELPME", command=openHelpMe, width=rootWidth, font=fontGeneral)
     helpMeButton.pack(side=tk.LEFT)
 
-    executeButton = tk.Button(frames[7], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
-    executeButton.pack()
-    frames[7].configure(width=rootWidth/2)
-    frames[7].pack(side=tk.LEFT, expand=True)
+    if isAdmin:
+        includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden files", variable=includeHiddenFilesState, font=fontGeneral)
+        includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
 
-    resultsButton = tk.Button(frames[8], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
-    resultsButton.pack()
+    executeButton = tk.Button(frames[8], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
+    executeButton.pack()
     frames[8].configure(width=rootWidth/2)
     frames[8].pack(side=tk.LEFT, expand=True)
+
+    resultsButton = tk.Button(frames[9], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
+    resultsButton.pack()
+    frames[9].configure(width=rootWidth/2)
+    frames[9].pack(side=tk.LEFT, expand=True)
 
 
     # tool tips
@@ -340,6 +346,7 @@ def view(isAdmin: bool):
         fixTip = Hovertip(fixLabel, "Run a Fix procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
         parameterTip = Hovertip(parameterLabel, "Input a number, string, etc. Required for some Fix procedures.", hover_delay=tooltipHoverDelay)
         modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this feature, leave this off.", hover_delay=tooltipHoverDelay)
+        includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Turn on to include hidden files in Find procedure output. Fix procedures ignore hidden files irregardless.", hover_delay=tooltipHoverDelay)
     includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subfolders, other than those excluded.", hover_delay=tooltipHoverDelay)
     helpMeTip = Hovertip(helpMeButton, "Open HELPME file.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)

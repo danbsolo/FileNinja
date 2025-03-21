@@ -23,6 +23,9 @@ If checked, will also traverse through all subfolders. Otherwise, will only trav
 - Allow Modify (ADMIN ONLY)
 If checked, executes all changes irreversibly. If unsure, ALWAYS leave this unchecked. Note: if checked, cannot run multiple fix procedures simultaneously.
 
+- Include Hidden Files (ADMIN ONLY)
+If checked, includes hidden files in output for Find procedures only. Fix procedures always ignore hidden files.
+
 - Execute
 Execute operations given the settings.
 

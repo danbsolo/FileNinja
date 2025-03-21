@@ -128,6 +128,9 @@ class WorkbookManager:
         for fileName in dirFiles:
             longFileAbsolute = longDirAbsolute + "\\" + fileName
 
+            hiddenFileSkipStatus = self.hiddenFileSkipFunction(longFileAbsolute)
+            if hiddenFileSkipStatus == 2: continue
+
             # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
             # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
             # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
@@ -159,9 +162,8 @@ class WorkbookManager:
             self.filesScannedCount += 1
 
             for fixProcedureObject in self.fileFixProcedures:
-                # If file is hidden, ignore it. Fix procedures do not have access to hidden files
-                if bool(os.stat(longFileAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN):
-                    break
+                # If file is hidden, ignore it. Fix procedures will not have access to hidden files
+                if hiddenFileSkipStatus != 0: break
 
                 if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
@@ -184,15 +186,29 @@ class WorkbookManager:
         return needsFolderWritten
 
 
-    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, excludedDirs):
+    def isHiddenCheck(self, longFileAbsolute, includeHiddenFiles):
+        # 0 == not hidden
+        # 1 == hidden, but not required to skip as find procedure, just as fix procedure
+        # 2 == hidden, and we must skip in totality
+        if not bool(os.stat(longFileAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN):
+            return 0
+        elif includeHiddenFiles:
+            return 1
+        else:
+            return 2
+
+
+    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs, ):
         def addLongPathPrefix(dirAbsolute):
             if dirAbsolute.startswith('\\\\'):
                 return '\\\\?\\UNC' + dirAbsolute[1:]
             else:
                 return '\\\\?\\' + dirAbsolute
-
-
+        
         start = time()
+
+        # A closure; pre-filling the "skipHiddenFile" argument for the ease of use in self.fileCrawl().
+        self.hiddenFileSkipFunction = lambda longFileAbsolute: self.isHiddenCheck(longFileAbsolute, includeHiddenFiles)
 
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify)
         self.excludedDirs = excludedDirs
