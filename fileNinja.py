@@ -8,6 +8,7 @@ from defs import *
 from sys import exit
 from idlelib.tooltip import Hovertip
 import threading
+import traceback
 
 
 def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHiddenFiles:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
@@ -70,9 +71,11 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
             return -3
 
 
-
-    wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs)
-
+    try:
+        wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs)
+    except Exception as e:
+        return traceback.format_exc()
+    
     wbm.close()
     os.startfile(workbookPathName)
     return 0
@@ -83,13 +86,13 @@ def view(isAdmin: bool):
     def launchControllerWorker():        
         currentState.set(102)  # 102 == The HTTP response code for "Still processing"
 
-        exitCode = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), bool(includeHiddenFilesState.get()),
+        exitStatus = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), bool(includeHiddenFilesState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
                     excludedDirs)
 
-        currentState.set(exitCode)
+        currentState.set(exitStatus)
 
     def scheduleCheckIfDone(t):
         root.after(500, checkIfDone, t)
@@ -100,29 +103,32 @@ def view(isAdmin: bool):
             root.title(FILE_NINJA)
             executeButton.config(text="Execute", state="normal")
 
-            exitCode = currentState.get()
-            
+            try:
+                exitStatus = int(currentState.get())
+            except:
+                exitStatus = currentState.get()
+
             errorMessage = ""
-            if (exitCode == 0):
+            if (exitStatus == 0):
                 return
-            elif (exitCode == -1):
+            elif (exitStatus == -1):
                 errorMessage = "Could not open file. Close file and try again."
-            elif (exitCode == -2):
+            elif (exitStatus == -2):
                 errorMessage = "Invalid directory."
-            elif (exitCode == -3):
+            elif (exitStatus == -3):
                 errorMessage = "Invalid argument."
-            elif (exitCode == -4):
+            elif (exitStatus == -4):
                 errorMessage = "Invalid excluded directories."
-            elif (exitCode == -5):
+            elif (exitStatus == -5):
                 errorMessage = "Invalid settings. Cannot run multiple Fix Procedures when modify is checked."
-            elif (exitCode == -6):
+            elif (exitStatus == -6):
                 errorMessage = "Invalid arguments. Separate with \"/\""
             else:
-                exitCode = -999
-                errorMessage = "An error has occurred."
+                # In this case, "exitStatus" is the text from "traceback.format_exc()", before we change it to -999
+                errorMessage = f"An error has occurred.\n\n{exitStatus}"
+                exitStatus = -999
 
-            tk.messagebox.showerror(f"Error: {str(exitCode)}", errorMessage)
-            
+            tk.messagebox.showerror(f"Error: {str(exitStatus)}", errorMessage)
         else:
             # Otherwise check again after the specified number of milliseconds.
             scheduleCheckIfDone(t)
@@ -261,7 +267,7 @@ def view(isAdmin: bool):
     includeSubFoldersState = tk.IntVar(value=1)
     modifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=isAdmin)
-    currentState = tk.IntVar(value=0)
+    currentState = tk.StringVar(value=0)
     excludedDirs = []
 
 
