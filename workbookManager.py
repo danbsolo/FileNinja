@@ -406,7 +406,6 @@ class WorkbookManager:
             try: helpMeFile = open(HELPME_LITE, "r")
             except FileNotFoundError: return
 
-
         termDict = {}
         lines = helpMeFile.readlines()
         linesLength = len(lines)

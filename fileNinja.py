@@ -73,11 +73,11 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
 
     try:
         wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs)
+        wbm.close()
+        os.startfile(workbookPathName)
     except Exception as e:
         return traceback.format_exc()
     
-    wbm.close()
-    os.startfile(workbookPathName)
     return 0
 
 
@@ -125,7 +125,7 @@ def view(isAdmin: bool):
                 errorMessage = "Invalid arguments. Separate with \"/\""
             else:
                 # In this case, "exitStatus" is the text from "traceback.format_exc()", before we change it to -999
-                errorMessage = f"An error has occurred.\n\n{exitStatus}"
+                errorMessage = f"TAKE A SCREENSHOT -- an error has occured.\n\n{exitStatus}"
                 exitStatus = -999
 
             tk.messagebox.showerror(f"Error: {str(exitStatus)}", errorMessage)
