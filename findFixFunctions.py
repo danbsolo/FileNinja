@@ -80,7 +80,7 @@ def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws) -> bool:
     return 2  # SPECIAL CASE
 
 
-def spaceFileFind(_:str, _:str, itemName:str, ws) -> bool:
+def spaceFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
     if " " in itemName: 
         wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
         return True
