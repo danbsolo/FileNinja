@@ -137,9 +137,9 @@ class WorkbookManager:
             hiddenFileSkipStatus = self.hiddenFileSkipFunction(longFileAbsolute)
             if hiddenFileSkipStatus == 2: continue
 
-            
+
             for findProcedureObject in self.fileFindProcedures:
-                result = findProcedureObject.mainFunction(dirAbsolute, fileName, self.findSheets[findProcedureObject])
+                result = findProcedureObject.mainFunction(longFileAbsolute, dirAbsolute, fileName, self.findSheets[findProcedureObject])
 
                 if (result == True):
                     needsFolderWritten.add(self.findSheets[findProcedureObject])

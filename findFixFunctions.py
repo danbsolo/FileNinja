@@ -68,19 +68,19 @@ def writeOwnerHeader(ws):
 
 
 
-def listAll(_:str, itemName:str, ws) -> bool:
+def listAll(_1:str, _2:str, itemName:str, ws) -> bool:
     wbm.writeItemAndIncrement(ws, itemName)
     return 2  # SPECIAL CASE
 
 
-def listAllOwner(dirAbsolute:str, itemName:str, ws) -> bool:
+def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws) -> bool:
     wbm.writeItem(ws, itemName)
-    wbm.writeAuxiliaryAndIncrement(ws, getOwnerCatch(dirAbsolute))
+    wbm.writeAuxiliaryAndIncrement(ws, getOwnerCatch(longFileAbsolute))
 
     return 2  # SPECIAL CASE
 
 
-def spaceFileFind(_:str, itemName:str, ws) -> bool:
+def spaceFileFind(_:str, _:str, itemName:str, ws) -> bool:
     if " " in itemName: 
         wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
         return True
@@ -93,7 +93,7 @@ def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
         wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
 
 
-def overCharLimitFind(dirAbsolute:str, itemName:str, ws) -> bool:
+def overCharLimitFind(_:str, dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
     if (absoluteItemLength > CHARACTER_LIMIT):
         wbm.writeItem(ws, itemName, wbm.errorFormat)
@@ -116,7 +116,7 @@ def badCharHelper(s:str) -> set:
     return badChars
 
 
-def badCharFileFind(_:str, itemName:str, ws) -> bool:
+def badCharFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
     # If no extension (aka, no period), lastPeriodIndex will equal -1
     lastPeriodIndex = itemName.rfind(".")
 
@@ -149,9 +149,9 @@ def addLongPathPrefix(dirAbsolute):
         return '\\\\?\\' + dirAbsolute
 
 
-def oldFileFind(dirAbsolute:str, itemName:str, ws):
+def oldFileFind(longFileAbsolute:str, _:str, itemName:str, ws):
     try:
-        fileDate = datetime.fromtimestamp(os.path.getatime(addLongPathPrefix(dirAbsolute) + "\\" + itemName))
+        fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute + "\\" + itemName))
     except Exception as e:
         wbm.writeItem(ws, itemName, wbm.errorFormat)
         wbm.writeOutcome(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
@@ -161,7 +161,7 @@ def oldFileFind(dirAbsolute:str, itemName:str, ws):
     fileDaysAgoLastAccessed = (TODAY - fileDate).days
 
     if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD):
-        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
+        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         wbm.writeItem(ws, itemName, wbm.errorFormat)
         wbm.writeOutcomeAndIncrement(ws, "{}".format(fileDaysAgoLastAccessed))
         return True
@@ -350,7 +350,7 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
             wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
     return True
 
-def fileExtensionConcurrent(dirAbsolute:str, itemName:str, _):
+def fileExtensionConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str, _):
     try: fileSize = os.path.getsize(addLongPathPrefix(dirAbsolute)+"\\"+itemName) / 1000_000  # Bytes / 1000_000 = MBs
     except: return False
 
@@ -433,7 +433,7 @@ def duplicateContentHelper(dirAbsolute:str, itemName:str):
 
     return hashFunc.hexdigest()
 
-def duplicateContentConcurrent(dirAbsolute:str, itemName:str, ws):
+def duplicateContentConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
         hashCode = duplicateContentHelper(dirAbsolute, itemName)
     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
@@ -633,7 +633,7 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
         return True
 
 
-def emptyFileFind(dirAbsolute:str, itemName:str, ws):
+def emptyFileFind(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
         fileSize = os.path.getsize(addLongPathPrefix(dirAbsolute)+"\\"+itemName)
     except PermissionError:
