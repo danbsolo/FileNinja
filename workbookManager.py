@@ -126,16 +126,17 @@ class WorkbookManager:
         alreadyCounted = False
 
         for fileName in dirFiles:
-            longFileAbsolute = longDirAbsolute + "\\" + fileName
-
-            hiddenFileSkipStatus = self.hiddenFileSkipFunction(longFileAbsolute)
-            if hiddenFileSkipStatus == 2: continue
-
             # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
             # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
             # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
             if fileName.startswith("~$") or ".one" in fileName[-8:]:
                 continue
+
+            longFileAbsolute = longDirAbsolute + "\\" + fileName
+
+            hiddenFileSkipStatus = self.hiddenFileSkipFunction(longFileAbsolute)
+            if hiddenFileSkipStatus == 2: continue
+
             
             for findProcedureObject in self.fileFindProcedures:
                 result = findProcedureObject.mainFunction(dirAbsolute, fileName, self.findSheets[findProcedureObject])

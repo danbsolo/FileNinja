@@ -329,7 +329,7 @@ def view(isAdmin: bool):
     helpMeButton.pack(side=tk.LEFT)
 
     if isAdmin:
-        includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden files", variable=includeHiddenFilesState, font=fontGeneral)
+        includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
         includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
 
     executeButton = tk.Button(frames[8], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
