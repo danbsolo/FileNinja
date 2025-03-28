@@ -4,6 +4,9 @@ import os
 from workbookManager import WorkbookManager
 from datetime import datetime
 from procedureDefinitions import *
+import procedureFunctions
+import findFunctions
+import fixFunctions
 from defs import *
 from sys import exit
 from idlelib.tooltip import Hovertip
@@ -46,7 +49,9 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
 
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
-    setWorkbookManager(wbm)
+    procedureFunctions.setWorkbookManager(wbm)
+    findFunctions.setWorkbookManager(wbm)
+    fixFunctions.setWorkbookManager(wbm)
     
     # Add selected findProcedures
     for findProcedureName in selectedFindProcedures:

@@ -86,19 +86,14 @@ def get_file_owner_info(filename):
     sid_type_str = sid_type_map.get(sid_type.value, f"Unknown({sid_type.value})")
     return f"{domain_buf.value}\\{name_buf.value} ({sid_type_str})"
 
-def getOwner(dirAbsolute):
+def getOwner(longFileAbsolute):
     """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format."""
-    return get_file_owner_info(dirAbsolute)
+    return get_file_owner_info(longFileAbsolute)
 
-def getOwnerCatch(dirAbsolute):
+def getOwnerCatch(longFileAbsolute):
     """Wrapper that adjusts for UNC paths and catches exceptions."""
-    if dirAbsolute.startswith('\\\\'):
-        dirAbsolute = '\\\\?\\UNC' + dirAbsolute[1:]
-    else:
-        dirAbsolute = '\\\\?\\' + dirAbsolute
-
     try:
-        return getOwner(dirAbsolute)
+        return getOwner(longFileAbsolute)
     except Exception as e:
         return f"GET OWNER FAILED: {e}"
 
