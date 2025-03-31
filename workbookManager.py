@@ -220,7 +220,7 @@ class WorkbookManager:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
 
 
-        self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify)
+        self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles)
         self.excludedDirs = excludedDirs
         copyOfExcludedDirs = deepcopy(excludedDirs)
 
@@ -361,7 +361,7 @@ class WorkbookManager:
     #    self.incrementFileCount(ws)
         
 
-    def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify):
+    def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles):
         self.summarySheet.set_column(0, 0, 34)
         self.summarySheet.set_column(1, 1, 15)
         
@@ -369,15 +369,17 @@ class WorkbookManager:
         self.summarySheet.write(1, 0, "Excluded Directories", self.headerFormat)
         self.summarySheet.write(2, 0, "Include Subfolders", self.headerFormat)
         self.summarySheet.write(3, 0, "Allow Modify", self.headerFormat)
-        self.summarySheet.write(4, 0, "Argument(s)", self.headerFormat)
-        self.summarySheet.write(6, 0, "Folder count", self.headerFormat)
-        self.summarySheet.write(7, 0, "File count", self.headerFormat)
-        self.summarySheet.write(8, 0, "File error count / %", self.headerFormat)
-        self.summarySheet.write(9, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(4, 0, "Include Hidden Files", self.headerFormat)
+        self.summarySheet.write(5, 0, "Argument(s)", self.headerFormat)
+        self.summarySheet.write(7, 0, "Folder count", self.headerFormat)
+        self.summarySheet.write(8, 0, "File count", self.headerFormat)
+        self.summarySheet.write(9, 0, "File error count / %", self.headerFormat)
+        self.summarySheet.write(10, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(2, 1, str(includeSubFolders), self.summaryValueFormat)
         self.summarySheet.write(3, 1, str(allowModify), self.summaryValueFormat)
+        self.summarySheet.write(4, 1, str(includeHiddenFiles), self.summaryValueFormat)
 
 
     def populateSummarySheet(self):
@@ -391,11 +393,11 @@ class WorkbookManager:
             self.summarySheet.write(4, col, f"{arg[0] if len(arg) <= 1 else arg} : {fixProcedureObject.name}", self.summaryValueFormat)
             col += 1
         
-        self.summarySheet.write_number(6, 1, self.foldersScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(7, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(8, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(8, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(9, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(7, 1, self.foldersScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(8, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(9, 1, self.errorCount, self.summaryValueFormat)
+        self.summarySheet.write(9, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(10, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 1
         for exDir in self.excludedDirs:
