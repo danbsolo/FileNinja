@@ -229,7 +229,7 @@ class WorkbookManager:
         for findProcedureObject in list(self.findSheets.keys()):
             if findProcedureObject.isConcurrentOnly and findProcedureObject.isFileFind:
                 sheetsSansNonConcurrentAndFolderFind.append(self.findSheets[findProcedureObject])
-        sheetsSansNonConcurrentAndFolderFind.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscrimnately
+        sheetsSansNonConcurrentAndFolderFind.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
 
         ##
         walkObject = []
