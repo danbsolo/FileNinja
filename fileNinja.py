@@ -12,6 +12,7 @@ from sys import exit
 from idlelib.tooltip import Hovertip
 import threading
 import traceback
+import filesScannedSharedVar
 
 
 def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHiddenFiles:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
@@ -107,6 +108,8 @@ def view(isAdmin: bool):
         if not t.is_alive():
             root.title(FILE_NINJA)
             executeButton.config(text="Execute", state="normal")
+            filesScannedSharedVar.FILES_SCANNED = 0
+            filesScannedSharedVar.TOTAL_FILES = 0
 
             try:
                 exitStatus = int(currentState.get())
@@ -136,6 +139,9 @@ def view(isAdmin: bool):
             tk.messagebox.showerror(f"Error: {str(exitStatus)}", errorMessage)
         else:
             # Otherwise check again after the specified number of milliseconds.
+            filesScanned = filesScannedSharedVar.FILES_SCANNED
+            root.title(f"{FILE_NINJA} ({filesScanned})")
+            executeButton.config(text=f"{filesScanned} files")
             scheduleCheckIfDone(t)
     
 
@@ -144,7 +150,6 @@ def view(isAdmin: bool):
             return
             
         root.title(FILE_NINJA + ": RUNNING...")
-
         executeButton.config(text="RUNNING....", state="disabled")
 
         executionThread = threading.Thread(target=launchControllerWorker)

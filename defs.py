@@ -5,7 +5,6 @@ HELPME_ADMIN = "HELPME-Admin.txt"
 HELPME_LITE = "HELPME-Lite.txt"
 LOGO_PATH = HCS_ASSETS_PATH + "File-Ninja-Logo-Square.png"
 
-
 # NOTE: Excel worksheet name must be <= 31 characters
 LIST_ALL = "List All Files"
 LIST_ALL_OWNER = "List All Files (Owner)"  # @owner

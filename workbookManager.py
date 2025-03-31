@@ -5,6 +5,7 @@ import os
 from copy import deepcopy
 import stat
 from defs import *
+import filesScannedSharedVar
 
 
 class WorkbookManager:
@@ -162,6 +163,7 @@ class WorkbookManager:
                 elif (result == 3):
                     countAsError = True
             
+            filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
             if countAsError:
                 self.errorCount += 1
