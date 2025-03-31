@@ -23,7 +23,7 @@ class WorkbookManager:
         self.fixProcedureArgs = {}
         self.fixProcedureFunctions = {}
         # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write variable number of procedure metrics.
-        self.sheetRows = {self.summarySheet: 11} # worksheet : Integer
+        self.sheetRows = {self.summarySheet: 12} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
         # Lists to avoid many redundant if statements
@@ -286,7 +286,8 @@ class WorkbookManager:
             longDirAbsolute = addLongPathPrefix(dirAbsolute)
 
             # If folder is hidden, ignore it. Anything within a hidden folder is inadvertently ignored
-            if bool(os.stat(longDirAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN):
+            if self.isHidden(longDirAbsolute):
+                dirFolders[:] = []
                 continue
 
             initialRows.clear()
