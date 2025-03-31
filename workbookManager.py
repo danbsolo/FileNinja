@@ -117,10 +117,6 @@ class WorkbookManager:
         return True
     
 
-    def isHidden(self, longItemAbsolute):
-        return bool(os.stat(longItemAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
-
-
     def fileCrawl(self, dirAbsolute, longDirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
         alreadyCounted = False
@@ -187,6 +183,9 @@ class WorkbookManager:
         return needsFolderWritten
 
 
+    # def isHidden(self, longItemAbsolute):
+    #     return bool(os.stat(longItemAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+
     def isHiddenCheck(self, longFileAbsolute, includeHiddenFiles):
         # 0 == not hidden
         # 1 == hidden, but not required to skip as find procedure, just as fix procedure
@@ -199,7 +198,7 @@ class WorkbookManager:
             return 2
 
 
-    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs, ):
+    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs):
         def addLongPathPrefix(dirAbsolute):
             if dirAbsolute.startswith('\\\\'):
                 return '\\\\?\\UNC' + dirAbsolute[1:]

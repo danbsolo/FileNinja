@@ -1,6 +1,9 @@
 import ctypes
 from ctypes import wintypes
 
+# CUSTOM
+OWNER_INFO_CACHE = {}
+
 kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 advapi32 = ctypes.WinDLL('advapi32', use_last_error=True)
 
@@ -86,16 +89,19 @@ def get_file_owner_info(filename):
     sid_type_str = sid_type_map.get(sid_type.value, f"Unknown({sid_type.value})")
     return f"{domain_buf.value}\\{name_buf.value} ({sid_type_str})"
 
-def getOwner(longFileAbsolute):
-    """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format."""
-    return get_file_owner_info(longFileAbsolute)
-
 def getOwnerCatch(longFileAbsolute):
-    """Wrapper that adjusts for UNC paths and catches exceptions."""
-    try:
-        return getOwner(longFileAbsolute)
-    except Exception as e:
-        return f"GET OWNER FAILED: {e}"
+    """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format. Return error info if applicable. Also manage OWNER_CACHE."""
+    if longFileAbsolute in OWNER_INFO_CACHE.keys():
+        print("USING CACHE FOR", longFileAbsolute, "\n")
+        return OWNER_INFO_CACHE[longFileAbsolute]
+    else:
+        try:
+            ownerInfo = get_file_owner_info(longFileAbsolute)
+        except Exception as e:
+            ownerInfo = f"GET OWNER FAILED: {e}"
+
+    OWNER_INFO_CACHE[longFileAbsolute] = ownerInfo
+    return ownerInfo
 
 # Example usage:
 if __name__ == '__main__':
