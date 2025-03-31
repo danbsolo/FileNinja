@@ -105,7 +105,7 @@ def spaceFileFixHelper(oldItemName) -> str:
     return newItemNameSansExt + oldItemName[lastPeriodIndex:]
 
 
-def spaceFileFixLog(_:str, oldItemName:str, ws, _2):
+def spaceFileFixLog(_1:str, _2:str, _3:str, oldItemName:str, ws, _4):
     newItemName = spaceFileFixHelper(oldItemName)
     if (not newItemName): return False
 
@@ -114,7 +114,7 @@ def spaceFileFixLog(_:str, oldItemName:str, ws, _2):
     return True
     
 
-def spaceFileFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
+def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, _):
     newItemName = spaceFileFixHelper(oldItemName)
     if (not newItemName): return False
 
@@ -122,7 +122,7 @@ def spaceFileFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
 
     # Log newItemName and rename file
     try:
-        os.rename(addLongPathPrefix(dirAbsolute) + "\\" + oldItemName, addLongPathPrefix(dirAbsolute) + "\\" + newItemName)
+        os.rename(longFileAbsolute, joinDirToFileName(longDirAbsolute, newItemName))
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
         wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
@@ -131,12 +131,12 @@ def spaceFileFixModify(dirAbsolute:str, oldItemName:str, ws, _2):
     return True
 
 
-def deleteOldFilesHelper(fullFilePath: str, arg) -> int:
+def deleteOldFilesHelper(longFileAbsolute: str, arg) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
 
     daysLowerBound = arg[0]
     
-    # NOTE: This is not well-done code since, over the lifetime of an execution, this will always evaluate one or the other.
+    # TODO: This is not well-done code since, over the lifetime of an execution, this will always evaluate one or the other.
     if len(arg) == 2:
         daysUpperBound = arg[1]
     else:
@@ -146,7 +146,7 @@ def deleteOldFilesHelper(fullFilePath: str, arg) -> int:
     #  if (daysLowerBound <= 0): return -1
     
     # Get date of file. This *can* error virtue of the library functions, hence try/except
-    try: fileDate = datetime.fromtimestamp(os.path.getatime(addLongPathPrefix(fullFilePath)))
+    try: fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
     except: return -1
 
     fileDaysAgo = (TODAY - fileDate).days
@@ -155,9 +155,8 @@ def deleteOldFilesHelper(fullFilePath: str, arg) -> int:
     else: return 0
 
 
-def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws, arg):
-    fullFilePath =  dirAbsolute + "\\" + itemName
-    daysOld = deleteOldFilesHelper(fullFilePath, arg)
+def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
+    daysOld = deleteOldFilesHelper(longFileAbsolute, arg)
 
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.         
     if (daysOld == 0): return False
@@ -168,14 +167,13 @@ def deleteOldFilesLog(dirAbsolute:str, itemName:str, ws, arg):
         wbm.writeOutcome(ws, "UNABLE TO READ DATE", wbm.errorFormat)
         wbm.incrementRow(ws)
     else:
-        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
+        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
     return True
 
 
-def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
-    fullFilePath =  dirAbsolute + "\\" + itemName
-    daysOld = deleteOldFilesHelper(fullFilePath, arg)
+def deleteOldFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
+    daysOld = deleteOldFilesHelper(longFileAbsolute, arg)
 
     if (daysOld == 0): return False
 
@@ -186,8 +184,8 @@ def deleteOldFilesModify(dirAbsolute:str, itemName:str, ws, arg):
         wbm.incrementRow(ws)
     else:
         try:
-            wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
-            os.remove(addLongPathPrefix(fullFilePath))
+            wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+            os.remove(longFileAbsolute)
             wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
         except PermissionError:
             wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
@@ -282,7 +280,7 @@ def searchAndReplaceFileHelper(oldItemName:str, arg):
     return newItemNameSansExt + extension
 
 
-def searchAndReplaceFileLog(_:str, oldItemName:str, ws, arg):
+def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, oldItemName:str, ws, arg):
     if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return False
 
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
@@ -290,13 +288,13 @@ def searchAndReplaceFileLog(_:str, oldItemName:str, ws, arg):
     return True
 
 
-def searchAndReplaceFileModify(dirAbsolute:str, oldItemName:str, ws, arg):
+def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, arg):
     if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return False
 
     wbm.writeItem(ws, oldItemName, wbm.errorFormat)
 
     try:
-        os.rename(addLongPathPrefix(dirAbsolute) + "\\" + oldItemName, addLongPathPrefix(dirAbsolute) + "\\" + newItemName)
+        os.rename(longFileAbsolute, joinDirToFileName(longDirAbsolute, newItemName))
         wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
     except PermissionError:
         wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
@@ -305,9 +303,9 @@ def searchAndReplaceFileModify(dirAbsolute:str, oldItemName:str, ws, arg):
     return True
 
 
-def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
+def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
     try:
-        fileSize = os.path.getsize(addLongPathPrefix(dirAbsolute)+"\\"+itemName) 
+        fileSize = os.path.getsize(longFileAbsolute)  # Bytes
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
@@ -321,19 +319,17 @@ def deleteEmptyFilesLog(dirAbsolute:str, itemName:str, ws, _):
 
     if fileSize == 0:
         wbm.writeItem(ws, itemName)
-        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
+        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
         return True
 
 
-def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
+def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
     """Glitch exists in that the current excel file will be considered empty.
     However, despite claiming so, the program does not actually delete it.'"""
 
-    fullFilePath =  dirAbsolute + "\\" + itemName
-
     try:
-        fileSize = os.path.getsize(addLongPathPrefix(fullFilePath))  # Bytes
+        fileSize = os.path.getsize(longFileAbsolute)
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
@@ -350,8 +346,8 @@ def deleteEmptyFilesModify(dirAbsolute:str, itemName:str, ws, _):
         wbm.writeItem(ws, itemName)
 
         try:
-            wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
-            os.remove(addLongPathPrefix(fullFilePath))
+            wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+            os.remove(longFileAbsolute)
             wbm.writeOutcomeAndIncrement(ws, "", wbm.modifyFormat)
         except PermissionError:
             wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)

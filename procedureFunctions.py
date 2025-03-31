@@ -36,3 +36,5 @@ def writeOwnerHeader(ws):
     
 
 
+def joinDirToFileName(dirAbsolute, fileName):
+    return dirAbsolute + "\\" + fileName

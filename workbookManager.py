@@ -117,7 +117,7 @@ class WorkbookManager:
         return True
     
 
-    def fileCrawl(self, dirAbsolute, longDirAbsolute, dirFiles: List[str]):
+    def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
         alreadyCounted = False
 
@@ -162,13 +162,13 @@ class WorkbookManager:
                 # If file is hidden, ignore it. Fix procedures will not have access to hidden files
                 if hiddenFileSkipStatus != 0: break
 
-                if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
+                if (self.fixProcedureFunctions[fixProcedureObject](longFileAbsolute, longDirAbsolute, dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
 
         return needsFolderWritten            
 
 
-    def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
+    def folderCrawl(self, longDirAbsolute, dirAbsolute, dirFolders, dirFiles):
         needsFolderWritten = set()
 
         for findProcedureObject in self.folderFindProcedures:
@@ -294,21 +294,20 @@ class WorkbookManager:
             for ws in sheetsSansNonConcurrentAndFolderFind:
                 initialRows[ws] = self.sheetRows[ws]
 
-            # union operator usage lol
-            needsFolderWritten = self.fileCrawl(dirAbsolute, longDirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+            # union operator usage, lol
+            needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(longDirAbsolute, dirAbsolute, dirFolders, dirFiles)
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
+        #
 
         for findProcedureObject in self.findSheets.keys():
             if findProcedureObject.postFunction:
                 findProcedureObject.postFunction(self.findSheets[findProcedureObject])
 
-        #
         for fixProcedureObject in self.fixSheets.keys():
             if fixProcedureObject.postFunction:
                 fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
-        #
         
         self.executionTime = time() - start
 
