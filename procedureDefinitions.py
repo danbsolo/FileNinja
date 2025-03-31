@@ -39,9 +39,9 @@ FIND_PROCEDURES_DISPLAY = [
 # This is so the "/" separated list of arguments from the "Parameter" field are properly distributed.
 FIX_PROCEDURES = {
     SPACE_FILE_FIX: FixProcedure(SPACE_FILE_FIX, spaceFileFixLog, spaceFileFixModify, True),
-    DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed", startFunction=writeOwnerHeader),
+    DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed", startFunction=deleteOldFilesStart),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained"),
-    DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion", startFunction=writeOwnerHeader),
+    DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion", startFunction=deleteEmptyFilesStart),
     SEARCH_AND_REPLACE_FILE: FixProcedure(SEARCH_AND_REPLACE_FILE, searchAndReplaceFileLog, searchAndReplaceFileModify, True, multiplePairsOfStringsValidator, ">"),
     SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False, postFunction=fixfolderModifyPost),
     SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, multiplePairsOfStringsValidator, ">", postFunction=fixfolderModifyPost)

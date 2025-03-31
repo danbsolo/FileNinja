@@ -130,17 +130,19 @@ def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:st
         wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
     return True
 
+def deleteOldFilesStart(arg, ws):
+    writeOwnerHeader(ws)
+
+    global DAYS_UPPER_BOUND
+    if len(arg) == 2:
+        DAYS_UPPER_BOUND = arg[1]
+    else:
+        DAYS_UPPER_BOUND = MAXSIZE
 
 def deleteOldFilesHelper(longFileAbsolute: str, arg) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
 
     daysLowerBound = arg[0]
-    
-    # TODO: This is not well-done code since, over the lifetime of an execution, this will always evaluate one or the other.
-    if len(arg) == 2:
-        daysUpperBound = arg[1]
-    else:
-        daysUpperBound = MAXSIZE
 
     # Could double-check that this value is usable each time. Dire consequences if not.
     #  if (daysLowerBound <= 0): return -1
@@ -151,7 +153,7 @@ def deleteOldFilesHelper(longFileAbsolute: str, arg) -> int:
 
     fileDaysAgo = (TODAY - fileDate).days
 
-    if (daysLowerBound <= fileDaysAgo) and (fileDaysAgo <= daysUpperBound): return fileDaysAgo
+    if (daysLowerBound <= fileDaysAgo) and (fileDaysAgo <= DAYS_UPPER_BOUND): return fileDaysAgo
     else: return 0
 
 
@@ -303,9 +305,13 @@ def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbs
     return True
 
 
+def deleteEmptyFilesStart(_, ws):
+    writeOwnerHeader(ws)
+
+
 def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
     try:
-        fileSize = os.path.getsize(longFileAbsolute)  # Bytes
+        fileSize = os.path.getsize(longFileAbsolute) # Bytes
     except PermissionError:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)

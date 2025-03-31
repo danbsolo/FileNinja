@@ -273,7 +273,7 @@ class WorkbookManager:
 
         for fixProcedureObject in self.fixSheets.keys():
            if fixProcedureObject.startFunction:
-               fixProcedureObject.startFunction(self.fixSheets[fixProcedureObject])
+               fixProcedureObject.startFunction(self.fixProcedureArgs[fixProcedureObject], self.fixSheets[fixProcedureObject])
         ###
 
         #
