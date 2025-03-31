@@ -22,10 +22,10 @@ DUPLICATE_CONTENT_FIND = "Identical Files Error"
 FILE_EXTENSION_SUMMARY = "Large File Size"
 
 # NULL_OPTION = ""
-SPACE_FILE_FIX = "Replace Space with Hyphen"
+SPACE_FILE_FIX = "Replace Space with Hyphen Error"
 SEARCH_AND_REPLACE_FILE = "Replace Characters#"
-DELETE_OLD_FILES = "Delete Old Files#"  # @owner
+DELETE_OLD_FILES = "Delete Old Files Error#"  # @owner
 DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories#"
-DELETE_EMPTY_FILES = "Delete Empty Files"  # @owner
+DELETE_EMPTY_FILES = "Delete Empty Files Error"  # @owner
 SPACE_FOLDER_FIX = "Replace Space with Hyphen (Dir)"
 SEARCH_AND_REPLACE_FOLDER = "Replace Characters (Dir)#"
