@@ -130,7 +130,7 @@ class WorkbookManager:
 
             longFileAbsolute = longDirAbsolute + "\\" + fileName
 
-            hiddenFileSkipStatus = self.hiddenFileSkipFunction(longFileAbsolute)
+            hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
             if hiddenFileSkipStatus == 2: continue
 
 
@@ -183,19 +183,26 @@ class WorkbookManager:
         return needsFolderWritten
 
 
-    # def isHidden(self, longItemAbsolute):
-    #     return bool(os.stat(longItemAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+    def isHidden(self, longItemAbsolute):
+        return bool(os.stat(longItemAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
 
-    def isHiddenCheck(self, longFileAbsolute, includeHiddenFiles):
+    # When we want to INCLUDE all hidden files (for find procedures only)
+    def includeHiddenFilesCheck(self, longFileAbsolute):
         # 0 == not hidden
-        # 1 == hidden, but not required to skip as find procedure, just as fix procedure
-        # 2 == hidden, and we must skip in totality
-        if not bool(os.stat(longFileAbsolute).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN):
-            return 0
-        elif includeHiddenFiles:
+        # 1 == hidden, but not required to skip for find procedures, just for fix procedures
+        if self.isHidden(longFileAbsolute):
             return 1
         else:
+            return 0
+    
+    # When we want to EXCLUDE all hidden files
+    def excludeHiddenFilesCheck(self, longFileAbsolute):
+        # 0 == not hidden
+        # 2 == hidden, and we must skip in totality
+        if self.isHidden(longFileAbsolute):
             return 2
+        else:
+            return 0
 
 
     def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs):
@@ -207,8 +214,11 @@ class WorkbookManager:
         
         start = time()
 
-        # A closure; pre-filling the "skipHiddenFile" argument for the ease of use in self.fileCrawl().
-        self.hiddenFileSkipFunction = lambda longFileAbsolute: self.isHiddenCheck(longFileAbsolute, includeHiddenFiles)
+        if includeHiddenFiles:
+            self.hiddenFileCheck = lambda longFileAbsolute: self.includeHiddenFilesCheck(longFileAbsolute)
+        else:
+            self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
+
 
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify)
         self.excludedDirs = excludedDirs
