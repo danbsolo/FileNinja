@@ -119,8 +119,8 @@ class WorkbookManager:
 
     def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
-        alreadyCounted = False
-
+        countAsError = False
+        
         for fileName in dirFiles:
             # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
             # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
@@ -133,37 +133,39 @@ class WorkbookManager:
             hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
             if hiddenFileSkipStatus == 2: continue
 
-
             for findProcedureObject in self.fileFindProcedures:
                 result = findProcedureObject.mainFunction(longFileAbsolute, dirAbsolute, fileName, self.findSheets[findProcedureObject])
 
                 if (result == True):
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
-                    
-                    if (not alreadyCounted):
-                        self.errorCount += 1
-                        alreadyCounted = True
-
+                    countAsError = True
                 elif (result == False):
                     pass
-
                 elif (result == 2):  # Special case (ex: Used by List All Files)
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
-                
                 elif (result == 3):  # Special case (ex: used by Identical Files Error)
-                    if (not alreadyCounted):
-                        self.errorCount += 1
-                        alreadyCounted = True
-
-            alreadyCounted = False
-            self.filesScannedCount += 1
+                    countAsError = True
 
             for fixProcedureObject in self.fileFixProcedures:
                 # If file is hidden, ignore it. Fix procedures will not have access to hidden files
                 if hiddenFileSkipStatus != 0: break
 
-                if (self.fixProcedureFunctions[fixProcedureObject](longFileAbsolute, longDirAbsolute, dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
+                result = self.fixProcedureFunctions[fixProcedureObject](longFileAbsolute, longDirAbsolute, dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+
+                if (result == True):
+                    countAsError = True
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+                elif (result == False):
+                    pass
+                elif (result == 2):
+                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+                elif (result == 3):
+                    countAsError = True
+            
+            self.filesScannedCount += 1
+            if countAsError:
+                self.errorCount += 1
+                countAsError = False
 
         return needsFolderWritten            
 

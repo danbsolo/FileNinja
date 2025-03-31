@@ -130,8 +130,15 @@ def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:st
         wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
     return True
 
+
 def deleteOldFilesStart(arg, ws):
     writeOwnerHeader(ws)
+    
+    global DAYS_LOWER_BOUND
+    DAYS_LOWER_BOUND = arg[0]
+    # Double-checking that this value is usable. Dire consequences if not.
+    if (DAYS_LOWER_BOUND <= 0):
+        raise Exception("DeleteOldFiles lower bound argument cannot be less than 1.")
 
     global DAYS_UPPER_BOUND
     if len(arg) == 2:
@@ -139,21 +146,17 @@ def deleteOldFilesStart(arg, ws):
     else:
         DAYS_UPPER_BOUND = MAXSIZE
 
+
 def deleteOldFilesHelper(longFileAbsolute: str, arg) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
 
-    daysLowerBound = arg[0]
-
-    # Could double-check that this value is usable each time. Dire consequences if not.
-    #  if (daysLowerBound <= 0): return -1
-    
     # Get date of file. This *can* error virtue of the library functions, hence try/except
     try: fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
     except: return -1
 
     fileDaysAgo = (TODAY - fileDate).days
 
-    if (daysLowerBound <= fileDaysAgo) and (fileDaysAgo <= DAYS_UPPER_BOUND): return fileDaysAgo
+    if (DAYS_LOWER_BOUND <= fileDaysAgo) and (fileDaysAgo <= DAYS_UPPER_BOUND): return fileDaysAgo
     else: return 0
 
 
@@ -166,8 +169,9 @@ def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str
     wbm.writeItem(ws, itemName)
 
     if (daysOld == -1):
-        wbm.writeOutcome(ws, "UNABLE TO READ DATE", wbm.errorFormat)
+        wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
         wbm.incrementRow(ws)
+        return 2
     else:
         wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
@@ -184,6 +188,7 @@ def deleteOldFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:
     if (daysOld == -1):
         wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
         wbm.incrementRow(ws)
+        return 2
     else:
         try:
             wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
@@ -316,18 +321,19 @@ def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:s
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return True
+        return 2
     except Exception as e:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return True
+        return 2
 
     if fileSize == 0:
         wbm.writeItem(ws, itemName)
         wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
         return True
+    return False
 
 
 def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
@@ -340,12 +346,12 @@ def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolut
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return True
+        return 2
     except Exception as e:
         wbm.writeItem(ws, itemName)
         wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return True
+        return 2
 
     # Stage for deletion
     if fileSize == 0:
@@ -360,3 +366,4 @@ def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolut
         except Exception as e:
             wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
         return True
+    return False
