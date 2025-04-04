@@ -53,7 +53,9 @@ class WorkbookManager:
         self.logFormat = self.wb.add_format({"bg_color": "#9999FF", "bold": True})  # purplish
         self.headerFormat = self.wb.add_format({"bg_color": "#C0C0C0", "bold": True})  # grayish
         self.summaryValueFormat = self.wb.add_format({})
-        self.warningFormat = self.wb.add_format({"bg_color": "#F7B900", "bold": True})  # yellowish
+
+        self.warningWeakFormat = self.wb.add_format({"bg_color": "#FFEB9C", "bold": True})  # yellowish
+        self.warningStrongFormat = self.wb.add_format({"bg_color": "#FFC7CE", "bold": True})  # reddish
 
 
     def getAllProcedureSheets(self):
@@ -82,7 +84,7 @@ class WorkbookManager:
             self.folderFindProcedures.append(findProcedureObject)
             
 
-    def addFixProcedure(self, fixProcedureObject, allowModify, arg) -> bool:
+    def addFixProcedure(self, fixProcedureObject, allowModify, addRecommendations, arg) -> bool:
         tmpWsVar = self.wb.add_worksheet(fixProcedureObject.name)
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, fixProcedureObject.name + " count", self.headerFormat)
 
@@ -92,9 +94,16 @@ class WorkbookManager:
 
         if allowModify:
             self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.modifyFunction
+        elif addRecommendations and fixProcedureObject.recommendLogFunction:
+            self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.recommendLogFunction
         else:
             self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.logFunction
-        
+
+        ###
+        #if fixProcedureObject.recommendLogFunction:
+        #    self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.recommendLogFunction
+        ###
+
         if fixProcedureObject.isFileFix:
             self.fileFixProcedures.append(fixProcedureObject)
         else:

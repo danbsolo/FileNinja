@@ -147,7 +147,7 @@ def deleteOldFilesStart(arg, ws):
         DAYS_UPPER_BOUND = MAXSIZE
 
 
-def deleteOldFilesHelper(longFileAbsolute: str, arg) -> int:
+def deleteOldFilesLowerboundHelper(longFileAbsolute: str, arg) -> int:
     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
 
     # Get date of file. This *can* error virtue of the library functions, hence try/except
@@ -156,15 +156,17 @@ def deleteOldFilesHelper(longFileAbsolute: str, arg) -> int:
 
     fileDaysAgo = (TODAY - fileDate).days
 
-    if (DAYS_LOWER_BOUND <= fileDaysAgo) and (fileDaysAgo <= DAYS_UPPER_BOUND): return fileDaysAgo
+    if (DAYS_LOWER_BOUND <= fileDaysAgo): return fileDaysAgo
     else: return 0
 
 
 def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
-    daysOld = deleteOldFilesHelper(longFileAbsolute, arg)
+    daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
 
-    # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.         
-    if (daysOld == 0): return False
+    # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
+    # If it's greater than the upperbound, exit
+    if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
+        return False
 
     wbm.writeItem(ws, itemName)
 
@@ -178,10 +180,38 @@ def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str
     return True
 
 
-def deleteOldFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
-    daysOld = deleteOldFilesHelper(longFileAbsolute, arg)
+###
+def deleteOldFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
+    daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
 
     if (daysOld == 0): return False
+
+    if (daysOld == -1):
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
+        wbm.incrementRow(ws)
+        return 2
+    else:
+        # Unlike the other variants, this will still log (and flag) items above the UPPER_BOUND threshold
+        if daysOld >= DAYS_UPPER_BOUND:
+            dynamicFormat = wbm.warningStrongFormat
+        else:
+            dynamicFormat = wbm.warningWeakFormat
+
+        wbm.writeItem(ws, itemName, dynamicFormat)
+        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        wbm.writeOutcomeAndIncrement(ws, daysOld, dynamicFormat)
+    return True
+###
+
+
+def deleteOldFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
+    daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
+
+    # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
+    # If it's greater than the upperbound, exit
+    if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
+        return False
 
     wbm.writeItem(ws, itemName)
 
@@ -213,6 +243,31 @@ def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
         wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
         return True
     return False
+
+
+###
+def deleteEmptyDirectoriesRecommendLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
+    tooFewAmount = arg[0]
+
+    if len(dirFolders) != 0: return False
+
+    fileAmount = len(dirFiles)
+    if fileAmount <= tooFewAmount:
+        
+        ## HARD CODED RECOMMENDATIONS
+        # Dynamic Format
+        if fileAmount <= 1:
+            dynamicFormat = wbm.warningStrongFormat
+        elif fileAmount == 2:
+            dynamicFormat = wbm.warningWeakFormat
+        else:
+            dynamicFormat = wbm.logFormat
+
+        # wbm.writeItem(ws, "", dynamicFormat)
+        wbm.writeOutcomeAndIncrement(ws, fileAmount, dynamicFormat)
+        return True
+    return False
+###
     
 
 def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
@@ -334,6 +389,30 @@ def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:s
         wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
         return True
     return False
+
+
+###
+def deleteEmptyFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
+    try:
+        fileSize = os.path.getsize(longFileAbsolute)
+    except PermissionError:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        wbm.incrementRow(ws)
+        return 2
+    except Exception as e:
+        wbm.writeItem(ws, itemName)
+        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        wbm.incrementRow(ws)
+        return 2
+
+    if fileSize == 0:
+        wbm.writeItem(ws, itemName, wbm.warningStrongFormat)
+        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        wbm.writeOutcomeAndIncrement(ws, "", wbm.warningStrongFormat)
+        return True
+    return False
+###
 
 
 def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):

@@ -166,7 +166,7 @@ def fileExtensionPost(ws):
 
         # only count as an error if the average size is above a threshold
         if (averageSize >= TOO_LARGE_SIZE_MB):
-            ws.write_string(row, 0, extension, wbm.warningFormat)
+            ws.write_string(row, 0, extension, wbm.warningWeakFormat)
             wbm.incrementFileCount(ws)
         else:
             ws.write_string(row, 0, extension)

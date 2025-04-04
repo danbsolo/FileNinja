@@ -15,12 +15,16 @@ import traceback
 import filesScannedSharedVar
 
 
-def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHiddenFiles:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
+def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
 
     # If multiple fix procedures are selected and allowModify is checked, exit
     if allowModify and len(selectedFixProcedures) > 1:
         return -5
+    
+    # If allowModify and addRecommendations are both turned on, even if it would be of no consequence, exit
+    if allowModify and addRecommendations:
+        return -7
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
@@ -73,7 +77,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
             arg = argsList[currentArg]
             currentArg += 1
         
-        if (not wbm.addFixProcedure(FIX_PROCEDURES[fixProcedureName], allowModify, arg)):
+        if (not wbm.addFixProcedure(FIX_PROCEDURES[fixProcedureName], allowModify, addRecommendations, arg)):
             return -3
 
 
@@ -92,7 +96,7 @@ def view(isAdmin: bool):
     def launchControllerWorker():        
         currentState.set(102)  # 102 == The HTTP response code for "Still processing"
 
-        exitStatus = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), bool(includeHiddenFilesState.get()),
+        exitStatus = control(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
@@ -131,6 +135,8 @@ def view(isAdmin: bool):
                 errorMessage = "Invalid settings. Cannot run multiple Fix Procedures when modify is checked."
             elif (exitStatus == -6):
                 errorMessage = "Invalid arguments. Separate with \"/\""
+            elif (exitStatus == -7):
+                errorMessage = "Invalid settings. Cannot run recommendations and modifications simultaneously."
             else:
                 # In this case, "exitStatus" is the text from "traceback.format_exc()", before we change it to -999
                 errorMessage = f"TAKE A SCREENSHOT -- an error has occured.\n\n{exitStatus}"
@@ -277,6 +283,7 @@ def view(isAdmin: bool):
     includeSubFoldersState = tk.IntVar(value=1)
     modifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=isAdmin)
+    addRecommendationsState = tk.IntVar(value=0)
     currentState = tk.StringVar(value=0)
     excludedDirs = []
 
@@ -341,6 +348,8 @@ def view(isAdmin: bool):
     if isAdmin:
         includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
         includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
+        addRecommendationsButton = tk.Checkbutton(frames[7], text="Add Recommendations", variable=addRecommendationsState, font=fontGeneral)
+        addRecommendationsButton.pack(side=tk.LEFT)
 
     executeButton = tk.Button(frames[8], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()
@@ -358,16 +367,17 @@ def view(isAdmin: bool):
     dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
     excludeTip = Hovertip(excludeButton, "Browse to exclude subfolders of currently selected directory.", hover_delay=tooltipHoverDelay)
     findTip = Hovertip(findLabel, "Run a Find procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
+    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subfolders, other than those excluded.", hover_delay=tooltipHoverDelay)
+    helpMeTip = Hovertip(helpMeButton, "Open HELPME file.", hover_delay=tooltipHoverDelay)
+    executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)
+    resultsTip = Hovertip(resultsButton, "Open folder containing all excel files of previous executions.", hover_delay=tooltipHoverDelay)
     if isAdmin: 
         fixTip = Hovertip(fixLabel, "Run a Fix procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
         parameterTip = Hovertip(parameterLabel, "Input a number, string, etc. Required for some Fix procedures.", hover_delay=tooltipHoverDelay)
         modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this feature, leave this off.", hover_delay=tooltipHoverDelay)
         includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Turn on to include hidden files in Find procedure output. Fix procedures ignore hidden files irregardless.", hover_delay=tooltipHoverDelay)
-    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subfolders, other than those excluded.", hover_delay=tooltipHoverDelay)
-    helpMeTip = Hovertip(helpMeButton, "Open HELPME file.", hover_delay=tooltipHoverDelay)
-    executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)
-    resultsTip = Hovertip(resultsButton, "Open folder containing all excel files of previous executions.", hover_delay=tooltipHoverDelay)
-
+        addRecommendationsTip = Hovertip(addRecommendationsButton, "Turn on to add recommendations to some procedures.", hover_delay=tooltipHoverDelay)
+    
 
     # bindings
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
