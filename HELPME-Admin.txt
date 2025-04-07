@@ -26,6 +26,9 @@ If checked, executes all changes irreversibly. If unsure, ALWAYS leave this unch
 - Include Hidden Files (ADMIN ONLY)
 If checked, includes hidden files in output for Find procedures only. Fix procedures always ignore hidden files.
 
+- Add Recommendations (ADMIN ONLY)
+If checked, adds recommendations via highlighting for some Fix procedures.
+
 - Execute
 Execute operations given the settings.
 
@@ -97,6 +100,9 @@ Note:
 
 - Delete Old Files#
 Deletes any files that has not been accessed in a set number of days or in a range. Read "Old File Error" find procedure for more information. Requires argument. Includes owner column. Example 1: With the argument set to "500", any file that has not been accessed in 500 days or more will get deleted. Example 2: With the argument set to "100-120", any file that has not been accessed between 100 and 120 days (inclusive) will get deleted.
+
+- Delete Identical Files (WIP)
+Logs any duplicate files. Work in Progress, so it does not delete anything yet, even with "Allow Modify" checked.
 
 - Delete Empty Files
 Deletes any file that is 0 bytes in size. Read "Empty File Error" find procedure for more information. Includes owner column.

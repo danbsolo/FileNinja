@@ -44,14 +44,15 @@ FIX_PROCEDURES = {
     DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion", startFunction=deleteEmptyFilesStart, recommendLogFunction=deleteEmptyFilesRecommendLog),
     SEARCH_AND_REPLACE_FILE: FixProcedure(SEARCH_AND_REPLACE_FILE, searchAndReplaceFileLog, searchAndReplaceFileModify, True, multiplePairsOfStringsValidator, ">"),
     SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False, postFunction=fixfolderModifyPost),
-    SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, multiplePairsOfStringsValidator, ">", postFunction=fixfolderModifyPost)
+    SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, multiplePairsOfStringsValidator, ">", postFunction=fixfolderModifyPost),
+    DELETE_IDENTICAL_FILES: FixProcedure(DELETE_IDENTICAL_FILES, deleteIdenticalFilesLogConcurrent, deleteIdenticalFilesLogConcurrent, True, startFunction=deleteIdenticalFilesStart, postFunction=deleteIdenticalFilesPost, recommendPostFunction=deleteIdenticalFilesRecommendPost)
 }
 
 FIX_PROCEDURES_DISPLAY = [
     "",
     "",
     DELETE_OLD_FILES,
-    "",
+    DELETE_IDENTICAL_FILES,
     DELETE_EMPTY_FILES,
     DELETE_EMPTY_DIRECTORIES_FIX,
     SPACE_FILE_FIX,

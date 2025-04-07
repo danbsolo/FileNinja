@@ -28,3 +28,4 @@ DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directories#"
 DELETE_EMPTY_FILES = "Delete Empty Files Error"  # @owner
 SPACE_FOLDER_FIX = "Replace Space with Hyphen (Dir)"
 SEARCH_AND_REPLACE_FOLDER = "Replace Characters (Dir)#"
+DELETE_IDENTICAL_FILES = "Delete Identical Files (WIP)"

@@ -218,7 +218,7 @@ class WorkbookManager:
             return 0
 
 
-    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs):
+    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
         def addLongPathPrefix(dirAbsolute):
             if dirAbsolute.startswith('\\\\'):
                 return '\\\\?\\UNC' + dirAbsolute[1:]
@@ -318,10 +318,20 @@ class WorkbookManager:
             if findProcedureObject.postFunction:
                 findProcedureObject.postFunction(self.findSheets[findProcedureObject])
 
-        for fixProcedureObject in self.fixSheets.keys():
-            if fixProcedureObject.postFunction:
-                fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
-        
+        ###
+        # TODO: Change this (and everywhere else where applicable) to just call a procedureObject function that returns (ala, a getter) the proper function so that it is encapsulated
+        if addRecommendations:
+            for fixProcedureObject in self.fixSheets.keys():
+                if fixProcedureObject.recommendPostFunction:
+                    fixProcedureObject.recommendPostFunction(self.fixSheets[fixProcedureObject])
+                elif fixProcedureObject.postFunction:
+                    fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
+        else:
+            for fixProcedureObject in self.fixSheets.keys():
+                if fixProcedureObject.postFunction:
+                    fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
+        ###
+              
         self.executionTime = time() - start
 
 

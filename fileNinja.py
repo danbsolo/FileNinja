@@ -82,7 +82,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
 
 
     try:
-        wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, excludedDirs)
+        wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs)
         wbm.close()
         os.startfile(workbookPathName)
     except Exception as e:
