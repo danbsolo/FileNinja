@@ -501,7 +501,7 @@ def deleteIdenticalFilesRecommendPost(ws):
 
     for hashCode in HASH_AND_FILES.keys():
         if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "---"*4, wbm.logFormat)
+            ws.write(row, 0, "------------", wbm.logFormat)
 
             # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
             if (numOfFiles >= 3):
@@ -533,7 +533,7 @@ def deleteIdenticalFilesRecommendPost(ws):
                         ws.write(row, 3, getOwnerCatch(dirAbsoluteKey))
                         row += 1
                 
-                # If this file is only duplicated once in directory, just write it normally
+                # If this file is only duplicated once in this directory, just write it normally
                 else:
                     ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
@@ -555,8 +555,7 @@ def deleteIdenticalFilesPost(ws):
     row = 1
     for hashCode in HASH_AND_FILES.keys():
         if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "---"*4, wbm.logFormat)
-
+            ws.write(row, 0, "------------", wbm.logFormat)
 
             for i in range(numOfFiles):
                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)

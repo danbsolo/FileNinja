@@ -24,7 +24,7 @@ class WorkbookManager:
         self.fixProcedureArgs = {}
         self.fixProcedureFunctions = {}
         # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write variable number of procedure metrics.
-        self.sheetRows = {self.summarySheet: 12} # worksheet : Integer
+        self.sheetRows = {self.summarySheet: 13} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
         # Lists to avoid many redundant if statements
@@ -233,9 +233,8 @@ class WorkbookManager:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
 
 
-        self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles)
+        self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
         self.excludedDirs = excludedDirs
-        copyOfExcludedDirs = deepcopy(excludedDirs)
 
         #
         sheetsSansNonConcurrentAndFolderFind = []
@@ -248,22 +247,7 @@ class WorkbookManager:
         walkObject = []
 
         if (includeSubfolders):
-            if (not excludedDirs):
-                walkObject = os.walk(baseDirAbsolute)
-            else:
-                for dirAbsolute, dirFolders, dirFiles in os.walk(baseDirAbsolute):
-                    isDirIncluded = True
-                    
-                    for exDir in copyOfExcludedDirs:
-                        if dirAbsolute.startswith(exDir):  # exclude by subDirAbsolute to be precise
-                            isDirIncluded = False
-                            copyOfExcludedDirs.remove(exDir)
-                            break
-
-                    if isDirIncluded:
-                        walkObject.append((dirAbsolute, dirFolders, dirFiles))
-                    else:
-                        dirFolders[:] = []  # stop traversal of this folder and its subfolders
+            walkObject = os.walk(baseDirAbsolute)
         
         else:
             # mimic os.walk()'s output but only for the current directory
@@ -288,18 +272,17 @@ class WorkbookManager:
            if fixProcedureObject.startFunction:
                fixProcedureObject.startFunction(self.fixProcedureArgs[fixProcedureObject], self.fixSheets[fixProcedureObject])
         ###
+        
+        # TODO: Clean this up?
+        excludedDirsSet = set(excludedDirs)
 
         #
         initialRows = {}
         for (dirAbsolute, dirFolders, dirFiles) in walkObject:
             # Ignore specifically OneNote_RecycleBin folders. Assumes these NEVER have subfolders.
-            if (dirAbsolute.endswith("OneNote_RecycleBin")): continue
-
-            # Get "long file path"
-            longDirAbsolute = addLongPathPrefix(dirAbsolute)
-
-            # If folder is hidden, ignore it. Anything within a hidden folder is inadvertently ignored
-            if self.isHidden(longDirAbsolute):
+            # Ignore excluded directories.
+            # Get "long file path". If folder is hidden, ignore it. Anything within a hidden folder is inadvertently ignored.
+            if (dirAbsolute.endswith("OneNote_RecycleBin")) or (dirAbsolute in excludedDirsSet) or self.isHidden(longDirAbsolute := addLongPathPrefix(dirAbsolute)):
                 dirFolders[:] = []
                 continue
 
@@ -384,7 +367,7 @@ class WorkbookManager:
     #    self.incrementFileCount(ws)
         
 
-    def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles):
+    def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles, addRecommendations):
         self.summarySheet.set_column(0, 0, 34)
         self.summarySheet.set_column(1, 1, 15)
         
@@ -393,16 +376,18 @@ class WorkbookManager:
         self.summarySheet.write(2, 0, "Include Subfolders", self.headerFormat)
         self.summarySheet.write(3, 0, "Allow Modify", self.headerFormat)
         self.summarySheet.write(4, 0, "Include Hidden Files", self.headerFormat)
-        self.summarySheet.write(5, 0, "Argument(s)", self.headerFormat)
-        self.summarySheet.write(7, 0, "Folder count", self.headerFormat)
-        self.summarySheet.write(8, 0, "File count", self.headerFormat)
-        self.summarySheet.write(9, 0, "File error count / %", self.headerFormat)
-        self.summarySheet.write(10, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(5, 0, "Add Recommendations", self.headerFormat)
+        self.summarySheet.write(6, 0, "Argument(s)", self.headerFormat)
+        self.summarySheet.write(8, 0, "Folder count", self.headerFormat)
+        self.summarySheet.write(9, 0, "File count", self.headerFormat)
+        self.summarySheet.write(10, 0, "File error count / %", self.headerFormat)
+        self.summarySheet.write(11, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(2, 1, str(includeSubFolders), self.summaryValueFormat)
         self.summarySheet.write(3, 1, str(allowModify), self.summaryValueFormat)
         self.summarySheet.write(4, 1, str(includeHiddenFiles), self.summaryValueFormat)
+        self.summarySheet.write(5, 1, str(addRecommendations), self.summaryValueFormat)
 
 
     def populateSummarySheet(self):
@@ -413,14 +398,14 @@ class WorkbookManager:
         for fixProcedureObject in self.fixProcedureArgs.keys():
             arg = self.fixProcedureArgs[fixProcedureObject]
             if arg == None: continue
-            self.summarySheet.write(4, col, f"{arg[0] if len(arg) <= 1 else arg} : {fixProcedureObject.name}", self.summaryValueFormat)
+            self.summarySheet.write(6, col, f"{arg[0] if len(arg) <= 1 else arg} : {fixProcedureObject.name}", self.summaryValueFormat)
             col += 1
         
-        self.summarySheet.write_number(7, 1, self.foldersScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(8, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(9, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(9, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(10, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(8, 1, self.foldersScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(9, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(10, 1, self.errorCount, self.summaryValueFormat)
+        self.summarySheet.write(10, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(11, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 1
         for exDir in self.excludedDirs:

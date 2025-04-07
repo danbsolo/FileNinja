@@ -218,7 +218,7 @@ def duplicateContentPost(ws):
     row = 1
     for hashCode in HASH_AND_FILES.keys():
         if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "---"*4, wbm.logFormat)
+            ws.write(row, 0, "------------", wbm.logFormat)
 
             for i in range(numOfFiles):
                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
