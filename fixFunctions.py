@@ -70,21 +70,23 @@ def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
     newFolderName = spaceFolderFixHelper(oldFolderName)
 
-    if (not newFolderName): return
+    if (not newFolderName): return False
     
     wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
     wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
     wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
+    return True
 
 
 def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
     newFolderName = spaceFolderFixHelper(oldFolderName)
 
-    if (not newFolderName): return
+    if (not newFolderName): return False
 
     directoryOfFolder = getDirectoryDirName(dirAbsolute)
     FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
+    return 3
 
 
 def spaceFileFixHelper(oldItemName) -> str:
@@ -246,7 +248,7 @@ def deleteEmptyDirectoriesRecommendLog(dirAbsolute, dirFolders, dirFiles, ws, ar
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
         
-        ## HARD CODED RECOMMENDATIONS
+        ## HARD CODED RECOMMENDATION VALUES
         # Dynamic Format
         if fileAmount <= 1:
             dynamicFormat = wbm.warningStrongFormat
@@ -298,20 +300,23 @@ def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
 
     if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
-        return
+        return False
     
     wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
     wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
     wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
+    return True
 
 
 def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
 
-    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)): return
+    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
+        return False
     
     directoryOfFolder = getDirectoryDirName(dirAbsolute)
     FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
+    return 3
 
 
 def searchAndReplaceFileHelper(oldItemName:str, arg):

@@ -24,7 +24,7 @@ class WorkbookManager:
         self.fixProcedureArgs = {}
         self.fixProcedureFunctions = {}
         # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write variable number of procedure metrics.
-        self.sheetRows = {self.summarySheet: 13} # worksheet : Integer
+        self.sheetRows = {self.summarySheet: 14} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
         # Lists to avoid many redundant if statements
@@ -37,8 +37,9 @@ class WorkbookManager:
         # Summary metrics
         self.filesScannedCount = 0
         self.foldersScannedCount = 0
+        self.fileErrorCount = 0
+        self.folderErrorCount = 0
         self.executionTime = 0
-        self.errorCount = 0
 
         # Constant columns
         self.DIR_COL = 0
@@ -72,8 +73,8 @@ class WorkbookManager:
 
         if findProcedureObject.isConcurrentOnly:
             tmpWsVar.freeze_panes(1, 0)
-            tmpWsVar.write(0, self.DIR_COL, "Directories", self.headerFormat)
-            tmpWsVar.write(0, self.ITEM_COL, "Items", self.headerFormat)
+            tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
+            tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
             tmpWsVar.write(0, self.OUTCOME_COL, "Error", self.headerFormat)
 
             self.findProceduresConcurrentOnly.append(findProcedureObject)
@@ -149,7 +150,7 @@ class WorkbookManager:
                 if (result == True):
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
                     countAsError = True
-                elif (result == False):
+                elif (not result):  # returning None or False
                     pass
                 elif (result == 2):  # Special case (ex: Used by List All Files)
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
@@ -165,7 +166,7 @@ class WorkbookManager:
                 if (result == True):
                     countAsError = True
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                elif (result == False):
+                elif (not result):
                     pass
                 elif (result == 2):
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
@@ -175,24 +176,48 @@ class WorkbookManager:
             filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
             if countAsError:
-                self.errorCount += 1
+                self.fileErrorCount += 1
                 countAsError = False
 
         return needsFolderWritten            
 
 
-    def folderCrawl(self, longDirAbsolute, dirAbsolute, dirFolders, dirFiles):
+    def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
         needsFolderWritten = set()
+        countAsError = False
 
         for findProcedureObject in self.folderFindProcedures:
-            findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
+            result = findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
+            
+            if result == True:
+                needsFolderWritten.add(self.findSheets[findProcedureObject])
+                countAsError = True
+            elif not result:  # returning None or False
+                pass
+            # These aren't ever used — at least not yet — so they're commented out.
+            #elif result == 2:
+            #    pass # needsFolderWritten.
+            #elif result == 3:
+            #    pass # countsAsError.
 
         for fixProcedureObject in self.folderFixProcedures:
-            if (self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])):
+            result = self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+            
+            if result == True:
                 needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+                countAsError = True
+            elif not result:
+                pass
+            elif result == 2:
+                needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+            elif result == 3:
+                countAsError = True
+
 
         self.foldersScannedCount += 1
-        
+        if countAsError:
+            self.folderErrorCount += 1
+
         return needsFolderWritten
 
 
@@ -237,11 +262,11 @@ class WorkbookManager:
         self.excludedDirs = excludedDirs
 
         #
-        sheetsSansNonConcurrentAndFolderFind = []
+        sheetsSansNonConcurrent = []
         for findProcedureObject in list(self.findSheets.keys()):
-            if findProcedureObject.isConcurrentOnly and findProcedureObject.isFileFind:
-                sheetsSansNonConcurrentAndFolderFind.append(self.findSheets[findProcedureObject])
-        sheetsSansNonConcurrentAndFolderFind.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
+            if findProcedureObject.isConcurrentOnly:
+                sheetsSansNonConcurrent.append(self.findSheets[findProcedureObject])
+        sheetsSansNonConcurrent.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
 
         ##
         walkObject = []
@@ -287,11 +312,11 @@ class WorkbookManager:
                 continue
 
             initialRows.clear()
-            for ws in sheetsSansNonConcurrentAndFolderFind:
+            for ws in sheetsSansNonConcurrent:
                 initialRows[ws] = self.sheetRows[ws]
 
             # union operator usage, lol
-            needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(longDirAbsolute, dirAbsolute, dirFolders, dirFiles)
+            needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
@@ -379,9 +404,10 @@ class WorkbookManager:
         self.summarySheet.write(5, 0, "Add Recommendations", self.headerFormat)
         self.summarySheet.write(6, 0, "Argument(s)", self.headerFormat)
         self.summarySheet.write(8, 0, "Directory count", self.headerFormat)
-        self.summarySheet.write(9, 0, "File count", self.headerFormat)
-        self.summarySheet.write(10, 0, "File error count / %", self.headerFormat)
-        self.summarySheet.write(11, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(9, 0, "Directory error count / %", self.headerFormat)
+        self.summarySheet.write(10, 0, "File count", self.headerFormat)
+        self.summarySheet.write(11, 0, "File error count / %", self.headerFormat)
+        self.summarySheet.write(12, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(2, 1, str(includeSubFolders), self.summaryValueFormat)
@@ -391,9 +417,6 @@ class WorkbookManager:
 
 
     def populateSummarySheet(self):
-        if self.filesScannedCount == 0: errorPercentage = 0
-        else: errorPercentage = round(self.errorCount / self.filesScannedCount * 100, 2)
-
         col = 1
         for fixProcedureObject in self.fixProcedureArgs.keys():
             arg = self.fixProcedureArgs[fixProcedureObject]
@@ -401,11 +424,18 @@ class WorkbookManager:
             self.summarySheet.write(6, col, f"{arg[0] if len(arg) <= 1 else arg} : {fixProcedureObject.name}", self.summaryValueFormat)
             col += 1
         
+        if self.filesScannedCount == 0: fileErrorPercentage = 0
+        else: fileErrorPercentage = round(self.fileErrorCount / self.filesScannedCount * 100, 2)
+        if self.foldersScannedCount == 0: folderErrorPercentage = 0
+        else: folderErrorPercentage = round(self.folderErrorCount / self.foldersScannedCount * 100, 2)
+
         self.summarySheet.write_number(8, 1, self.foldersScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(9, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(10, 1, self.errorCount, self.summaryValueFormat)
-        self.summarySheet.write(10, 2, "{}%".format(errorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(11, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(9, 1, self.folderErrorCount, self.summaryValueFormat)
+        self.summarySheet.write(9, 2, "{}%".format(folderErrorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(10, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(11, 1, self.fileErrorCount, self.summaryValueFormat)
+        self.summarySheet.write(11, 2, "{}%".format(fileErrorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(12, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 1
         for exDir in self.excludedDirs:

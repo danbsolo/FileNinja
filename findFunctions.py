@@ -4,7 +4,6 @@ from procedureFunctions import *
 # Used by oldFileFind (1095 days == 3 years old)
 DAYS_TOO_OLD = 1095
 
-
 # Used by emptyDirectoryConcurrent
 TOO_FEW_AMOUNT = 0
 
@@ -51,7 +50,10 @@ def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)
 
     if " " in folderName:
-        wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
+        wbm.writeItemAndIncrement(ws, folderName, wbm.errorFormat)
+        return True
+    return False
+
 
 
 def overCharLimitFind(_:str, dirAbsolute:str, itemName:str, ws) -> bool:
@@ -93,8 +95,10 @@ def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     badChars = badCharHelper(folderName)
 
     if (badChars):
-        wbm.writeDir(ws, dirAbsolute, wbm.errorFormat)
+        wbm.writeItem(ws, folderName, wbm.errorFormat)
         wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
+        return True
+    return False
 
 
 def oldFileFind(longFileAbsolute:str, _:str, itemName:str, ws):
@@ -117,9 +121,13 @@ def oldFileFind(longFileAbsolute:str, _:str, itemName:str, ws):
         return False
 
 
-def emptyDirectoryConcurrent(dirAbsolute:str, dirFolders, dirFiles, ws):
+def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
+    folderName = getDirectoryBaseName(dirAbsolute)
+
     if len(dirFolders) == 0 and len(dirFiles) <= TOO_FEW_AMOUNT:
-        wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
+        wbm.writeItemAndIncrement(ws, folderName, wbm.errorFormat)
+        return True
+    return False
 
 
 def fileExtensionStart(ws):
