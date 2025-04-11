@@ -26,9 +26,6 @@ Various metrics regarding the execution.
 
 
 LEGEND for procedure names:
-- "Error"
-Adds to the total file error count on the summary sheet.
-
 - "(Dir)"
 Short for "Directory". Appended to procedures that flag errant directories, rather than files.
 
