@@ -314,14 +314,14 @@ def view(isAdmin: bool):
         findLabel.pack()
     frames[3].pack(fill="x", padx=10, pady=(3, 0))  # inadvertently packed twice to have less y padding
 
-    findListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
+    findListbox = tk.Listbox(frames[4], selectmode=tk.EXTENDED, exportselection=0, width=listboxWidth, height=listboxHeight)
     for findProcedureName in FIND_PROCEDURES_DISPLAY:
         findListbox.insert(tk.END, findProcedureName)
     findListbox.select_set(0)
     findListbox.config(font=fontSmall)
 
     if isAdmin:
-        fixListbox = tk.Listbox(frames[4], selectmode="multiple", exportselection=0, width=listboxWidth, height=listboxHeight)
+        fixListbox = tk.Listbox(frames[4], selectmode=tk.EXTENDED, exportselection=0, width=listboxWidth, height=listboxHeight)
         for fixProcedureName in FIX_PROCEDURES_DISPLAY:
             fixListbox.insert(tk.END, fixProcedureName)
         fixListbox.config(font=fontSmall)
