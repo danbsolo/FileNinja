@@ -418,12 +418,21 @@ class WorkbookManager:
 
     def populateSummarySheet(self):
         col = 1
+        argWritten = False
         for fixProcedureObject in self.fixProcedureArgs.keys():
             arg = self.fixProcedureArgs[fixProcedureObject]
-            if arg == None: continue
+            
+            if arg == None:
+                continue
+            
             self.summarySheet.write(6, col, f"{arg[0] if len(arg) <= 1 else arg} : {fixProcedureObject.name}", self.summaryValueFormat)
+            argWritten = True
             col += 1
         
+        if (not argWritten):
+            self.summarySheet.write(6, col, str(None))
+
+
         if self.filesScannedCount == 0: fileErrorPercentage = 0
         else: fileErrorPercentage = round(self.fileErrorCount / self.filesScannedCount * 100, 2)
         if self.foldersScannedCount == 0: folderErrorPercentage = 0
