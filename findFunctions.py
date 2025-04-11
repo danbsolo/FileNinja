@@ -8,11 +8,6 @@ DAYS_TOO_OLD = 1095
 # Used by emptyDirectoryConcurrent
 TOO_FEW_AMOUNT = 0
 
-# Used by fileExtension
-EXTENSION_COUNT = {}
-EXTENSION_TOTAL_SIZE = {}
-TOO_LARGE_SIZE_MB = 100
-
 # Used by duplicateContent
 HASH_AND_FILES = {}
 # MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
@@ -53,8 +48,8 @@ def spaceFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
 
 
 def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
-    folderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
-    
+    folderName = getDirectoryBaseName(dirAbsolute)
+
     if " " in folderName:
         wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
 
@@ -83,13 +78,8 @@ def badCharHelper(s:str) -> set:
 
 
 def badCharFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
-    # If no extension (aka, no period), lastPeriodIndex will equal -1
-    lastPeriodIndex = itemName.rfind(".")
-
-    if (lastPeriodIndex == -1):
-        badChars = badCharHelper(itemName)
-    else:
-        badChars = badCharHelper(itemName[0:lastPeriodIndex])
+    rootName, extension = getRootNameAndExtension(itemName)
+    badChars = badCharHelper(rootName)
 
     # if any bad characters were found
     if (badChars):
@@ -99,7 +89,7 @@ def badCharFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
     return False
 
 def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
-    folderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
+    folderName = getDirectoryBaseName(dirAbsolute)
     badChars = badCharHelper(folderName)
 
     if (badChars):
@@ -132,25 +122,24 @@ def emptyDirectoryConcurrent(dirAbsolute:str, dirFolders, dirFiles, ws):
         wbm.writeDirAndIncrement(ws, dirAbsolute, wbm.errorFormat)
 
 
+def fileExtensionStart(ws):
+    global EXTENSION_COUNT
+    global EXTENSION_TOTAL_SIZE
+    global TOO_LARGE_SIZE_MB
+    
+    EXTENSION_COUNT = defaultdict(int)
+    EXTENSION_TOTAL_SIZE = defaultdict(int)
+    TOO_LARGE_SIZE_MB = 100
+
 def fileExtensionConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str, _):
     try: fileSize = os.path.getsize(longFileAbsolute) / 1000_000  # Bytes / 1000_000 = MBs
     except: return False
 
-    lastPeriodIndex = itemName.rfind(".")
+    _, extension = getRootNameAndExtension(itemName)
 
-    if lastPeriodIndex == -1: extension = ""
-    else:
-        extension = itemName[lastPeriodIndex:]
-        extension = extension.lower()
-
-    if extension in EXTENSION_COUNT:
-        EXTENSION_COUNT[extension] += 1
-        EXTENSION_TOTAL_SIZE[extension] += fileSize
-    else:
-        EXTENSION_COUNT[extension] = 1
-        EXTENSION_TOTAL_SIZE[extension] = fileSize
+    EXTENSION_COUNT[extension] += 1
+    EXTENSION_TOTAL_SIZE[extension] += fileSize
     return False
-
 
 def fileExtensionPost(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)

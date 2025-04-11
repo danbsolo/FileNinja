@@ -337,7 +337,7 @@ def view(isAdmin: bool):
         parameterLabel.pack(side=tk.LEFT)
         argumentEntry.pack(side=tk.LEFT)
 
-    includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subfolders", variable=includeSubFoldersState, font=fontGeneral)
+    includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubFoldersState, font=fontGeneral)
     includeSubfoldersCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
         modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=modifyState, font=fontGeneral)

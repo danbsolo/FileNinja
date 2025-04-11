@@ -1,6 +1,5 @@
 from sys import maxsize as MAXSIZE
 from procedureFunctions import *
-from collections import defaultdict
 
 
 # Used by spaceFolderFixModify or searchAndReplaceFolderModify (not logs)
@@ -68,7 +67,7 @@ def spaceFolderFixHelper(oldFolderName) -> str:
 
 
 def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
-    oldFolderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
+    oldFolderName = getDirectoryBaseName(dirAbsolute)
     newFolderName = spaceFolderFixHelper(oldFolderName)
 
     if (not newFolderName): return
@@ -79,13 +78,12 @@ def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
 
 
 def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
-    lastSlashIndex = dirAbsolute.rfind("\\")
-    oldFolderName = dirAbsolute[lastSlashIndex +1:]
+    oldFolderName = getDirectoryBaseName(dirAbsolute)
     newFolderName = spaceFolderFixHelper(oldFolderName)
 
     if (not newFolderName): return
 
-    directoryOfFolder = dirAbsolute[0:lastSlashIndex]
+    directoryOfFolder = getDirectoryDirName(dirAbsolute)
     FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
 
 
@@ -93,16 +91,10 @@ def spaceFileFixHelper(oldItemName) -> str:
     # Also fixes double dashes, even if no space is present
     if (" " not in oldItemName) and ("--" not in oldItemName):
         return
-
-    lastPeriodIndex = oldItemName.rfind(".")
-
-    # Replace '-' characters with ' ' to make the string homogenous for the upcoming split()
-    # split() automatically removes leading, trailing, and excess middle whitespace
-    newItemNameSansExt = "-".join(oldItemName[0:lastPeriodIndex].replace("-", " ").split())
-
-    # This works because of a double oversight that fixes itself lol
-    # TODO: Should I fix? Ya, probably.
-    return newItemNameSansExt + oldItemName[lastPeriodIndex:]
+    
+    rootName, extension = getRootNameAndExtension(oldItemName)
+    newItemNameSansExt = "-".join(rootName.replace("-", " ").split())
+    return newItemNameSansExt + extension
 
 
 def spaceFileFixLog(_1:str, _2:str, _3:str, oldItemName:str, ws, _4):
@@ -198,7 +190,7 @@ def deleteOldFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbs
         else:
             dynamicFormat = wbm.warningWeakFormat
 
-        wbm.writeItem(ws, itemName, dynamicFormat)
+        wbm.writeItem(ws, itemName, wbm.errorFormat)
         wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         wbm.writeOutcomeAndIncrement(ws, daysOld, dynamicFormat)
     return True
@@ -303,7 +295,7 @@ def searchAndReplaceFolderHelper(oldFolderName:str, arg):
 
 
 def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
-    oldFolderName = dirAbsolute[dirAbsolute.rfind("\\") +1:]
+    oldFolderName = getDirectoryBaseName(dirAbsolute)
 
     if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
         return
@@ -314,23 +306,16 @@ def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
 
 
 def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
-    lastSlashIndex = dirAbsolute.rfind("\\")
-    oldFolderName = dirAbsolute[lastSlashIndex +1:]
+    oldFolderName = getDirectoryBaseName(dirAbsolute)
 
     if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)): return
     
-    directoryOfFolder = dirAbsolute[0:lastSlashIndex]
+    directoryOfFolder = getDirectoryDirName(dirAbsolute)
     FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
 
 
 def searchAndReplaceFileHelper(oldItemName:str, arg):
-    lastPeriodIndex = oldItemName.rfind(".")
-    if lastPeriodIndex == -1:
-        extension = ""
-        oldItemNameSansExt = oldItemName[0:]
-    else:
-        extension = oldItemName[lastPeriodIndex:]
-        oldItemNameSansExt = oldItemName[0:lastPeriodIndex]
+    oldItemNameSansExt, extension = getRootNameAndExtension(oldItemName)
     
     # Order of argument pairs given matters.
     newItemNameSansExt = oldItemNameSansExt

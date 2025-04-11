@@ -14,24 +14,24 @@ FIND_PROCEDURES = {
     SPACE_FOLDER_FIND: FindProcedure(SPACE_FOLDER_FIND, spaceFolderFind, True, isFileFind=False),
     BAD_CHARACTER_FOLDER_FIND: FindProcedure(BAD_CHARACTER_FOLDER_FIND, badCharFolderFind, True, isFileFind=False),
     CHARACTER_LIMIT_FIND: FindProcedure(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
-    DUPLICATE_CONTENT_FIND:FindProcedure(DUPLICATE_CONTENT_FIND, duplicateContentConcurrent, False, duplicateContentPost),
-    FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost),
+    IDENTICAL_FILE_ERROR:FindProcedure(IDENTICAL_FILE_ERROR, duplicateContentConcurrent, False, duplicateContentPost),
+    FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost, startFunction=fileExtensionStart),
     LIST_ALL_OWNER: FindProcedure(LIST_ALL_OWNER, listAllOwner, True, startFunction=writeOwnerHeader),
 }
 
 FIND_PROCEDURES_DISPLAY = [
     LIST_ALL,
     LIST_ALL_OWNER,
+    IDENTICAL_FILE_ERROR,
+    FILE_EXTENSION_SUMMARY,
     OLD_FILE_FIND,
-    DUPLICATE_CONTENT_FIND,
-    EMPTY_FILE_FIND,
     EMPTY_DIRECTORY_FIND,
-    SPACE_FILE_FIND,
+    EMPTY_FILE_FIND,
     SPACE_FOLDER_FIND,
-    BAD_CHARACTER_FILE_FIND,
+    SPACE_FILE_FIND,
     BAD_CHARACTER_FOLDER_FIND,
-    CHARACTER_LIMIT_FIND,
-    FILE_EXTENSION_SUMMARY
+    BAD_CHARACTER_FILE_FIND,
+    CHARACTER_LIMIT_FIND
 ]
 
 
@@ -42,21 +42,22 @@ FIX_PROCEDURES = {
     DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed", startFunction=deleteOldFilesStart, recommendLogFunction=deleteOldFilesRecommendLog),
     DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained", recommendLogFunction=deleteEmptyDirectoriesRecommendLog),
     DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion", startFunction=deleteEmptyFilesStart, recommendLogFunction=deleteEmptyFilesRecommendLog),
+    SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, multiplePairsOfStringsValidator, ">", postFunction=fixfolderModifyPost),
     SEARCH_AND_REPLACE_FILE: FixProcedure(SEARCH_AND_REPLACE_FILE, searchAndReplaceFileLog, searchAndReplaceFileModify, True, multiplePairsOfStringsValidator, ">"),
     SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False, postFunction=fixfolderModifyPost),
-    SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, multiplePairsOfStringsValidator, ">", postFunction=fixfolderModifyPost),
     DELETE_IDENTICAL_FILES: FixProcedure(DELETE_IDENTICAL_FILES, deleteIdenticalFilesLogConcurrent, deleteIdenticalFilesLogConcurrent, True, startFunction=deleteIdenticalFilesStart, postFunction=deleteIdenticalFilesPost, recommendPostFunction=deleteIdenticalFilesRecommendPost)
 }
 
 FIX_PROCEDURES_DISPLAY = [
     "",
     "",
-    DELETE_OLD_FILES,
     DELETE_IDENTICAL_FILES,
-    DELETE_EMPTY_FILES,
+    "",
+    DELETE_OLD_FILES,
     DELETE_EMPTY_DIRECTORIES_FIX,
-    SPACE_FILE_FIX,
+    DELETE_EMPTY_FILES,
     SPACE_FOLDER_FIX,
-    SEARCH_AND_REPLACE_FILE,
-    SEARCH_AND_REPLACE_FOLDER
+    SPACE_FILE_FIX,
+    SEARCH_AND_REPLACE_FOLDER,
+    SEARCH_AND_REPLACE_FILE
 ]

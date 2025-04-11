@@ -4,7 +4,7 @@ import string
 from datetime import datetime
 import hashlib
 from getFileOwner import getOwnerCatch
-
+from collections import defaultdict
 
 
 # Used by badCharFind
@@ -40,3 +40,17 @@ def writeOwnerHeader(ws):
 
 def joinDirToFileName(dirAbsolute, fileName):
     return dirAbsolute + "\\" + fileName
+
+
+
+def getRootNameAndExtension(itemName):
+    return os.path.splitext(itemName)
+
+
+
+def getDirectoryBaseName(dirAbsolute):
+    return os.path.basename(dirAbsolute)
+
+
+def getDirectoryDirName(dirAbsolute):
+    return os.path.dirname(dirAbsolute)
