@@ -256,7 +256,7 @@ def view(isAdmin: bool):
     root = tk.Tk()
     root.title(FILE_NINJA)
     root.resizable(0, 0)
-    rootWidth = 500 if isAdmin else 310
+    rootWidth = 500 if isAdmin else 345
     rootHeight = (listboxHeight * listboxHeightMultiplier) + (385 if isAdmin else 310) # 345, 310
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
@@ -274,7 +274,7 @@ def view(isAdmin: bool):
     fontGeneral = (fontType, fontSize)
     fontSmall = (fontType, int(fontSize/3*2))
     listboxWidth = int(rootWidth/15) if isAdmin else int(rootWidth/10)  # listboxHeight defined above
-    finalButtonsWidth = 20 if isAdmin else 10  # HARD CODED WIDTH
+    finalButtonsWidth = 20 if isAdmin else 12  # HARD CODED WIDTH
     tooltipHoverDelay = 0
 
     # data variables
@@ -365,9 +365,9 @@ def view(isAdmin: bool):
     # tool tips
     browseTip = Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay)  
     dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
-    excludeTip = Hovertip(excludeButton, "Browse to exclude subfolders of currently selected directory.", hover_delay=tooltipHoverDelay)
+    excludeTip = Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay)
     findTip = Hovertip(findLabel, "Run a Find procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
-    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subfolders, other than those excluded.", hover_delay=tooltipHoverDelay)
+    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
     helpMeTip = Hovertip(helpMeButton, "Open HELPME file.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)
     resultsTip = Hovertip(resultsButton, "Open folder containing all excel files of previous executions.", hover_delay=tooltipHoverDelay)
@@ -399,7 +399,7 @@ def view(isAdmin: bool):
         
 
 def main():
-    view(True)
+    view(False)
 
 
 if __name__ == "__main__":
