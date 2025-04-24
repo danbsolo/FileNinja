@@ -27,36 +27,33 @@ def writeOwnerHeader(ws):
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 
 
-#def listAll(_1:str, _2:str, itemName:str, ws) -> bool:
-#    wbm.writeItemAndIncrement(ws, itemName)
-#    return 2  # SPECIAL CASE
-
-
-def listAll(_1:str, _2:str, itemName:str, ws) -> bool:
-    ewp = ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws)
+def listAll(_1:str, _2:str, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
-    return (2, ewp)  # SPECIAL CASE
+    return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))  # SPECIAL CASE
 
-# def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws) -> bool:
-#     wbm.writeItem(ws, itemName)
-#     wbm.writeAuxiliaryAndIncrement(ws, getOwnerCatch(longFileAbsolute))
-#     return 2  # SPECIAL CASE
 
-def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws) -> bool:
+def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws):
+    wbm.incrementRowAndFileCount(ws)
     row = wbm.sheetRows[ws]
-    ewp1 = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
-    ewp2 = ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws)
-    wbm.incrementRowAndFileCount(ws)
-    return (2, ewp1, ewp2)  # SPECIAL CASE
+    return (2, 
+            ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws), 
+            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws))  # SPECIAL CASE
 
 
-def spaceFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
+def spaceFileFind(_1:str, _2:str, itemName:str, ws):
     if " " in itemName: 
-        wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
-        return True
-    return False
+        wbm.incrementRowAndFileCount(ws)
+        return (True, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws, wbm.errorFormat))
+    return (False,)
 
 
+# def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
+#     folderName = getDirectoryBaseName(dirAbsolute)
+
+#     if " " in folderName:
+#         wbm.incrementRowAndFileCount(ws)
+#         return (True, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat))
+#     return (False,)
 def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)
 
@@ -69,11 +66,14 @@ def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
 
 def overCharLimitFind(_:str, dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
+
     if (absoluteItemLength > CHARACTER_LIMIT):
-        wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, absoluteItemLength)
-        return True
-    return False
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, absoluteItemLength, ws))
+    return (False,)
 
 
 def badCharHelper(s:str) -> set:

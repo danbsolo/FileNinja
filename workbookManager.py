@@ -68,7 +68,7 @@ class WorkbookManager:
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, findProcedureObject.name + " count", self.headerFormat)
         
         self.findSheets[findProcedureObject] = tmpWsVar
-        self.sheetRows[tmpWsVar] = 1
+        self.sheetRows[tmpWsVar] = 0  # NOTE: CHANGED HERE FROM 0 SO SHEETROW TRACKS LAST ROW WRITTEN TO
         self.summaryCounts[tmpWsVar] = 0
 
         if findProcedureObject.isConcurrentOnly:
@@ -152,7 +152,7 @@ class WorkbookManager:
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
                     countAsError = True
                 elif (not status):  # returning None or False
-                    pass
+                    break  # It's not super necessary to break here, but might as well
                 elif (status == 2):  # Special case (ex: Used by List All Files)
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
                 elif (status == 3):  # Special case (ex: used by Identical File)
@@ -318,7 +318,7 @@ class WorkbookManager:
 
             initialRows.clear()
             for ws in sheetsSansNonConcurrent:
-                initialRows[ws] = self.sheetRows[ws]
+                initialRows[ws] = self.sheetRows[ws] + 1  # CHANGE HERE TO GET NEXT AVAILABLE ROW
 
             # union operator usage, lol
             needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
