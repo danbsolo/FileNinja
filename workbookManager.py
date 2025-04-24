@@ -193,17 +193,22 @@ class WorkbookManager:
 
         for findProcedureObject in self.folderFindProcedures:
             result = findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
+            status = result[0]
             
-            if result == True:
+            if status == True:
                 needsFolderWritten.add(self.findSheets[findProcedureObject])
                 countAsError = True
-            elif not result:  # returning None or False
+            elif not status:  # returning None or False
                 pass
             # These aren't ever used — at least not yet — so they're commented out.
             #elif result == 2:
             #    pass # needsFolderWritten.
             #elif result == 3:
             #    pass # countsAsError.
+
+            for ewp in result[1:]:
+                ewp.executeWrite()     
+
 
         for fixProcedureObject in self.folderFixProcedures:
             result = self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
