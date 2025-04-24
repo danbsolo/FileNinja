@@ -1,8 +1,12 @@
 import ctypes
 from ctypes import wintypes
+import threading
 
 # CUSTOM
 OWNER_INFO_CACHE = {}
+CACHE_EVENTS = {}
+CACHE_LOCK = threading.Lock()
+dummyData = "DUMMY"
 
 kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 advapi32 = ctypes.WinDLL('advapi32', use_last_error=True)
@@ -91,15 +95,32 @@ def get_file_owner_info(filename):
 
 def getOwnerCatch(longFileAbsolute):
     """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format. Return error info if applicable. Also manage OWNER_CACHE."""
-    if longFileAbsolute in OWNER_INFO_CACHE.keys():
+    if longFileAbsolute in OWNER_INFO_CACHE:
+        if OWNER_INFO_CACHE[longFileAbsolute] == dummyData:
+            print("Found dummy data. Waiting...", end=" ")
+            CACHE_EVENTS[longFileAbsolute].wait()
+            print("Done waiting.")
         return OWNER_INFO_CACHE[longFileAbsolute]
-    else:
+
+    with CACHE_LOCK:
+        # Double check here. Goal is to make it so it's impossible to be dummy data.
+        if longFileAbsolute in OWNER_INFO_CACHE:
+            return OWNER_INFO_CACHE[longFileAbsolute]
+
+        OWNER_INFO_CACHE[longFileAbsolute] = dummyData
+        print("Inserting dummy data. Computing...", end=" ")
+        CACHE_EVENTS[longFileAbsolute] = threading.Event()
+        print("Done computing.")
+
         try:
             ownerInfo = get_file_owner_info(longFileAbsolute)
         except Exception as e:
             ownerInfo = f"GET OWNER FAILED: {e}"
 
-    OWNER_INFO_CACHE[longFileAbsolute] = ownerInfo
+    with CACHE_LOCK:
+        OWNER_INFO_CACHE[longFileAbsolute] = ownerInfo
+    
+    CACHE_EVENTS[longFileAbsolute].set()
     return ownerInfo
 
 # Example usage:

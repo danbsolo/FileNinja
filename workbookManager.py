@@ -6,6 +6,7 @@ import stat
 from defs import *
 import filesScannedSharedVar
 from ExcelWritePackage import ExcelWritePackage
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class WorkbookManager:
@@ -131,6 +132,7 @@ class WorkbookManager:
     def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
         countAsError = False
+        ewpList = []
         
         for fileName in dirFiles:
             # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
@@ -144,22 +146,34 @@ class WorkbookManager:
             hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
             if hiddenFileSkipStatus == 2: continue
 
-            for findProcedureObject in self.fileFindProcedures:
-                result = findProcedureObject.mainFunction(longFileAbsolute, dirAbsolute, fileName, self.findSheets[findProcedureObject])
-                status = result[0]
+            with ThreadPoolExecutor() as executor:
+                futures = {
+                    executor.submit(
+                        findProcedureObject.mainFunction,
+                        longFileAbsolute,
+                        dirAbsolute,
+                        fileName,
+                        self.findSheets[findProcedureObject]
+                    ): findProcedureObject
+                    for findProcedureObject in self.fileFindProcedures
+                }
 
-                if (status == True):
-                    needsFolderWritten.add(self.findSheets[findProcedureObject])
-                    countAsError = True
-                elif (not status):  # returning None or False
-                    break  # It's not super necessary to break here, but might as well
-                elif (status == 2):  # Special case (ex: Used by List All Files)
-                    needsFolderWritten.add(self.findSheets[findProcedureObject])
-                elif (status == 3):  # Special case (ex: used by Identical File)
-                    countAsError = True
+                for fut in as_completed(futures):
+                    result = fut.result()
+                    status = result[0]
+                    findProcedureObject = futures[fut]
 
-                for ewp in result[1:]:
-                    ewp.executeWrite()
+                    if (status == True):
+                        needsFolderWritten.add(self.findSheets[findProcedureObject])
+                        countAsError = True
+                    elif (not status):  # returning None or False
+                        break  # It's not super necessary to break here, but might as well
+                    elif (status == 2):  # Special case (ex: Used by List All Files)
+                        needsFolderWritten.add(self.findSheets[findProcedureObject])
+                    elif (status == 3):  # Special case (ex: used by Identical File)
+                        countAsError = True
+
+                    ewpList.extend(result[1:])
 
 
             for fixProcedureObject in self.fileFixProcedures:
@@ -183,6 +197,9 @@ class WorkbookManager:
             if countAsError:
                 self.fileErrorCount += 1
                 countAsError = False
+
+        for ewp in ewpList:
+            ewp.executeWrite()
 
         return needsFolderWritten            
 
