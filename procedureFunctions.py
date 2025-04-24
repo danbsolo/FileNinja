@@ -5,6 +5,7 @@ from datetime import datetime
 import hashlib
 from getFileOwner import getOwnerCatch
 from collections import defaultdict
+from ExcelWritePackage import ExcelWritePackage
 
 
 # Used by badCharFind

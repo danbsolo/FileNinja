@@ -27,16 +27,27 @@ def writeOwnerHeader(ws):
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 
 
-def listAll(_1:str, _2:str, itemName:str, ws) -> bool:
-    wbm.writeItemAndIncrement(ws, itemName)
-    return 2  # SPECIAL CASE
+#def listAll(_1:str, _2:str, itemName:str, ws) -> bool:
+#    wbm.writeItemAndIncrement(ws, itemName)
+#    return 2  # SPECIAL CASE
 
+
+def listAll(_1:str, _2:str, itemName:str, ws) -> bool:
+    ewp = ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws)
+    wbm.incrementRowAndFileCount(ws)
+    return (2, ewp)  # SPECIAL CASE
+
+# def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws) -> bool:
+#     wbm.writeItem(ws, itemName)
+#     wbm.writeAuxiliaryAndIncrement(ws, getOwnerCatch(longFileAbsolute))
+#     return 2  # SPECIAL CASE
 
 def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws) -> bool:
-    wbm.writeItem(ws, itemName)
-    wbm.writeAuxiliaryAndIncrement(ws, getOwnerCatch(longFileAbsolute))
-
-    return 2  # SPECIAL CASE
+    row = wbm.sheetRows[ws]
+    ewp1 = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
+    ewp2 = ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws)
+    wbm.incrementRowAndFileCount(ws)
+    return (2, ewp1, ewp2)  # SPECIAL CASE
 
 
 def spaceFileFind(_1:str, _2:str, itemName:str, ws) -> bool:

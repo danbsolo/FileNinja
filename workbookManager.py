@@ -2,10 +2,10 @@ import xlsxwriter
 from typing import List
 from time import time
 import os
-from copy import deepcopy
 import stat
 from defs import *
 import filesScannedSharedVar
+from ExcelWritePackage import ExcelWritePackage
 
 
 class WorkbookManager:
@@ -146,16 +146,21 @@ class WorkbookManager:
 
             for findProcedureObject in self.fileFindProcedures:
                 result = findProcedureObject.mainFunction(longFileAbsolute, dirAbsolute, fileName, self.findSheets[findProcedureObject])
+                status = result[0]
 
-                if (result == True):
+                if (status == True):
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
                     countAsError = True
-                elif (not result):  # returning None or False
+                elif (not status):  # returning None or False
                     pass
-                elif (result == 2):  # Special case (ex: Used by List All Files)
+                elif (status == 2):  # Special case (ex: Used by List All Files)
                     needsFolderWritten.add(self.findSheets[findProcedureObject])
-                elif (result == 3):  # Special case (ex: used by Identical Files Error)
+                elif (status == 3):  # Special case (ex: used by Identical File)
                     countAsError = True
+
+                for ewp in result[1:]:
+                    ewp.executeWrite()
+
 
             for fixProcedureObject in self.fileFixProcedures:
                 # If file is hidden, ignore it. Fix procedures will not have access to hidden files
@@ -379,17 +384,15 @@ class WorkbookManager:
         if (format): ws.write(self.sheetRows[ws], col, text, format)
         else: ws.write(self.sheetRows[ws], col, text)
 
+    def incrementRow(self, ws):
+        self.sheetRows[ws] += 1
 
-## TODO: Change these all to hard-coded 1. There's never a time where anything more than 1 is selected.
-    def incrementRow(self, ws, amount:int=1):
-        self.sheetRows[ws] += amount
+    def incrementFileCount(self, ws):
+        self.summaryCounts[ws] += 1
 
-    def incrementFileCount(self, ws, amount:int=1):
-        self.summaryCounts[ws] += amount
-
-    #def incrementRowAndFileCount(self, ws):
-    #    self.incrementRow(ws)
-    #    self.incrementFileCount(ws)
+    def incrementRowAndFileCount(self, ws):
+       self.sheetRows[ws] += 1
+       self.summaryCounts[ws] += 1
         
 
     def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles, addRecommendations):
