@@ -97,7 +97,6 @@ def getOwnerCatch(longFileAbsolute):
     """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format. Return error info if applicable. Also manage OWNER_CACHE."""
     if longFileAbsolute in OWNER_INFO_CACHE:
         if OWNER_INFO_CACHE[longFileAbsolute] == dummyData:
-            print("Found dummy data. Waiting...")
             CACHE_EVENTS[longFileAbsolute].wait()
         return OWNER_INFO_CACHE[longFileAbsolute]
 
