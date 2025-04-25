@@ -259,7 +259,7 @@ def emptyFileFind(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
         return (True,
-                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(dirAbsolute), ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat))
     
     return (False,)

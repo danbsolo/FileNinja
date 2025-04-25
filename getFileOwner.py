@@ -97,20 +97,18 @@ def getOwnerCatch(longFileAbsolute):
     """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format. Return error info if applicable. Also manage OWNER_CACHE."""
     if longFileAbsolute in OWNER_INFO_CACHE:
         if OWNER_INFO_CACHE[longFileAbsolute] == dummyData:
-            print("Found dummy data. Waiting...", end=" ")
             CACHE_EVENTS[longFileAbsolute].wait()
-            print("Done waiting.")
         return OWNER_INFO_CACHE[longFileAbsolute]
 
     with CACHE_LOCK:
-        # Double check here. Goal is to make it so it's impossible to be dummy data.
-        if longFileAbsolute in OWNER_INFO_CACHE:
-            return OWNER_INFO_CACHE[longFileAbsolute]
+        # Could double check here. Goal is to make it so it's impossible to be dummy data.
+        # if longFileAbsolute in OWNER_INFO_CACHE:
+        #    return OWNER_INFO_CACHE[longFileAbsolute]
 
         OWNER_INFO_CACHE[longFileAbsolute] = dummyData
-        print("Inserting dummy data. Computing...", end=" ")
+        #print("Inserting dummy data. Computing...", end=" ")
         CACHE_EVENTS[longFileAbsolute] = threading.Event()
-        print("Done computing.")
+        #print("Done computing.")
 
         try:
             ownerInfo = get_file_owner_info(longFileAbsolute)
