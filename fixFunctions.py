@@ -160,18 +160,27 @@ def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
     # If it's greater than the upperbound, exit
     if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
-        return False
-
-    wbm.writeItem(ws, itemName)
+        return (False,)
+    
+    # wbm.writeItem(ws, itemName)
+    wbm.incrementRow(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
 
     if (daysOld == -1):
-        wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
-        wbm.incrementRow(ws)
-        return 2
+        #wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
+        #wbm.incrementRow(ws)
+        return (2,
+                itemEwp,
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
     else:
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
-    return True
+        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        #wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
+        wbm.incrementFileCount(ws)
+        return (True,
+                itemEwp,
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, daysOld, ws, wbm.logFormat))
 
 
 ###
@@ -363,22 +372,35 @@ def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:s
     try:
         fileSize = os.path.getsize(longFileAbsolute) # Bytes
     except PermissionError:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ. PERMISSION ERROR.", ws, wbm.errorFormat))
     except Exception as e:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. {e}", ws, wbm.errorFormat))
 
     if fileSize == 0:
-        wbm.writeItem(ws, itemName)
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
-        return True
-    return False
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        #wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.logFormat))
+    return (False,)
 
 
 ###

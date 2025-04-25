@@ -7,6 +7,7 @@ from defs import *
 import filesScannedSharedVar
 from ExcelWritePackage import ExcelWritePackage
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 
 class WorkbookManager:
@@ -91,7 +92,7 @@ class WorkbookManager:
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, fixProcedureObject.name + " count", self.headerFormat)
 
         self.fixSheets[fixProcedureObject] = tmpWsVar
-        self.sheetRows[tmpWsVar] = 1
+        self.sheetRows[tmpWsVar] = 0
         self.summaryCounts[tmpWsVar] = 0
 
         if allowModify:
@@ -149,7 +150,7 @@ class WorkbookManager:
 
             ## THREADING STUFF STARTS
             futures = {
-                self.threadPoolExecutorFind.submit(
+                self.threadPoolExecutorFile.submit(
                     findProcedureObject.mainFunction,
                     longFileAbsolute,
                     dirAbsolute,
@@ -174,7 +175,8 @@ class WorkbookManager:
                 elif (status == 3):  # Special case (ex: used by Identical File)
                     countAsError = True
 
-                ewpList.extend(result[1:])
+                with self.lockThreadFile:
+                    ewpList.extend(result[1:])
             ## THREADING STUFF ENDS
 
 
@@ -183,17 +185,21 @@ class WorkbookManager:
                 if hiddenFileSkipStatus != 0: break
 
                 result = self.fixProcedureFunctions[fixProcedureObject](longFileAbsolute, longDirAbsolute, dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+                status = result[0]
 
-                if (result == True):
+                if (status == True):
                     countAsError = True
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                elif (not result):
-                    pass
-                elif (result == 2):
+                elif (not status):
+                    break
+                elif (status == 2):
                     needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                elif (result == 3):
+                elif (status == 3):
                     countAsError = True
+
+                ewpList.extend(result[1:])
             
+
             filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
             if countAsError:
@@ -289,13 +295,11 @@ class WorkbookManager:
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
         self.excludedDirs = excludedDirs
 
-        ## Get static number of [] procedures for setting max workers via threading.
-        ## Saves having to call len() every time, since this is a performance-sensitive application
-        #self.numFileFindProcedures = len(self.fileFindProcedures)
-        ## self.numFileFixProcedures = len(self.fileFixProcedures)
-        # Create the thread pool executor for find procedures
+        # Create the thread pool executors and necessary locks
         # TODO: Add more workers proportionate to fileFixProcedures' length when applicable.
-        self.threadPoolExecutorFind = ThreadPoolExecutor(max_workers=len(self.fileFindProcedures))
+        self.threadPoolExecutorFile = ThreadPoolExecutor(max_workers= len(self.fileFindProcedures) + len(self.fileFixProcedures))
+        self.lockThreadFile = Lock()
+
 
         #
         sheetsSansNonConcurrent = []
@@ -377,7 +381,7 @@ class WorkbookManager:
         ###
 
         # shutdown threads
-        self.threadPoolExecutorFind.shutdown(wait=True)
+        self.threadPoolExecutorFile.shutdown(wait=True)
 
         self.executionTime = time() - start
 
