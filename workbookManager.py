@@ -146,34 +146,36 @@ class WorkbookManager:
             hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
             if hiddenFileSkipStatus == 2: continue
 
-            with ThreadPoolExecutor() as executor:
-                futures = {
-                    executor.submit(
-                        findProcedureObject.mainFunction,
-                        longFileAbsolute,
-                        dirAbsolute,
-                        fileName,
-                        self.findSheets[findProcedureObject]
-                    ): findProcedureObject
-                    for findProcedureObject in self.fileFindProcedures
-                }
 
-                for fut in as_completed(futures):
-                    result = fut.result()
-                    status = result[0]
-                    findProcedureObject = futures[fut]
+            ## THREADING STUFF STARTS
+            futures = {
+                self.threadPoolExecutorFind.submit(
+                    findProcedureObject.mainFunction,
+                    longFileAbsolute,
+                    dirAbsolute,
+                    fileName,
+                    self.findSheets[findProcedureObject]
+                ): findProcedureObject
+                for findProcedureObject in self.fileFindProcedures
+            }
 
-                    if (status == True):
-                        needsFolderWritten.add(self.findSheets[findProcedureObject])
-                        countAsError = True
-                    elif (not status):  # returning None or False
-                        break  # It's not super necessary to break here, but might as well
-                    elif (status == 2):  # Special case (ex: Used by List All Files)
-                        needsFolderWritten.add(self.findSheets[findProcedureObject])
-                    elif (status == 3):  # Special case (ex: used by Identical File)
-                        countAsError = True
+            for fut in as_completed(futures):
+                result = fut.result()
+                status = result[0]
+                findProcedureObject = futures[fut]
 
-                    ewpList.extend(result[1:])
+                if (status == True):
+                    needsFolderWritten.add(self.findSheets[findProcedureObject])
+                    countAsError = True
+                elif (not status):  # returning None or False
+                    break  # It's not super necessary to break here, but might as well
+                elif (status == 2):  # Special case (ex: Used by List All Files)
+                    needsFolderWritten.add(self.findSheets[findProcedureObject])
+                elif (status == 3):  # Special case (ex: used by Identical File)
+                    countAsError = True
+
+                ewpList.extend(result[1:])
+            ## THREADING STUFF ENDS
 
 
             for fixProcedureObject in self.fileFixProcedures:
@@ -283,10 +285,17 @@ class WorkbookManager:
             self.hiddenFileCheck = lambda longFileAbsolute: self.includeHiddenFilesCheck(longFileAbsolute)
         else:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
-
-
+        
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
         self.excludedDirs = excludedDirs
+
+        ## Get static number of [] procedures for setting max workers via threading.
+        ## Saves having to call len() every time, since this is a performance-sensitive application
+        #self.numFileFindProcedures = len(self.fileFindProcedures)
+        ## self.numFileFixProcedures = len(self.fileFixProcedures)
+        # Create the thread pool executor for find procedures
+        # TODO: Add more workers proportionate to fileFixProcedures' length when applicable.
+        self.threadPoolExecutorFind = ThreadPoolExecutor(max_workers=len(self.fileFindProcedures))
 
         #
         sheetsSansNonConcurrent = []
@@ -366,7 +375,10 @@ class WorkbookManager:
                 if fixProcedureObject.postFunction:
                     fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
         ###
-              
+
+        # shutdown threads
+        self.threadPoolExecutorFind.shutdown(wait=True)
+
         self.executionTime = time() - start
 
 
