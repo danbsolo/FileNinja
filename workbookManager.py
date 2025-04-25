@@ -2,7 +2,6 @@ import xlsxwriter
 from typing import List
 from time import time
 import os
-from copy import deepcopy
 import stat
 from defs import *
 import filesScannedSharedVar
