@@ -220,7 +220,8 @@ def duplicateContentPost(ws):
             for i in range(numOfFiles):
                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
                 ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
-                ws.write(row, 3, getOwnerCatch(HASH_AND_FILES[hashCode][1][i]))
+                ws.write(row, 3, getOwnerCatch(
+                    joinDirToFileName(HASH_AND_FILES[hashCode][1][i], HASH_AND_FILES[hashCode][0][i])))
                 row += 1
                 
     HASH_AND_FILES.clear()
@@ -242,6 +243,6 @@ def emptyFileFind(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
         return 2
     
     if fileSize == 0:
-        wbm.writeAuxiliary(ws, getOwnerCatch(dirAbsolute))
+        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
         return True
