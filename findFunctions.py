@@ -28,13 +28,9 @@ def writeOwnerHeader(ws):
 
 
 def listAll(_1:str, _2:str, itemName:str, ws):
-    # wbm.incrementRowAndFileCount(ws)
-    # return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))  # SPECIAL CASE
     wbm.incrementRowAndFileCount(ws)
-    row = wbm.sheetRows[ws]
-    return (2, 
-            ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws), 
-            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(_1), ws))  # SPECIAL CASE
+    return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))  # SPECIAL CASE
+
 
 def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
