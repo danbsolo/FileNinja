@@ -468,16 +468,16 @@ def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolut
 
 
 
-
-# Used by deleteIdenticalFiles
-HASH_AND_FILES = {}
-hashFunc = hashlib.new("sha256")
-hashFunc.update("".encode())
-EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
-#
-
 def deleteIdenticalFilesStart(_, ws):
-    pass
+    global HASH_AND_FILES
+    global EMPTY_INPUT_HASH_CODE
+    global LOCK_DELETE_IDENTICAL_FILES
+
+    HASH_AND_FILES = {}
+    hashFunc = hashlib.new("sha256")
+    hashFunc.update("".encode())
+    EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
+    LOCK_DELETE_IDENTICAL_FILES = Lock()
 
 def deleteIdenticalFilesHelper(longFileAbsolute:str):    
     hashFunc = hashlib.new("sha256")
@@ -487,7 +487,6 @@ def deleteIdenticalFilesHelper(longFileAbsolute:str):
             hashFunc.update(chunk)
 
     return hashFunc.hexdigest()
-
 
 def deleteIdenticalFilesLogConcurrent(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
     try:
@@ -500,12 +499,14 @@ def deleteIdenticalFilesLogConcurrent(longFileAbsolute:str, longDirAbsolute:str,
         return (False,)
     
     if hashCode in HASH_AND_FILES:
-        HASH_AND_FILES[hashCode][0].append(itemName)
-        HASH_AND_FILES[hashCode][1].append(dirAbsolute)
+        with LOCK_DELETE_IDENTICAL_FILES:
+            HASH_AND_FILES[hashCode][0].append(itemName)
+            HASH_AND_FILES[hashCode][1].append(dirAbsolute)
         wbm.incrementFileCount(ws)
         return (3,)
     else:
-        HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
+        with LOCK_DELETE_IDENTICAL_FILES:
+            HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
         return (False,)
 
 

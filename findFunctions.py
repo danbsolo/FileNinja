@@ -188,7 +188,6 @@ def duplicateContentStart(ws):
     global LOCK_DUPLICATE_CONTENT
     
     HASH_AND_FILES = {}
-    # MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
     hashFunc = hashlib.new("sha256")
     hashFunc.update("".encode())
     EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
