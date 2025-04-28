@@ -147,7 +147,6 @@ class WorkbookManager:
             hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
             if hiddenFileSkipStatus == 2: continue
 
-
             ## THREADING STUFF STARTS
             futures = {
                 self.threadPoolExecutorFile.submit(
@@ -156,50 +155,42 @@ class WorkbookManager:
                     dirAbsolute,
                     fileName,
                     self.findSheets[findProcedureObject]
-                ): findProcedureObject
+                ): self.findSheets[findProcedureObject]
                 for findProcedureObject in self.fileFindProcedures
             }
+
+            # If not hidden, append to futures with fixProcedureObjects 
+            if hiddenFileSkipStatus == 0:
+                for fixProcedureObject in self.fileFixProcedures:
+                    futures[self.threadPoolExecutorFile.submit(
+                        self.fixProcedureFunctions[fixProcedureObject],
+                        longFileAbsolute,
+                        longDirAbsolute,
+                        dirAbsolute,
+                        fileName,
+                        self.fixSheets[fixProcedureObject],
+                        self.fixProcedureArgs[fixProcedureObject]
+                    )] = self.fixSheets[fixProcedureObject]
 
             for fut in as_completed(futures):
                 result = fut.result()
                 status = result[0]
-                findProcedureObject = futures[fut]
+                fileSheet = futures[fut]
 
                 if (status == True):
-                    needsFolderWritten.add(self.findSheets[findProcedureObject])
+                    needsFolderWritten.add(fileSheet)
                     countAsError = True
                 elif (not status):  # returning None or False
-                    break  # It's not super necessary to break here, but might as well
+                    continue  # It's not super necessary to continue here, but might as well
                 elif (status == 2):  # Special case (ex: Used by List All Files)
-                    needsFolderWritten.add(self.findSheets[findProcedureObject])
+                    needsFolderWritten.add(fileSheet)
                 elif (status == 3):  # Special case (ex: used by Identical File)
                     countAsError = True
 
                 with self.lockThreadFile:
                     ewpList.extend(result[1:])
-            ## THREADING STUFF ENDS
 
-
-            for fixProcedureObject in self.fileFixProcedures:
-                # If file is hidden, ignore it. Fix procedures will not have access to hidden files
-                if hiddenFileSkipStatus != 0: break
-
-                result = self.fixProcedureFunctions[fixProcedureObject](longFileAbsolute, longDirAbsolute, dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
-                status = result[0]
-
-                if (status == True):
-                    countAsError = True
-                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                elif (not status):
-                    break
-                elif (status == 2):
-                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                elif (status == 3):
-                    countAsError = True
-
-                ewpList.extend(result[1:])
-            
-
+            # TODO: This stuff would need a higher layered lock once the higher layered threads are created
             filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
             if countAsError:
@@ -231,8 +222,11 @@ class WorkbookManager:
             #elif result == 3:
             #    pass # countsAsError.
 
-            for ewp in result[1:]:
-                ewp.executeWrite()     
+            # TODO: Realize that fileCrawl and folderCrawl should never be able to write in the Excel file simultaneously.
+            # This would require a lock or returning the ewp list straight up.
+            # So, by commenting this out, the folder find procedures will not write anything *for now*
+            #for ewp in result[1:]:
+            #    ewp.executeWrite()     
 
 
         for fixProcedureObject in self.folderFixProcedures:
@@ -298,7 +292,6 @@ class WorkbookManager:
         # Create the thread pool executors and necessary locks
         self.threadPoolExecutorFile = ThreadPoolExecutor(max_workers= len(self.fileFindProcedures) + len(self.fileFixProcedures))
         self.lockThreadFile = Lock()
-
 
         #
         sheetsSansNonConcurrent = []
