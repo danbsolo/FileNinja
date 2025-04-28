@@ -1,6 +1,5 @@
 from procedureFunctions import *
 
-
 # Used by oldFileFind (1095 days == 3 years old)
 DAYS_TOO_OLD = 1095
 

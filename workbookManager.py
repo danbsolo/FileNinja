@@ -1,6 +1,6 @@
 import xlsxwriter
 from typing import List
-from time import time
+from time import time, sleep
 import os
 import stat
 from defs import *
@@ -194,7 +194,6 @@ class WorkbookManager:
             if countAsError:
                 self.fileErrorCount += 1
 
-
     def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
         ewpList = []
@@ -328,7 +327,12 @@ class WorkbookManager:
         self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
         self.lockFile = Lock()
 
+        self.sheetLocks = {}
+        for ws in self.getAllProcedureSheets():
+            self.sheetLocks[ws] = Lock()
 
+
+        #
         #
         sheetsSansNonConcurrent = []
         for findProcedureObject in list(self.findSheets.keys()):
@@ -453,15 +457,18 @@ class WorkbookManager:
         else: ws.write(self.sheetRows[ws], col, text)
 
     def incrementRow(self, ws):
-        self.sheetRows[ws] += 1
+        with self.sheetLocks[ws]:
+            self.sheetRows[ws] += 1
 
     def incrementFileCount(self, ws):
-        self.summaryCounts[ws] += 1
+        with self.sheetLocks[ws]:
+            self.summaryCounts[ws] += 1
 
     def incrementRowAndFileCount(self, ws):
-       self.sheetRows[ws] += 1
-       self.summaryCounts[ws] += 1
-        
+       with self.sheetLocks[ws]:
+            self.sheetRows[ws] += 1
+            self.summaryCounts[ws] += 1
+
 
     def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles, addRecommendations):
         self.summarySheet.set_column(0, 0, 34)
