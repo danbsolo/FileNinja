@@ -194,6 +194,7 @@ class WorkbookManager:
             if countAsError:
                 self.fileErrorCount += 1
 
+
     def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
         ewpList = []
@@ -293,6 +294,35 @@ class WorkbookManager:
             return 2
         else:
             return 0
+    
+
+    def doFileProceduresExist(self):
+        return (len(self.fileFindProcedures) + len(self.fileFixProcedures)) == 0
+
+
+    def createFileThreads(self):
+        ## Create thread pool executors and necessary locks
+        numFileProcedures = len(self.fileFindProcedures) + len(self.fileFixProcedures)
+
+        self.fileProcedureThreadPoolExecutors = []
+
+        # Dynamically choose the number of file threads based on a hard-coded max total.
+        totalThreads = 160
+        self.numFileThreads = totalThreads // numFileProcedures
+
+        self.nextNumFileProcedureIndex = 0  # used by self.fileCrawl()
+        for _ in range(self.numFileThreads):
+            self.fileProcedureThreadPoolExecutors.append(
+                ThreadPoolExecutor(max_workers = numFileProcedures)
+            )
+        self.lockFileProcedure = Lock()
+
+        self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
+        self.lockFile = Lock()
+
+        self.sheetLocks = {}
+        for ws in self.getAllProcedureSheets():
+            self.sheetLocks[ws] = Lock()
 
 
     def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
@@ -311,28 +341,11 @@ class WorkbookManager:
         
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
         self.excludedDirs = excludedDirs
+        
+
+        self.createFileThreads()
 
 
-        # Create thread pool executors and necessary locks
-        self.fileProcedureThreadPoolExecutors = []
-        numFileProcedures = len(self.fileFindProcedures) + len(self.fileFixProcedures)
-        self.numFileThreads = 10  # NOTE: Hardcoded number. Perhaps change?
-        self.nextNumFileProcedureIndex = 0  # used by self.fileCrawl()
-        for _ in range(self.numFileThreads):
-            self.fileProcedureThreadPoolExecutors.append(
-                ThreadPoolExecutor(max_workers = numFileProcedures)
-            )
-        self.lockFileProcedure = Lock()
-
-        self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
-        self.lockFile = Lock()
-
-        self.sheetLocks = {}
-        for ws in self.getAllProcedureSheets():
-            self.sheetLocks[ws] = Lock()
-
-
-        #
         #
         sheetsSansNonConcurrent = []
         for findProcedureObject in list(self.findSheets.keys()):
