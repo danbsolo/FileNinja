@@ -7,13 +7,6 @@ DAYS_TOO_OLD = 1095
 # Used by emptyDirectory
 TOO_FEW_AMOUNT = 0
 
-# Used by duplicateContent
-HASH_AND_FILES = {}
-# MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
-hashFunc = hashlib.new("sha256")
-hashFunc.update("".encode())
-EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
-
 
 
 def setWorkbookManager(newManager: WorkbookManager):
@@ -144,10 +137,12 @@ def fileExtensionStart(ws):
     global EXTENSION_COUNT
     global EXTENSION_TOTAL_SIZE
     global TOO_LARGE_SIZE_MB
+    global LOCK_FILE_EXTENSION
     
     EXTENSION_COUNT = defaultdict(int)
     EXTENSION_TOTAL_SIZE = defaultdict(int)
     TOO_LARGE_SIZE_MB = 100
+    LOCK_FILE_EXTENSION = Lock()
 
 def fileExtensionConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str, _):
     try: fileSize = os.path.getsize(longFileAbsolute) / 1000_000  # Bytes / 1000_000 = MBs
@@ -155,8 +150,9 @@ def fileExtensionConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str,
 
     _, extension = getRootNameAndExtension(itemName)
 
-    EXTENSION_COUNT[extension] += 1
-    EXTENSION_TOTAL_SIZE[extension] += fileSize
+    with LOCK_FILE_EXTENSION:
+        EXTENSION_COUNT[extension] += 1
+        EXTENSION_TOTAL_SIZE[extension] += fileSize
     return (False,)
 
 def fileExtensionPost(ws):
@@ -186,6 +182,18 @@ def fileExtensionPost(ws):
     ws.freeze_panes(1, 0)
 
 
+def duplicateContentStart(ws):
+    global HASH_AND_FILES
+    global EMPTY_INPUT_HASH_CODE
+    global LOCK_DUPLICATE_CONTENT
+    
+    HASH_AND_FILES = {}
+    # MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
+    hashFunc = hashlib.new("sha256")
+    hashFunc.update("".encode())
+    EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
+    LOCK_DUPLICATE_CONTENT = Lock()
+
 def duplicateContentHelper(longFileAbsolute:str):    
     hashFunc = hashlib.new("sha256")
     
@@ -206,12 +214,14 @@ def duplicateContentConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:s
         return (False,)
     
     if hashCode in HASH_AND_FILES:
-        HASH_AND_FILES[hashCode][0].append(itemName)
-        HASH_AND_FILES[hashCode][1].append(dirAbsolute)
+        with LOCK_DUPLICATE_CONTENT:
+            HASH_AND_FILES[hashCode][0].append(itemName)
+            HASH_AND_FILES[hashCode][1].append(dirAbsolute)
         wbm.incrementFileCount(ws)
         return (3,)
     else:
-        HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
+        with LOCK_DUPLICATE_CONTENT:
+            HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
         return (False,)
 
 def duplicateContentPost(ws):

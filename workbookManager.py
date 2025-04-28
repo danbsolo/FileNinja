@@ -6,7 +6,7 @@ import stat
 from defs import *
 import filesScannedSharedVar
 from ExcelWritePackage import ExcelWritePackage
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, wait
 from threading import Lock
 
 
@@ -129,73 +129,94 @@ class WorkbookManager:
         self.fixProcedureArgs[fixProcedureObject] = arg
         return True
     
-
-    def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
-        needsFolderWritten = set()
+    
+    def processFile(self, longDirAbsolute, dirAbsolute, fileName, needsFolderWritten, ewpList, tpeIndex):
         countAsError = False
-        ewpList = []
         
-        for fileName in dirFiles:
-            # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
-            # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
-            # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
-            if fileName.startswith("~$") or ".one" in fileName[-8:]:
-                continue
+        # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
+        # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
+        # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
+        if fileName.startswith("~$") or ".one" in fileName[-8:]:
+            return
+    
+        longFileAbsolute = longDirAbsolute + "\\" + fileName
 
-            longFileAbsolute = longDirAbsolute + "\\" + fileName
+        hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
+        if hiddenFileSkipStatus == 2:
+            return
 
-            hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
-            if hiddenFileSkipStatus == 2: continue
+        ## THREADING STUFF STARTS
+        futures = {
+            self.fileProcedureThreadPoolExecutors[tpeIndex].submit(
+                findProcedureObject.mainFunction,
+                longFileAbsolute,
+                dirAbsolute,
+                fileName,
+                self.findSheets[findProcedureObject]
+            ): self.findSheets[findProcedureObject]
+            for findProcedureObject in self.fileFindProcedures
+        }
 
-            ## THREADING STUFF STARTS
-            futures = {
-                self.threadPoolExecutorFile.submit(
-                    findProcedureObject.mainFunction,
+        # If not hidden, append to futures with fixProcedureObjects 
+        if hiddenFileSkipStatus == 0:
+            for fixProcedureObject in self.fileFixProcedures:
+                futures[self.fileProcedureThreadPoolExecutors[tpeIndex].submit(
+                    self.fixProcedureFunctions[fixProcedureObject],
                     longFileAbsolute,
+                    longDirAbsolute,
                     dirAbsolute,
                     fileName,
-                    self.findSheets[findProcedureObject]
-                ): self.findSheets[findProcedureObject]
-                for findProcedureObject in self.fileFindProcedures
-            }
+                    self.fixSheets[fixProcedureObject],
+                    self.fixProcedureArgs[fixProcedureObject]
+                )] = self.fixSheets[fixProcedureObject]
 
-            # If not hidden, append to futures with fixProcedureObjects 
-            if hiddenFileSkipStatus == 0:
-                for fixProcedureObject in self.fileFixProcedures:
-                    futures[self.threadPoolExecutorFile.submit(
-                        self.fixProcedureFunctions[fixProcedureObject],
-                        longFileAbsolute,
-                        longDirAbsolute,
-                        dirAbsolute,
-                        fileName,
-                        self.fixSheets[fixProcedureObject],
-                        self.fixProcedureArgs[fixProcedureObject]
-                    )] = self.fixSheets[fixProcedureObject]
+        for fut in as_completed(futures):
+            result = fut.result()
+            status = result[0]
+            fileSheet = futures[fut]
 
-            for fut in as_completed(futures):
-                result = fut.result()
-                status = result[0]
-                fileSheet = futures[fut]
+            if (status == True):
+                needsFolderWritten.add(fileSheet)
+                countAsError = True
+            elif (not status):  # returning None or False
+                continue  # It's not super necessary to continue here, but might as well
+            elif (status == 2):  # Special case (ex: Used by List All Files)
+                needsFolderWritten.add(fileSheet)
+            elif (status == 3):  # Special case (ex: used by Identical File)
+                countAsError = True
 
-                if (status == True):
-                    needsFolderWritten.add(fileSheet)
-                    countAsError = True
-                elif (not status):  # returning None or False
-                    continue  # It's not super necessary to continue here, but might as well
-                elif (status == 2):  # Special case (ex: Used by List All Files)
-                    needsFolderWritten.add(fileSheet)
-                elif (status == 3):  # Special case (ex: used by Identical File)
-                    countAsError = True
+            with self.lockFileProcedure:
+                ewpList.extend(result[1:])
 
-                with self.lockThreadFile:
-                    ewpList.extend(result[1:])
-
-            # TODO: This stuff would need a higher layered lock once the higher layered threads are created
+        with self.lockFile:
             filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
             if countAsError:
                 self.fileErrorCount += 1
-                countAsError = False
+
+
+    def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
+        needsFolderWritten = set()
+        ewpList = []
+
+        futures = {}
+        for fileName in dirFiles:
+            if self.nextNumFileProcedureIndex >= self.numFileThreads:
+                self.nextNumFileProcedureIndex = 0
+                
+            futures[self.fileThreadPoolExecutor.submit(
+                self.processFile,
+                longDirAbsolute,
+                dirAbsolute,
+                fileName,
+                needsFolderWritten,
+                ewpList,
+                self.nextNumFileProcedureIndex
+            )] = fileName
+            
+            self.nextNumFileProcedureIndex += 1
+
+        wait(futures)
 
         for ewp in ewpList:
             ewp.executeWrite()
@@ -289,9 +310,21 @@ class WorkbookManager:
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
         self.excludedDirs = excludedDirs
 
-        # Create the thread pool executors and necessary locks
-        self.threadPoolExecutorFile = ThreadPoolExecutor(max_workers= len(self.fileFindProcedures) + len(self.fileFixProcedures))
-        self.lockThreadFile = Lock()
+
+        # Create thread pool executors and necessary locks
+        self.fileProcedureThreadPoolExecutors = []
+        numFileProcedures = len(self.fileFindProcedures) + len(self.fileFixProcedures)
+        self.numFileThreads = 10  # NOTE: Hardcoded number. Perhaps change?
+        self.nextNumFileProcedureIndex = 0  # used by self.fileCrawl()
+        for _ in range(self.numFileThreads):
+            self.fileProcedureThreadPoolExecutors.append(
+                ThreadPoolExecutor(max_workers = numFileProcedures)
+            )
+        self.lockFileProcedure = Lock()
+
+        self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
+        self.lockFile = Lock()
+
 
         #
         sheetsSansNonConcurrent = []
@@ -373,7 +406,9 @@ class WorkbookManager:
         ###
 
         # shutdown threads
-        self.threadPoolExecutorFile.shutdown(wait=True)
+        self.fileThreadPoolExecutor.shutdown(wait=True)
+        for i in range(self.numFileThreads):
+            self.fileProcedureThreadPoolExecutors[i].shutdown(wait=True)
 
         self.executionTime = time() - start
 

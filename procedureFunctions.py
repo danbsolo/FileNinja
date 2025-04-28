@@ -6,6 +6,7 @@ import hashlib
 from getFileOwner import getOwnerCatch
 from collections import defaultdict
 from ExcelWritePackage import ExcelWritePackage
+from threading import Lock
 
 
 # Used by badCharFind
