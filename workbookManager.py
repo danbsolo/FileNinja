@@ -6,7 +6,7 @@ import stat
 from defs import *
 import filesScannedSharedVar
 from ExcelWritePackage import ExcelWritePackage
-from concurrent.futures import ThreadPoolExecutor, as_completed, wait
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 
 
@@ -216,7 +216,10 @@ class WorkbookManager:
             
             self.nextNumFileProcedureIndex += 1
 
-        wait(futures)
+        # If any thread raises an exception, this will ensure they are raised in this "main" WorkbookManager thread
+        # , as opposed to just using concurrent.futures(wait)
+        for fut in as_completed(futures):
+            fut.result()
 
         for ewp in ewpList:
             ewp.executeWrite()
