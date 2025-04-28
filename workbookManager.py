@@ -296,7 +296,6 @@ class WorkbookManager:
         self.excludedDirs = excludedDirs
 
         # Create the thread pool executors and necessary locks
-        # TODO: Add more workers proportionate to fileFixProcedures' length when applicable.
         self.threadPoolExecutorFile = ThreadPoolExecutor(max_workers= len(self.fileFindProcedures) + len(self.fileFixProcedures))
         self.lockThreadFile = Lock()
 

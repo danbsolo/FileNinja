@@ -101,12 +101,15 @@ def spaceFileFixHelper(oldItemName) -> str:
 
 def spaceFileFixLog(_1:str, _2:str, _3:str, oldItemName:str, ws, _4):
     newItemName = spaceFileFixHelper(oldItemName)
-    if (not newItemName): return False
+    if (not newItemName): return (False,)
 
-    wbm.writeItem(ws, oldItemName)
-    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
-    return True
-    
+    #wbm.writeItem(ws, oldItemName)
+    #wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    return (True,
+            ExcelWritePackage(row, wbm.ITEM_COL, oldItemName, ws),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.logFormat)) 
 
 def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, _):
     newItemName = spaceFileFixHelper(oldItemName)
@@ -342,11 +345,15 @@ def searchAndReplaceFileHelper(oldItemName:str, arg):
 
 
 def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, oldItemName:str, ws, arg):
-    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return False
+    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return (False,)
 
-    wbm.writeItem(ws, oldItemName, wbm.errorFormat)
-    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
-    return True
+    #wbm.writeItem(ws, oldItemName, wbm.errorFormat)
+    #wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    return (True,
+            ExcelWritePackage(row, wbm.ITEM_COL, oldItemName, ws, wbm.errorFormat),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.logFormat))
 
 
 def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, arg):
@@ -487,19 +494,19 @@ def deleteIdenticalFilesLogConcurrent(longFileAbsolute:str, longDirAbsolute:str,
         hashCode = deleteIdenticalFilesHelper(longFileAbsolute)
     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
         # Unlike other procedures, this won't print out the error; it'll just assume it's not a duplicate.
-        return False
+        return (False,)
     
     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
-        return False
+        return (False,)
     
     if hashCode in HASH_AND_FILES:
         HASH_AND_FILES[hashCode][0].append(itemName)
         HASH_AND_FILES[hashCode][1].append(dirAbsolute)
         wbm.incrementFileCount(ws)
-        return 3
+        return (3,)
     else:
         HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
-        return False
+        return (False,)
 
 
 def deleteIdenticalFilesRecommendPost(ws):
