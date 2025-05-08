@@ -221,8 +221,9 @@ class WorkbookManager:
         for fut in as_completed(futures):
             fut.result()
 
-        for ewp in ewpList:
-            ewp.executeWrite()
+        with self.workbookLock:
+            for ewp in ewpList:
+                ewp.executeWrite()
 
         return needsFolderWritten            
 
@@ -246,11 +247,10 @@ class WorkbookManager:
             #elif result == 3:
             #    pass # countsAsError.
 
-            # TODO: Realize that fileCrawl and folderCrawl should never be able to write in the Excel file simultaneously.
-            # This would require a lock or returning the ewp list straight up.
-            # So, by commenting this out, the folder find procedures will not write anything *for now*
-            #for ewp in result[1:]:
-            #    ewp.executeWrite()     
+            # TODO: 2 layer threading with folder procedures are a work in progress.
+            with self.workbookLock:
+                for ewp in result[1:]:
+                    ewp.executeWrite()
 
 
         for fixProcedureObject in self.folderFixProcedures:
@@ -373,6 +373,8 @@ class WorkbookManager:
         
         self.createSheetLocks()
 
+        # Only one thread can access the workbook at a time, hence a lock
+        self.workbookLock = Lock()
 
         #
         sheetsSansNonConcurrent = []
@@ -434,7 +436,7 @@ class WorkbookManager:
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
-        #
+
 
         for findProcedureObject in self.findSheets.keys():
             if findProcedureObject.postFunction:
