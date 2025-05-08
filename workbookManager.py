@@ -130,7 +130,7 @@ class WorkbookManager:
         return True
     
     
-    def processFile(self, longDirAbsolute, dirAbsolute, fileName, needsFolderWritten, ewpList, tpeIndex):
+    def processFile(self, longDirAbsolute, dirAbsolute, fileName, needsFolderWritten, tpeIndex):
         countAsError = False
         
         # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
@@ -176,22 +176,23 @@ class WorkbookManager:
             fileSheet = futures[fut]
 
             if (status == True):
-                needsFolderWritten.add(fileSheet)
+                with self.lockFileNeedsFolderWritten:
+                    needsFolderWritten.add(fileSheet)
                 countAsError = True
             elif (not status):  # returning None or False
                 continue  # It's not super necessary to continue here, but might as well
             elif (status == 2):  # Special case (ex: Used by List All Files)
-                needsFolderWritten.add(fileSheet)
+                with self.lockFileNeedsFolderWritten:
+                    needsFolderWritten.add(fileSheet)
             elif (status == 3):  # Special case (ex: used by Identical File)
                 countAsError = True
 
-            # So two procedures -- whether within the same pool or not -- ...
-            # ... don't finish and add to this local ewpList simultaneously
-            with self.lockFileProcedure:
-                ewpList.extend(result[1:])
+            with self.workbookLock:
+                for ewp in result[1:]:
+                    ewp.executeWrite()
 
         # So two files don't finish and try to increment these counters simultaneously
-        with self.lockFile:
+        with self.lockFileScan:
             filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
             if countAsError:
@@ -200,32 +201,26 @@ class WorkbookManager:
 
     def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
         needsFolderWritten = set()
-        ewpList = []
 
-        futures = {}
+        futures = []
         for fileName in dirFiles:
             with self.fileThreadsCounterLock:
                 nextFileThreadIndex = self.fileThreadsCounter % self.numFileThreads
                 self.fileThreadsCounter += 1
                 
-            futures[self.fileThreadPoolExecutor.submit(
+            futures.append(self.fileThreadPoolExecutor.submit(
                 self.processFile,
                 longDirAbsolute,
                 dirAbsolute,
                 fileName,
                 needsFolderWritten,
-                ewpList,
                 nextFileThreadIndex
-            )] = fileName
+            ))
 
         # If any thread raises an exception, this will ensure they are raised in this "main" WorkbookManager thread
         # , as opposed to just using concurrent.futures(wait)
         for fut in as_completed(futures):
             fut.result()
-
-        with self.workbookLock:
-            for ewp in ewpList:
-                ewp.executeWrite()
 
         return needsFolderWritten            
     
@@ -247,65 +242,39 @@ class WorkbookManager:
                 self.findSheets[findProcedureObject]
             )] = self.findSheets[findProcedureObject]
 
+        for fixProcedureObject in self.folderFixProcedures:
+            futures[self.folderProcedureThreadPoolExecutor.submit(
+                self.fixProcedureFunctions[fixProcedureObject],
+                dirAbsolute,
+                dirFolders,
+                dirFiles,
+                self.fixSheets[fixProcedureObject],
+                self.fixProcedureArgs[fixProcedureObject]
+            )] = self.fixSheets[fixProcedureObject]
+
         for fut in as_completed(futures):
             result = fut.result()
             status = result[0]
             folderSheet = futures[fut]
 
             if status == True:
-                needsFolderWritten.add(folderSheet)
+                with self.lockFolderNeedsFolderWritten:
+                    needsFolderWritten.add(folderSheet)
                 countAsError = True
             elif not status:  # returning None or False
                 pass
-            # These aren't ever used — at least not yet — so they're commented out.
-            #elif result == 2:
-            #    pass # needsFolderWritten.
-            #elif result == 3:
-            #    pass # countsAsError.
+            elif status == 2:
+                with self.lockFolderNeedsFolderWritten:
+                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+            elif status == 3:
+                countAsError = True
 
             with self.workbookLock:
                 for ewp in result[1:]:
                     ewp.executeWrite()
 
-        # for findProcedureObject in self.folderFindProcedures:
-        #     result = findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
-        #     status = result[0]
-            
-        #     if status == True:
-        #         needsFolderWritten.add(self.findSheets[findProcedureObject])
-        #         countAsError = True
-        #     elif not status:  # returning None or False
-        #         pass
-        #     # These aren't ever used — at least not yet — so they're commented out.
-        #     #elif result == 2:
-        #     #    pass # needsFolderWritten.
-        #     #elif result == 3:
-        #     #    pass # countsAsError.
 
-        #     #with self.workbookLock:
-        #     for ewp in result[1:]:
-        #         ewp.executeWrite()
-
-
-        # for fixProcedureObject in self.folderFixProcedures:
-        #     result = self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
-        #     status = result[0]
-
-        #     if status == True:
-        #         needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-        #         countAsError = True
-        #     elif not status:
-        #         pass
-        #     elif status == 2:
-        #         needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-        #     elif status == 3:
-        #         countAsError = True
-
-        #     #with self.workbookLock:
-        #     for ewp in result[1:]:
-        #         ewp.executeWrite()
-
-
+        # NOTE: if creating another layer of threading, need some sort of lock here
         self.foldersScannedCount += 1
         if countAsError:
             self.folderErrorCount += 1
@@ -333,7 +302,7 @@ class WorkbookManager:
             return 2
         else:
             return 0
-    
+        
 
     def doFileProceduresExist(self):
         return (len(self.fileFindProcedures) + len(self.fileFixProcedures)) != 0
@@ -369,16 +338,18 @@ class WorkbookManager:
             self.fileProcedureThreadPoolExecutors.append(
                 ThreadPoolExecutor(max_workers = numFileProcedures)
             )
-        self.lockFileProcedure = Lock()
 
         self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
-        self.lockFile = Lock()
+
+        self.lockFileNeedsFolderWritten = Lock()
+        self.lockFileScan = Lock()
 
 
     def createFolderThreads(self):
         numFolderProcedures = len(self.folderFindProcedures) + len(self.folderFixProcedures)
         self.folderProcedureThreadPoolExecutor = ThreadPoolExecutor(max_workers = numFolderProcedures)
 
+        self.lockFolderNeedsFolderWritten = Lock()
 
     def createSheetLocks(self):
         self.sheetLocks = {}
