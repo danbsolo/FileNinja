@@ -201,8 +201,9 @@ class WorkbookManager:
 
         futures = {}
         for fileName in dirFiles:
-            if self.nextNumFileProcedureIndex >= self.numFileThreads:
-                self.nextNumFileProcedureIndex = 0
+            with self.totalFileThreadsUsedLock:
+                nextFileThreadIndex = self.totalFileThreadsUsed % self.numFileThreads
+                self.totalFileThreadsUsed += 1
                 
             futures[self.fileThreadPoolExecutor.submit(
                 self.processFile,
@@ -211,10 +212,8 @@ class WorkbookManager:
                 fileName,
                 needsFolderWritten,
                 ewpList,
-                self.nextNumFileProcedureIndex
+                nextFileThreadIndex
             )] = fileName
-            
-            self.nextNumFileProcedureIndex += 1
 
         # If any thread raises an exception, this will ensure they are raised in this "main" WorkbookManager thread
         # , as opposed to just using concurrent.futures(wait)
@@ -330,7 +329,9 @@ class WorkbookManager:
         totalThreads = 160
         self.numFileThreads = totalThreads // numFileProcedures
 
-        self.nextNumFileProcedureIndex = 0  # used by self.fileCrawl()
+        self.totalFileThreadsUsed = 0  # used by self.fileCrawl()
+        self.totalFileThreadsUsedLock = Lock()
+
         for _ in range(self.numFileThreads):
             self.fileProcedureThreadPoolExecutors.append(
                 ThreadPoolExecutor(max_workers = numFileProcedures)
