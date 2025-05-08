@@ -543,21 +543,24 @@ def deleteIdenticalFilesRecommendPost(ws):
                     # Write the first one normally
                     ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(dirAbsoluteKey))
+                    ws.write(row, 3, getOwnerCatch(
+                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
                     row += 1
 
                     # Write the rest in strong warning format
                     for i in range(1, dirAbsoluteNumOfFiles):
                         ws.write(row, 1, folderAndItem[dirAbsoluteKey][i], wbm.warningStrongFormat)
                         ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                        ws.write(row, 3, getOwnerCatch(dirAbsoluteKey))
+                        ws.write(row, 3, getOwnerCatch(
+                            joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][i])))
                         row += 1
                 
                 # If this file is only duplicated once in this directory, just write it normally
                 else:
                     ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(dirAbsoluteKey))
+                    ws.write(row, 3, getOwnerCatch(
+                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
                     row += 1
 
             folderAndItem.clear()
@@ -580,7 +583,7 @@ def deleteIdenticalFilesPost(ws):
             for i in range(numOfFiles):
                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
                 ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
-                ws.write(row, 3, getOwnerCatch(HASH_AND_FILES[hashCode][1][i]))
+                ws.write(row, 3, joinDirToFileName(HASH_AND_FILES[hashCode][1][i], HASH_AND_FILES[hashCode][0][i]))
                 row += 1
                 
     HASH_AND_FILES.clear()
