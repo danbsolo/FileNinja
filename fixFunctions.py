@@ -224,11 +224,16 @@ def deleteOldFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbs
         else:
             dynamicFormat = wbm.warningWeakFormat
 
+        wbm.incrementFileCount(ws)
+
         #wbm.writeItem(ws, itemName, wbm.errorFormat)
         #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
         #wbm.writeOutcomeAndIncrement(ws, daysOld, dynamicFormat)
-        
-    return True
+    return (True,
+            itemEwp,
+            ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, daysOld, ws, dynamicFormat))
 ###
 
 
@@ -238,45 +243,60 @@ def deleteOldFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
     # If it's greater than the upperbound, exit
     if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
-        return False
+        return (False,)
 
-    wbm.writeItem(ws, itemName)
+    # wbm.writeItem(ws, itemName)
+    wbm.incrementRow(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
 
     if (daysOld == -1):
-        wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
-        wbm.incrementRow(ws)
-        return 2
+        # wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
+        # wbm.incrementRow(ws)
+        
+        return (2,
+                itemEwp,
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
     else:
+        wbm.incrementFileCount(ws)
+
         try:
-            wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+            # wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
             os.remove(longFileAbsolute)
-            wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
+            #wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
         except PermissionError:
-            wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
+            #wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
+            outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, "FAILED TO DELETE. PERMISSION ERROR.", ws, wbm.errorFormat)
         except Exception as e:
-            wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
-    return True
+            #wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
+            outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, f"FAILED TO DELETE. {e}", ws, wbm.errorFormat)
+    return (True,
+            itemEwp,
+            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+            outcomeEwp)
 
 
 def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
     tooFewAmount = arg[0]
 
     # If even 1 folder exists, this isn't empty
-    if len(dirFolders) != 0: return False
+    if len(dirFolders) != 0: return (False,)
 
     # If equal to tooFewAmount or less, then this folder needs to be at least flagged
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
-        wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
-        return True
-    return False
+        #wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
+        wbm.incrementRowAndFileCount(ws)
+        return (True,
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.logFormat))
+    return (False,)
 
 
 ###
 def deleteEmptyDirectoriesRecommendLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
     tooFewAmount = arg[0]
 
-    if len(dirFolders) != 0: return False
+    if len(dirFolders) != 0: return (False,)
 
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
@@ -290,33 +310,44 @@ def deleteEmptyDirectoriesRecommendLog(dirAbsolute, dirFolders, dirFiles, ws, ar
         else:
             dynamicFormat = wbm.logFormat
 
-        # wbm.writeItem(ws, "", dynamicFormat)
-        wbm.writeOutcomeAndIncrement(ws, fileAmount, dynamicFormat)
-        return True
-    return False
+        # wbm.writeOutcomeAndIncrement(ws, fileAmount, dynamicFormat)
+        wbm.incrementRowAndFileCount(ws)
+        return (True,
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, dynamicFormat))
+    return (False,)
 ###
     
-
+    
 def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     tooFewAmount = arg[0]
 
-    if len(dirFolders) != 0: return False
+    if len(dirFolders) != 0: return (False,)
 
     fileAmount = len(dirFiles)
     if fileAmount <= tooFewAmount:
+        wbm.incrementRowAndFileCount(ws)
+
         # If it specifically has 0 files, delete the folder
         if (fileAmount == 0):
             try: 
                 os.rmdir(addLongPathPrefix(dirAbsolute))
-                wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.modifyFormat)
+                # wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.modifyFormat)
+                outcomeEwp = ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.modifyFormat)
             except Exception as e:
-                wbm.writeOutcomeAndIncrement(ws, f"0 FILES. UNABLE TO DELETE. {e}", wbm.errorFormat)
-            return True
+                # wbm.writeOutcomeAndIncrement(ws, f"0 FILES. UNABLE TO DELETE. {e}", wbm.errorFormat)
+                outcomeEwp = ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, f"0 FILES. UNABLE TO DELETE. {e}", ws, wbm.errorFormat)
+
+            return (True,
+                    outcomeEwp
+                    )
+        
         # Otherwise, just flag as usual
         else:
-            wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
-            return True
-    return False
+            # wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
+
+            return (True,
+                    ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.logFormat))
+    return (False,)
 
 
 def searchAndReplaceFolderHelper(oldFolderName:str, arg):
@@ -333,23 +364,30 @@ def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
 
     if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
-        return False
+        return (False,)
     
-    wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
-    wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
-    wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
-    return True
+    # wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
+    # wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
+    # wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+
+    return (True,
+            ExcelWritePackage(row, wbm.DIR_COL, dirAbsolute, ws, wbm.dirFormat),
+            ExcelWritePackage(row, wbm.ITEM_COL, oldFolderName, ws, wbm.errorFormat),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, newFolderName, ws, wbm.logFormat)
+            )
 
 
 def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
 
     if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
-        return False
+        return (False,)
     
     directoryOfFolder = getDirectoryDirName(dirAbsolute)
     FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
-    return 3
+    return (3,)
 
 
 def searchAndReplaceFileHelper(oldItemName:str, arg):
@@ -378,18 +416,26 @@ def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, ol
 
 
 def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, arg):
-    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return False
+    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return (False,)
 
-    wbm.writeItem(ws, oldItemName, wbm.errorFormat)
+    # wbm.writeItem(ws, oldItemName, wbm.errorFormat)
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, oldItemName, ws, wbm.errorFormat)
 
     try:
         os.rename(longFileAbsolute, joinDirToFileName(longDirAbsolute, newItemName))
-        wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
+        # wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
+        outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+        # wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+        outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, "MODIFICATION FAILED. PERMISSION ERROR.", ws, wbm.errorFormat)
     except Exception as e:
-        wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
-    return True
+        # wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
+        outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, f"MODIFICATION FAILED. {e}", ws, wbm.errorFormat)
+    return (True,
+            itemEwp,
+            outcomeEwp)
 
 
 def deleteEmptyFilesStart(_, ws):
@@ -436,22 +482,36 @@ def deleteEmptyFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirA
     try:
         fileSize = os.path.getsize(longFileAbsolute)
     except PermissionError:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ. PERMISSION ERROR.", ws, wbm.errorFormat))
     except Exception as e:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. {e}", ws, wbm.errorFormat))
+
 
     if fileSize == 0:
-        wbm.writeItem(ws, itemName, wbm.warningStrongFormat)
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeOutcomeAndIncrement(ws, "", wbm.warningStrongFormat)
-        return True
-    return False
+        #wbm.writeItem(ws, itemName, wbm.warningStrongFormat)
+        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        #wbm.writeOutcomeAndIncrement(ws, "", wbm.warningStrongFormat)
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.warningStrongFormat),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.warningStrongFormat))
+    return (False,)
 ###
 
 
@@ -462,30 +522,50 @@ def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolut
     try:
         fileSize = os.path.getsize(longFileAbsolute)
     except PermissionError:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ. PERMISSION ERROR.", ws, wbm.errorFormat))
+    
     except Exception as e:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. {e}", ws, wbm.errorFormat))
+
 
     # Stage for deletion
     if fileSize == 0:
-        wbm.writeItem(ws, itemName)
+        # wbm.writeItem(ws, itemName)
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
+        auxiliaryEwp = ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws)
 
         try:
-            wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+            # wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
             os.remove(longFileAbsolute)
-            wbm.writeOutcomeAndIncrement(ws, "", wbm.modifyFormat)
+            # wbm.writeOutcomeAndIncrement(ws, "", wbm.modifyFormat)
+            outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.modifyFormat)
         except PermissionError:
-            wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
+            # wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
+            outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, "FAILED TO DELETE. PERMISSION ERROR.", ws, wbm.errorFormat)
         except Exception as e:
-            wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
-        return True
-    return False
+            # wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
+            outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, f"FAILED TO DELETE. {e}", ws, wbm.errorFormat)
+        return (True,
+                itemEwp,
+                auxiliaryEwp,
+                outcomeEwp)    
+    return (False,)
 
 
 
