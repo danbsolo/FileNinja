@@ -248,23 +248,30 @@ class WorkbookManager:
             #    pass # countsAsError.
 
             # TODO: 2 layer threading with folder procedures are a work in progress.
-            with self.workbookLock:
-                for ewp in result[1:]:
-                    ewp.executeWrite()
+            # It's not actually possible to have concurrency issues here yet, but once that
+            # problem arises, use the self.workbookLock
+            #with self.workbookLock:
+            for ewp in result[1:]:
+                ewp.executeWrite()
 
 
         for fixProcedureObject in self.folderFixProcedures:
             result = self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
-            
-            if result == True:
+            status = result[0]
+
+            if status == True:
                 needsFolderWritten.add(self.fixSheets[fixProcedureObject])
                 countAsError = True
-            elif not result:
+            elif not status:
                 pass
-            elif result == 2:
+            elif status == 2:
                 needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-            elif result == 3:
+            elif status == 3:
                 countAsError = True
+
+            #with self.workbookLock:
+            for ewp in result[1:]:
+                ewp.executeWrite()
 
 
         self.foldersScannedCount += 1

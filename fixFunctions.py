@@ -70,12 +70,18 @@ def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
     newFolderName = spaceFolderFixHelper(oldFolderName)
 
-    if (not newFolderName): return False
+    if (not newFolderName): return (False,)
     
-    wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
-    wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
-    wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
-    return True
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    #wbm.writeDir(ws, dirAbsolute, wbm.dirFormat)
+    #wbm.writeItem(ws, oldFolderName, wbm.errorFormat)
+    #wbm.writeOutcomeAndIncrement(ws, newFolderName, wbm.logFormat)
+    
+    return (True,
+            ExcelWritePackage(row, wbm.DIR_COL, dirAbsolute, ws, wbm.dirFormat),
+            ExcelWritePackage(row, wbm.ITEM_COL, oldFolderName, ws, wbm.errorFormat),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, newFolderName, ws, wbm.logFormat))
 
 
 def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
@@ -86,7 +92,7 @@ def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
 
     directoryOfFolder = getDirectoryDirName(dirAbsolute)
     FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
-    return 3
+    return (3,)
 
 
 def spaceFileFixHelper(oldItemName) -> str:
@@ -113,19 +119,27 @@ def spaceFileFixLog(_1:str, _2:str, _3:str, oldItemName:str, ws, _4):
 
 def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, _):
     newItemName = spaceFileFixHelper(oldItemName)
-    if (not newItemName): return False
+    if (not newItemName): return (False,)
 
-    wbm.writeItem(ws, oldItemName)
+    # wbm.writeItem(ws, oldItemName)
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, oldItemName, ws)
 
     # Log newItemName and rename file
     try:
         os.rename(longFileAbsolute, joinDirToFileName(longDirAbsolute, newItemName))
-        wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
+        # wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.modifyFormat)
+        outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.modifyFormat)
     except PermissionError:
-        wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+        # wbm.writeOutcomeAndIncrement(ws, "MODIFICATION FAILED. PERMISSION ERROR.", wbm.errorFormat)
+        outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, "MODIFICATION FAILED. PERMISSION ERROR.", ws, wbm.errorFormat)
     except Exception as e:
-        wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
-    return True
+        # wbm.writeOutcomeAndIncrement(ws, f"MODIFICATION FAILED. {e}", wbm.errorFormat)
+        outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, f"MODIFICATION FAILED. {e}", ws, wbm.errorFormat)
+    return (True,
+            itemEwp,
+            outcomeEwp)
 
 
 def deleteOldFilesStart(arg, ws):
@@ -190,13 +204,19 @@ def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str
 def deleteOldFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
     daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
 
-    if (daysOld == 0): return False
+    if (daysOld == 0): return (False,)
+
+    wbm.incrementRow(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
 
     if (daysOld == -1):
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
-        wbm.incrementRow(ws)
-        return 2
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
+        #wbm.incrementRow(ws)
+        return (2,
+                itemEwp,
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
     else:
         # Unlike the other variants, this will still log (and flag) items above the UPPER_BOUND threshold
         if daysOld >= DAYS_UPPER_BOUND:
@@ -204,9 +224,10 @@ def deleteOldFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbs
         else:
             dynamicFormat = wbm.warningWeakFormat
 
-        wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeOutcomeAndIncrement(ws, daysOld, dynamicFormat)
+        #wbm.writeItem(ws, itemName, wbm.errorFormat)
+        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        #wbm.writeOutcomeAndIncrement(ws, daysOld, dynamicFormat)
+        
     return True
 ###
 
