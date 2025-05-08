@@ -297,7 +297,20 @@ class WorkbookManager:
     
 
     def doFileProceduresExist(self):
-        return (len(self.fileFindProcedures) + len(self.fileFixProcedures)) == 0
+        return (len(self.fileFindProcedures) + len(self.fileFixProcedures)) != 0
+
+    def doFolderProceduresExist(self):
+        return (len(self.folderFindProcedures) + len(self.folderFixProcedures)) != 0
+    
+
+    def initFileCrawlOnly(self, longDirAbsolute, dirAbsolute, dirFiles, _):
+        return self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles)
+
+    def initFolderCrawlOnly(self, _, dirAbsolute, dirFiles, dirFolders):
+        return self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+
+    def initFileFolderCrawl(self, longDirAbsolute, dirAbsolute, dirFiles, dirFolders):
+        return self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
 
 
     def createFileThreads(self):
@@ -320,6 +333,8 @@ class WorkbookManager:
         self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
         self.lockFile = Lock()
 
+
+    def createSheetLocks(self):
         self.sheetLocks = {}
         for ws in self.getAllProcedureSheets():
             self.sheetLocks[ws] = Lock()
@@ -343,7 +358,20 @@ class WorkbookManager:
         self.excludedDirs = excludedDirs
         
 
-        self.createFileThreads()
+        if self.doFileProceduresExist():
+            self.createFileThreads()
+
+            if self.doFolderProceduresExist():
+                crawlFunction = self.initFileFolderCrawl
+            else:
+                crawlFunction = self.initFileCrawlOnly
+
+        elif self.doFolderProceduresExist():
+            crawlFunction = self.initFolderCrawlOnly
+        else:
+            raise Exception("No procedures selected.")
+        
+        self.createSheetLocks()
 
 
         #
@@ -401,7 +429,8 @@ class WorkbookManager:
                 initialRows[ws] = self.sheetRows[ws] + 1  # CHANGE HERE TO GET NEXT AVAILABLE ROW
 
             # union operator usage, lol
-            needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+            # needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+            needsFolderWritten = crawlFunction(longDirAbsolute, dirAbsolute, dirFiles, dirFolders)
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
@@ -426,9 +455,10 @@ class WorkbookManager:
         ###
 
         # shutdown threads
-        self.fileThreadPoolExecutor.shutdown(wait=True)
-        for i in range(self.numFileThreads):
-            self.fileProcedureThreadPoolExecutors[i].shutdown(wait=True)
+        if self.doFileProceduresExist():
+            self.fileThreadPoolExecutor.shutdown(wait=True)
+            for i in range(self.numFileThreads):
+                self.fileProcedureThreadPoolExecutors[i].shutdown(wait=True)
 
         self.executionTime = time() - start
 
