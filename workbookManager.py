@@ -472,41 +472,41 @@ class WorkbookManager:
         self.executionTime = time() - start
 
 
-    def writeDir(self, ws, text, format=None):
-        self.writeHelper(ws, self.DIR_COL, text, format)
+    # def writeDir(self, ws, text, format=None):
+    #     self.writeHelper(ws, self.DIR_COL, text, format)
     
-    def writeDirAndIncrement(self, ws, text, format=None):
-        self.writeDir(ws, text, format)
-        self.incrementRow(ws)
-        self.incrementFileCount(ws)
+    # def writeDirAndIncrement(self, ws, text, format=None):
+    #     self.writeDir(ws, text, format)
+    #     self.incrementRow(ws)
+    #     self.incrementFileCount(ws)
 
-    def writeItem(self, ws, text, format=None):
-        self.writeHelper(ws, self.ITEM_COL, text, format)
+    # def writeItem(self, ws, text, format=None):
+    #     self.writeHelper(ws, self.ITEM_COL, text, format)
 
-    def writeItemAndIncrement(self, ws, text, format=None):
-        self.writeItem(ws, text, format)
-        self.incrementRow(ws)
-        self.incrementFileCount(ws)
+    # def writeItemAndIncrement(self, ws, text, format=None):
+    #     self.writeItem(ws, text, format)
+    #     self.incrementRow(ws)
+    #     self.incrementFileCount(ws)
 
-    def writeOutcome(self, ws, text, format=None):
-        self.writeHelper(ws, self.OUTCOME_COL, text, format)
+    # def writeOutcome(self, ws, text, format=None):
+    #     self.writeHelper(ws, self.OUTCOME_COL, text, format)
 
-    def writeOutcomeAndIncrement(self, ws, text, format=None):
-        self.writeOutcome(ws, text, format)
-        self.incrementRow(ws)
-        self.incrementFileCount(ws)
+    # def writeOutcomeAndIncrement(self, ws, text, format=None):
+    #     self.writeOutcome(ws, text, format)
+    #     self.incrementRow(ws)
+    #     self.incrementFileCount(ws)
 
-    def writeAuxiliary(self, ws, text, format=None):
-        self.writeHelper(ws, self.AUXILIARY_COL, text, format)
+    # def writeAuxiliary(self, ws, text, format=None):
+    #     self.writeHelper(ws, self.AUXILIARY_COL, text, format)
 
-    def writeAuxiliaryAndIncrement(self, ws, text, format=None):
-        self.writeAuxiliary(ws, text, format)
-        self.incrementRow(ws)
-        self.incrementFileCount(ws)
+    # def writeAuxiliaryAndIncrement(self, ws, text, format=None):
+    #     self.writeAuxiliary(ws, text, format)
+    #     self.incrementRow(ws)
+    #     self.incrementFileCount(ws)
 
-    def writeHelper(self, ws, col: str, text: str, format=None):
-        if (format): ws.write(self.sheetRows[ws], col, text, format)
-        else: ws.write(self.sheetRows[ws], col, text)
+    # def writeHelper(self, ws, col: str, text: str, format=None):
+    #     if (format): ws.write(self.sheetRows[ws], col, text, format)
+    #     else: ws.write(self.sheetRows[ws], col, text)
 
     def incrementRow(self, ws):
         with self.sheetLocks[ws]:
