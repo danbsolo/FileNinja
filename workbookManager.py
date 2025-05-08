@@ -185,9 +185,12 @@ class WorkbookManager:
             elif (status == 3):  # Special case (ex: used by Identical File)
                 countAsError = True
 
+            # So two procedures -- whether within the same pool or not -- ...
+            # ... don't finish and add to this local ewpList simultaneously
             with self.lockFileProcedure:
                 ewpList.extend(result[1:])
 
+        # So two files don't finish and try to increment these counters simultaneously
         with self.lockFile:
             filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
@@ -201,9 +204,9 @@ class WorkbookManager:
 
         futures = {}
         for fileName in dirFiles:
-            with self.totalFileThreadsUsedLock:
-                nextFileThreadIndex = self.totalFileThreadsUsed % self.numFileThreads
-                self.totalFileThreadsUsed += 1
+            with self.fileThreadsCounterLock:
+                nextFileThreadIndex = self.fileThreadsCounter % self.numFileThreads
+                self.fileThreadsCounter += 1
                 
             futures[self.fileThreadPoolExecutor.submit(
                 self.processFile,
@@ -225,18 +228,32 @@ class WorkbookManager:
                 ewp.executeWrite()
 
         return needsFolderWritten            
-
+    
+    #def processFolder(self, ...):
+    #    pass
 
     def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
         needsFolderWritten = set()
         countAsError = False
 
+        futures = {}
+
         for findProcedureObject in self.folderFindProcedures:
-            result = findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
+            futures[self.folderProcedureThreadPoolExecutor.submit(
+                findProcedureObject.mainFunction,
+                dirAbsolute,
+                dirFolders,
+                dirFiles,
+                self.findSheets[findProcedureObject]
+            )] = self.findSheets[findProcedureObject]
+
+        for fut in as_completed(futures):
+            result = fut.result()
             status = result[0]
-            
+            folderSheet = futures[fut]
+
             if status == True:
-                needsFolderWritten.add(self.findSheets[findProcedureObject])
+                needsFolderWritten.add(folderSheet)
                 countAsError = True
             elif not status:  # returning None or False
                 pass
@@ -246,31 +263,47 @@ class WorkbookManager:
             #elif result == 3:
             #    pass # countsAsError.
 
-            # TODO: 2 layer threading with folder procedures are a work in progress.
-            # It's not actually possible to have concurrency issues here yet, but once that
-            # problem arises, use the self.workbookLock
-            #with self.workbookLock:
-            for ewp in result[1:]:
-                ewp.executeWrite()
+            with self.workbookLock:
+                for ewp in result[1:]:
+                    ewp.executeWrite()
+
+        # for findProcedureObject in self.folderFindProcedures:
+        #     result = findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
+        #     status = result[0]
+            
+        #     if status == True:
+        #         needsFolderWritten.add(self.findSheets[findProcedureObject])
+        #         countAsError = True
+        #     elif not status:  # returning None or False
+        #         pass
+        #     # These aren't ever used — at least not yet — so they're commented out.
+        #     #elif result == 2:
+        #     #    pass # needsFolderWritten.
+        #     #elif result == 3:
+        #     #    pass # countsAsError.
+
+        #     #with self.workbookLock:
+        #     for ewp in result[1:]:
+        #         ewp.executeWrite()
 
 
-        for fixProcedureObject in self.folderFixProcedures:
-            result = self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
-            status = result[0]
+        # for fixProcedureObject in self.folderFixProcedures:
+        #     result = self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+        #     status = result[0]
 
-            if status == True:
-                needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                countAsError = True
-            elif not status:
-                pass
-            elif status == 2:
-                needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-            elif status == 3:
-                countAsError = True
+        #     if status == True:
+        #         needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+        #         countAsError = True
+        #     elif not status:
+        #         pass
+        #     elif status == 2:
+        #         needsFolderWritten.add(self.fixSheets[fixProcedureObject])
+        #     elif status == 3:
+        #         countAsError = True
 
-            #with self.workbookLock:
-            for ewp in result[1:]:
-                ewp.executeWrite()
+        #     #with self.workbookLock:
+        #     for ewp in result[1:]:
+        #         ewp.executeWrite()
 
 
         self.foldersScannedCount += 1
@@ -326,11 +359,11 @@ class WorkbookManager:
         self.fileProcedureThreadPoolExecutors = []
 
         # Dynamically choose the number of file threads based on a hard-coded max total.
-        totalThreads = 160
+        totalThreads = 150
         self.numFileThreads = totalThreads // numFileProcedures
 
-        self.totalFileThreadsUsed = 0  # used by self.fileCrawl()
-        self.totalFileThreadsUsedLock = Lock()
+        self.fileThreadsCounter = 0  # used by self.fileCrawl()
+        self.fileThreadsCounterLock = Lock()
 
         for _ in range(self.numFileThreads):
             self.fileProcedureThreadPoolExecutors.append(
@@ -340,6 +373,11 @@ class WorkbookManager:
 
         self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
         self.lockFile = Lock()
+
+
+    def createFolderThreads(self):
+        numFolderProcedures = len(self.folderFindProcedures) + len(self.folderFixProcedures)
+        self.folderProcedureThreadPoolExecutor = ThreadPoolExecutor(max_workers = numFolderProcedures)
 
 
     def createSheetLocks(self):
@@ -370,11 +408,13 @@ class WorkbookManager:
             self.createFileThreads()
 
             if self.doFolderProceduresExist():
+                self.createFolderThreads()
                 crawlFunction = self.initFileFolderCrawl
             else:
                 crawlFunction = self.initFileCrawlOnly
 
         elif self.doFolderProceduresExist():
+            self.createFolderThreads()
             crawlFunction = self.initFolderCrawlOnly
         else:
             raise Exception("No procedures selected.")
@@ -469,6 +509,9 @@ class WorkbookManager:
             self.fileThreadPoolExecutor.shutdown(wait=True)
             for i in range(self.numFileThreads):
                 self.fileProcedureThreadPoolExecutors[i].shutdown(wait=True)
+
+        if self.doFolderProceduresExist():
+            self.folderProcedureThreadPoolExecutor.shutdown(wait=True)
 
         self.executionTime = time() - start
 
