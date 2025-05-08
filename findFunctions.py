@@ -1,18 +1,10 @@
 from procedureFunctions import *
 
-
 # Used by oldFileFind (1095 days == 3 years old)
 DAYS_TOO_OLD = 1095
 
-# Used by emptyDirectoryConcurrent
+# Used by emptyDirectory
 TOO_FEW_AMOUNT = 0
-
-# Used by duplicateContent
-HASH_AND_FILES = {}
-# MMAP_THRESHOLD = 8 * 1024 * 1024  # 8MB to Bytes
-hashFunc = hashlib.new("sha256")
-hashFunc.update("".encode())
-EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
 
 
 
@@ -27,42 +19,45 @@ def writeOwnerHeader(ws):
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 
 
-def listAll(_1:str, _2:str, itemName:str, ws) -> bool:
-    wbm.writeItemAndIncrement(ws, itemName)
-    return 2  # SPECIAL CASE
+def listAll(_1:str, _2:str, itemName:str, ws):
+    wbm.incrementRowAndFileCount(ws)
+    return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))  # SPECIAL CASE
 
 
-def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws) -> bool:
-    wbm.writeItem(ws, itemName)
-    wbm.writeAuxiliaryAndIncrement(ws, getOwnerCatch(longFileAbsolute))
+def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws):
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    return (2, 
+            ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws), 
+            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws))  # SPECIAL CASE
 
-    return 2  # SPECIAL CASE
 
-
-def spaceFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
+def spaceFileFind(_1:str, _2:str, itemName:str, ws):
     if " " in itemName: 
-        wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
-        return True
-    return False
+        wbm.incrementRowAndFileCount(ws)
+        return (True, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws, wbm.errorFormat))
+    return (False,)
 
 
 def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)
 
     if " " in folderName:
-        wbm.writeItemAndIncrement(ws, folderName, wbm.errorFormat)
-        return True
-    return False
-
+        wbm.incrementRowAndFileCount(ws)
+        return (True, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat))
+    return (False,)
 
 
 def overCharLimitFind(_:str, dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
+
     if (absoluteItemLength > CHARACTER_LIMIT):
-        wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, absoluteItemLength)
-        return True
-    return False
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, absoluteItemLength, ws))
+    return (False,)
 
 
 def badCharHelper(s:str) -> set:
@@ -78,76 +73,86 @@ def badCharHelper(s:str) -> set:
 
     return badChars
 
-
 def badCharFileFind(_1:str, _2:str, itemName:str, ws) -> bool:
-    rootName, extension = getRootNameAndExtension(itemName)
+    rootName, _ = getRootNameAndExtension(itemName)
     badChars = badCharHelper(rootName)
 
     # if any bad characters were found
     if (badChars):
-        wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
-        return True
-    return False
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat), 
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "".join(badChars), ws))
+    return (False,)
 
 def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)
     badChars = badCharHelper(folderName)
 
     if (badChars):
-        wbm.writeItem(ws, folderName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, "".join(badChars))
-        return True
-    return False
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.ITEM_COL, folderName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "".join(badChars), ws))
+    return (False,)
 
 
 def oldFileFind(longFileAbsolute:str, _:str, itemName:str, ws):
     try:
         fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
     except Exception as e:
-        wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcome(ws, f"UNABLE TO READ DATE. {e}", wbm.errorFormat) 
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE. {e}", ws, wbm.errorFormat))
 
     fileDaysAgoLastAccessed = (TODAY - fileDate).days
 
     if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD):
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeItem(ws, itemName, wbm.errorFormat)
-        wbm.writeOutcomeAndIncrement(ws, "{}".format(fileDaysAgoLastAccessed))
-        return True
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws))
     else:
-        return False
+        return (False,)
 
 
 def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)
 
     if len(dirFolders) == 0 and len(dirFiles) <= TOO_FEW_AMOUNT:
-        wbm.writeItemAndIncrement(ws, folderName, wbm.errorFormat)
-        return True
-    return False
+        wbm.incrementRowAndFileCount(ws)
+        return (True,
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat))
+    return (False,)
 
 
 def fileExtensionStart(ws):
     global EXTENSION_COUNT
     global EXTENSION_TOTAL_SIZE
     global TOO_LARGE_SIZE_MB
+    global LOCK_FILE_EXTENSION
     
     EXTENSION_COUNT = defaultdict(int)
     EXTENSION_TOTAL_SIZE = defaultdict(int)
     TOO_LARGE_SIZE_MB = 100
+    LOCK_FILE_EXTENSION = Lock()
 
 def fileExtensionConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str, _):
     try: fileSize = os.path.getsize(longFileAbsolute) / 1000_000  # Bytes / 1000_000 = MBs
-    except: return False
+    except: return (False,)
 
     _, extension = getRootNameAndExtension(itemName)
 
-    EXTENSION_COUNT[extension] += 1
-    EXTENSION_TOTAL_SIZE[extension] += fileSize
-    return False
+    with LOCK_FILE_EXTENSION:
+        EXTENSION_COUNT[extension] += 1
+        EXTENSION_TOTAL_SIZE[extension] += fileSize
+    return (False,)
 
 def fileExtensionPost(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)
@@ -176,6 +181,17 @@ def fileExtensionPost(ws):
     ws.freeze_panes(1, 0)
 
 
+def duplicateContentStart(ws):
+    global HASH_AND_FILES
+    global EMPTY_INPUT_HASH_CODE
+    global LOCK_DUPLICATE_CONTENT
+    
+    HASH_AND_FILES = {}
+    hashFunc = hashlib.new("sha256")
+    hashFunc.update("".encode())
+    EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
+    LOCK_DUPLICATE_CONTENT = Lock()
+
 def duplicateContentHelper(longFileAbsolute:str):    
     hashFunc = hashlib.new("sha256")
     
@@ -185,26 +201,26 @@ def duplicateContentHelper(longFileAbsolute:str):
 
     return hashFunc.hexdigest()
 
-
 def duplicateContentConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
         hashCode = duplicateContentHelper(longFileAbsolute)
     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
         # Unlike other procedures, this won't print out the error; it'll just assume it's not a duplicate.
-        return False
+        return (False,)
     
     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
-        return False
+        return (False,)
     
     if hashCode in HASH_AND_FILES:
-        HASH_AND_FILES[hashCode][0].append(itemName)
-        HASH_AND_FILES[hashCode][1].append(dirAbsolute)
+        with LOCK_DUPLICATE_CONTENT:
+            HASH_AND_FILES[hashCode][0].append(itemName)
+            HASH_AND_FILES[hashCode][1].append(dirAbsolute)
         wbm.incrementFileCount(ws)
-        return 3  # SPECIAL CASE
+        return (3,)
     else:
-        HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
-        return False
-
+        with LOCK_DUPLICATE_CONTENT:
+            HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
+        return (False,)
 
 def duplicateContentPost(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
@@ -232,17 +248,23 @@ def emptyFileFind(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
         fileSize = os.path.getsize(longFileAbsolute)
     except PermissionError:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. PERMISSION ERROR.", ws, wbm.errorFormat))
     except Exception as e:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. {e}", ws, wbm.errorFormat))
     
     if fileSize == 0:
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeItemAndIncrement(ws, itemName, wbm.errorFormat)
-        return True
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat))
+    
+    return (False,)

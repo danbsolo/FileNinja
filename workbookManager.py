@@ -1,10 +1,13 @@
 import xlsxwriter
 from typing import List
-from time import time
+from time import time, sleep
 import os
 import stat
 from defs import *
 import filesScannedSharedVar
+from ExcelWritePackage import ExcelWritePackage
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 
 class WorkbookManager:
@@ -67,7 +70,7 @@ class WorkbookManager:
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, findProcedureObject.name + " count", self.headerFormat)
         
         self.findSheets[findProcedureObject] = tmpWsVar
-        self.sheetRows[tmpWsVar] = 1
+        self.sheetRows[tmpWsVar] = 0  # NOTE: CHANGED HERE FROM 0 SO SHEETROW TRACKS LAST ROW WRITTEN TO
         self.summaryCounts[tmpWsVar] = 0
 
         if findProcedureObject.isConcurrentOnly:
@@ -89,7 +92,7 @@ class WorkbookManager:
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, fixProcedureObject.name + " count", self.headerFormat)
 
         self.fixSheets[fixProcedureObject] = tmpWsVar
-        self.sheetRows[tmpWsVar] = 1
+        self.sheetRows[tmpWsVar] = 0
         self.summaryCounts[tmpWsVar] = 0
 
         if allowModify:
@@ -126,57 +129,100 @@ class WorkbookManager:
         self.fixProcedureArgs[fixProcedureObject] = arg
         return True
     
-
-    def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
-        needsFolderWritten = set()
+    
+    def processFile(self, longDirAbsolute, dirAbsolute, fileName, needsFolderWritten, ewpList, tpeIndex):
         countAsError = False
         
-        for fileName in dirFiles:
-            # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
-            # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
-            # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
-            if fileName.startswith("~$") or ".one" in fileName[-8:]:
-                continue
+        # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
+        # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
+        # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
+        if fileName.startswith("~$") or ".one" in fileName[-8:]:
+            return
+    
+        longFileAbsolute = longDirAbsolute + "\\" + fileName
 
-            longFileAbsolute = longDirAbsolute + "\\" + fileName
+        hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
+        if hiddenFileSkipStatus == 2:
+            return
 
-            hiddenFileSkipStatus = self.hiddenFileCheck(longFileAbsolute)
-            if hiddenFileSkipStatus == 2: continue
+        ## THREADING STUFF STARTS
+        futures = {
+            self.fileProcedureThreadPoolExecutors[tpeIndex].submit(
+                findProcedureObject.mainFunction,
+                longFileAbsolute,
+                dirAbsolute,
+                fileName,
+                self.findSheets[findProcedureObject]
+            ): self.findSheets[findProcedureObject]
+            for findProcedureObject in self.fileFindProcedures
+        }
 
-            for findProcedureObject in self.fileFindProcedures:
-                result = findProcedureObject.mainFunction(longFileAbsolute, dirAbsolute, fileName, self.findSheets[findProcedureObject])
-
-                if (result == True):
-                    needsFolderWritten.add(self.findSheets[findProcedureObject])
-                    countAsError = True
-                elif (not result):  # returning None or False
-                    pass
-                elif (result == 2):  # Special case (ex: Used by List All Files)
-                    needsFolderWritten.add(self.findSheets[findProcedureObject])
-                elif (result == 3):  # Special case (ex: used by Identical Files Error)
-                    countAsError = True
-
+        # If not hidden, append to futures with fixProcedureObjects 
+        if hiddenFileSkipStatus == 0:
             for fixProcedureObject in self.fileFixProcedures:
-                # If file is hidden, ignore it. Fix procedures will not have access to hidden files
-                if hiddenFileSkipStatus != 0: break
+                futures[self.fileProcedureThreadPoolExecutors[tpeIndex].submit(
+                    self.fixProcedureFunctions[fixProcedureObject],
+                    longFileAbsolute,
+                    longDirAbsolute,
+                    dirAbsolute,
+                    fileName,
+                    self.fixSheets[fixProcedureObject],
+                    self.fixProcedureArgs[fixProcedureObject]
+                )] = self.fixSheets[fixProcedureObject]
 
-                result = self.fixProcedureFunctions[fixProcedureObject](longFileAbsolute, longDirAbsolute, dirAbsolute, fileName, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
+        for fut in as_completed(futures):
+            result = fut.result()
+            status = result[0]
+            fileSheet = futures[fut]
 
-                if (result == True):
-                    countAsError = True
-                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                elif (not result):
-                    pass
-                elif (result == 2):
-                    needsFolderWritten.add(self.fixSheets[fixProcedureObject])
-                elif (result == 3):
-                    countAsError = True
-            
+            if (status == True):
+                needsFolderWritten.add(fileSheet)
+                countAsError = True
+            elif (not status):  # returning None or False
+                continue  # It's not super necessary to continue here, but might as well
+            elif (status == 2):  # Special case (ex: Used by List All Files)
+                needsFolderWritten.add(fileSheet)
+            elif (status == 3):  # Special case (ex: used by Identical File)
+                countAsError = True
+
+            with self.lockFileProcedure:
+                ewpList.extend(result[1:])
+
+        with self.lockFile:
             filesScannedSharedVar.FILES_SCANNED += 1
             self.filesScannedCount += 1
             if countAsError:
                 self.fileErrorCount += 1
-                countAsError = False
+
+
+    def fileCrawl(self, longDirAbsolute, dirAbsolute, dirFiles: List[str]):
+        needsFolderWritten = set()
+        ewpList = []
+
+        futures = {}
+        for fileName in dirFiles:
+            if self.nextNumFileProcedureIndex >= self.numFileThreads:
+                self.nextNumFileProcedureIndex = 0
+                
+            futures[self.fileThreadPoolExecutor.submit(
+                self.processFile,
+                longDirAbsolute,
+                dirAbsolute,
+                fileName,
+                needsFolderWritten,
+                ewpList,
+                self.nextNumFileProcedureIndex
+            )] = fileName
+            
+            self.nextNumFileProcedureIndex += 1
+
+        # If any thread raises an exception, this will ensure they are raised in this "main" WorkbookManager thread
+        # , as opposed to just using concurrent.futures(wait)
+        for fut in as_completed(futures):
+            fut.result()
+
+        for ewp in ewpList:
+            ewp.executeWrite()
 
         return needsFolderWritten            
 
@@ -187,17 +233,25 @@ class WorkbookManager:
 
         for findProcedureObject in self.folderFindProcedures:
             result = findProcedureObject.mainFunction(dirAbsolute, dirFolders, dirFiles, self.findSheets[findProcedureObject])
+            status = result[0]
             
-            if result == True:
+            if status == True:
                 needsFolderWritten.add(self.findSheets[findProcedureObject])
                 countAsError = True
-            elif not result:  # returning None or False
+            elif not status:  # returning None or False
                 pass
             # These aren't ever used — at least not yet — so they're commented out.
             #elif result == 2:
             #    pass # needsFolderWritten.
             #elif result == 3:
             #    pass # countsAsError.
+
+            # TODO: Realize that fileCrawl and folderCrawl should never be able to write in the Excel file simultaneously.
+            # This would require a lock or returning the ewp list straight up.
+            # So, by commenting this out, the folder find procedures will not write anything *for now*
+            #for ewp in result[1:]:
+            #    ewp.executeWrite()     
+
 
         for fixProcedureObject in self.folderFixProcedures:
             result = self.fixProcedureFunctions[fixProcedureObject](dirAbsolute, dirFolders, dirFiles, self.fixSheets[fixProcedureObject], self.fixProcedureArgs[fixProcedureObject])
@@ -240,6 +294,50 @@ class WorkbookManager:
             return 2
         else:
             return 0
+    
+
+    def doFileProceduresExist(self):
+        return (len(self.fileFindProcedures) + len(self.fileFixProcedures)) != 0
+
+    def doFolderProceduresExist(self):
+        return (len(self.folderFindProcedures) + len(self.folderFixProcedures)) != 0
+    
+
+    def initFileCrawlOnly(self, longDirAbsolute, dirAbsolute, dirFiles, _):
+        return self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles)
+
+    def initFolderCrawlOnly(self, _, dirAbsolute, dirFiles, dirFolders):
+        return self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+
+    def initFileFolderCrawl(self, longDirAbsolute, dirAbsolute, dirFiles, dirFolders):
+        return self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+
+
+    def createFileThreads(self):
+        ## Create thread pool executors and necessary locks
+        numFileProcedures = len(self.fileFindProcedures) + len(self.fileFixProcedures)
+
+        self.fileProcedureThreadPoolExecutors = []
+
+        # Dynamically choose the number of file threads based on a hard-coded max total.
+        totalThreads = 160
+        self.numFileThreads = totalThreads // numFileProcedures
+
+        self.nextNumFileProcedureIndex = 0  # used by self.fileCrawl()
+        for _ in range(self.numFileThreads):
+            self.fileProcedureThreadPoolExecutors.append(
+                ThreadPoolExecutor(max_workers = numFileProcedures)
+            )
+        self.lockFileProcedure = Lock()
+
+        self.fileThreadPoolExecutor = ThreadPoolExecutor(max_workers = self.numFileThreads)
+        self.lockFile = Lock()
+
+
+    def createSheetLocks(self):
+        self.sheetLocks = {}
+        for ws in self.getAllProcedureSheets():
+            self.sheetLocks[ws] = Lock()
 
 
     def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
@@ -255,10 +353,26 @@ class WorkbookManager:
             self.hiddenFileCheck = lambda longFileAbsolute: self.includeHiddenFilesCheck(longFileAbsolute)
         else:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
-
-
+        
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
         self.excludedDirs = excludedDirs
+        
+
+        if self.doFileProceduresExist():
+            self.createFileThreads()
+
+            if self.doFolderProceduresExist():
+                crawlFunction = self.initFileFolderCrawl
+            else:
+                crawlFunction = self.initFileCrawlOnly
+
+        elif self.doFolderProceduresExist():
+            crawlFunction = self.initFolderCrawlOnly
+        else:
+            raise Exception("No procedures selected.")
+        
+        self.createSheetLocks()
+
 
         #
         sheetsSansNonConcurrent = []
@@ -312,10 +426,11 @@ class WorkbookManager:
 
             initialRows.clear()
             for ws in sheetsSansNonConcurrent:
-                initialRows[ws] = self.sheetRows[ws]
+                initialRows[ws] = self.sheetRows[ws] + 1  # CHANGE HERE TO GET NEXT AVAILABLE ROW
 
             # union operator usage, lol
-            needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+            # needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+            needsFolderWritten = crawlFunction(longDirAbsolute, dirAbsolute, dirFiles, dirFolders)
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
@@ -338,7 +453,13 @@ class WorkbookManager:
                 if fixProcedureObject.postFunction:
                     fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
         ###
-              
+
+        # shutdown threads
+        if self.doFileProceduresExist():
+            self.fileThreadPoolExecutor.shutdown(wait=True)
+            for i in range(self.numFileThreads):
+                self.fileProcedureThreadPoolExecutors[i].shutdown(wait=True)
+
         self.executionTime = time() - start
 
 
@@ -378,18 +499,19 @@ class WorkbookManager:
         if (format): ws.write(self.sheetRows[ws], col, text, format)
         else: ws.write(self.sheetRows[ws], col, text)
 
+    def incrementRow(self, ws):
+        with self.sheetLocks[ws]:
+            self.sheetRows[ws] += 1
 
-## TODO: Change these all to hard-coded 1. There's never a time where anything more than 1 is selected.
-    def incrementRow(self, ws, amount:int=1):
-        self.sheetRows[ws] += amount
+    def incrementFileCount(self, ws):
+        with self.sheetLocks[ws]:
+            self.summaryCounts[ws] += 1
 
-    def incrementFileCount(self, ws, amount:int=1):
-        self.summaryCounts[ws] += amount
+    def incrementRowAndFileCount(self, ws):
+       with self.sheetLocks[ws]:
+            self.sheetRows[ws] += 1
+            self.summaryCounts[ws] += 1
 
-    #def incrementRowAndFileCount(self, ws):
-    #    self.incrementRow(ws)
-    #    self.incrementFileCount(ws)
-        
 
     def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles, addRecommendations):
         self.summarySheet.set_column(0, 0, 34)

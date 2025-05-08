@@ -101,12 +101,15 @@ def spaceFileFixHelper(oldItemName) -> str:
 
 def spaceFileFixLog(_1:str, _2:str, _3:str, oldItemName:str, ws, _4):
     newItemName = spaceFileFixHelper(oldItemName)
-    if (not newItemName): return False
+    if (not newItemName): return (False,)
 
-    wbm.writeItem(ws, oldItemName)
-    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
-    return True
-    
+    #wbm.writeItem(ws, oldItemName)
+    #wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    return (True,
+            ExcelWritePackage(row, wbm.ITEM_COL, oldItemName, ws),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.logFormat)) 
 
 def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, _):
     newItemName = spaceFileFixHelper(oldItemName)
@@ -160,18 +163,27 @@ def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
     # If it's greater than the upperbound, exit
     if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
-        return False
-
-    wbm.writeItem(ws, itemName)
+        return (False,)
+    
+    # wbm.writeItem(ws, itemName)
+    wbm.incrementRow(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
 
     if (daysOld == -1):
-        wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
-        wbm.incrementRow(ws)
-        return 2
+        #wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
+        #wbm.incrementRow(ws)
+        return (2,
+                itemEwp,
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
     else:
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
-    return True
+        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        #wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
+        wbm.incrementFileCount(ws)
+        return (True,
+                itemEwp,
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, daysOld, ws, wbm.logFormat))
 
 
 ###
@@ -333,11 +345,15 @@ def searchAndReplaceFileHelper(oldItemName:str, arg):
 
 
 def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, oldItemName:str, ws, arg):
-    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return False
+    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return (False,)
 
-    wbm.writeItem(ws, oldItemName, wbm.errorFormat)
-    wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
-    return True
+    #wbm.writeItem(ws, oldItemName, wbm.errorFormat)
+    #wbm.writeOutcomeAndIncrement(ws, newItemName, wbm.logFormat)
+    wbm.incrementRowAndFileCount(ws)
+    row = wbm.sheetRows[ws]
+    return (True,
+            ExcelWritePackage(row, wbm.ITEM_COL, oldItemName, ws, wbm.errorFormat),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.logFormat))
 
 
 def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, arg):
@@ -363,22 +379,35 @@ def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:s
     try:
         fileSize = os.path.getsize(longFileAbsolute) # Bytes
     except PermissionError:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, "UNABLE TO READ. PERMISSION ERROR.", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ. PERMISSION ERROR.", ws, wbm.errorFormat))
     except Exception as e:
-        wbm.writeItem(ws, itemName)
-        wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeOutcome(ws, f"UNABLE TO READ. {e}", wbm.errorFormat)
+        #wbm.incrementRow(ws)
         wbm.incrementRow(ws)
-        return 2
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. {e}", ws, wbm.errorFormat))
 
     if fileSize == 0:
-        wbm.writeItem(ws, itemName)
-        wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
-        return True
-    return False
+        #wbm.writeItem(ws, itemName)
+        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+        #wbm.writeOutcomeAndIncrement(ws, "", wbm.logFormat)
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.logFormat))
+    return (False,)
 
 
 ###
@@ -439,16 +468,16 @@ def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolut
 
 
 
-
-# Used by deleteIdenticalFiles
-HASH_AND_FILES = {}
-hashFunc = hashlib.new("sha256")
-hashFunc.update("".encode())
-EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
-#
-
 def deleteIdenticalFilesStart(_, ws):
-    pass
+    global HASH_AND_FILES
+    global EMPTY_INPUT_HASH_CODE
+    global LOCK_DELETE_IDENTICAL_FILES
+
+    HASH_AND_FILES = {}
+    hashFunc = hashlib.new("sha256")
+    hashFunc.update("".encode())
+    EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
+    LOCK_DELETE_IDENTICAL_FILES = Lock()
 
 def deleteIdenticalFilesHelper(longFileAbsolute:str):    
     hashFunc = hashlib.new("sha256")
@@ -459,25 +488,26 @@ def deleteIdenticalFilesHelper(longFileAbsolute:str):
 
     return hashFunc.hexdigest()
 
-
 def deleteIdenticalFilesLogConcurrent(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
     try:
         hashCode = deleteIdenticalFilesHelper(longFileAbsolute)
     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
         # Unlike other procedures, this won't print out the error; it'll just assume it's not a duplicate.
-        return False
+        return (False,)
     
     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
-        return False
+        return (False,)
     
     if hashCode in HASH_AND_FILES:
-        HASH_AND_FILES[hashCode][0].append(itemName)
-        HASH_AND_FILES[hashCode][1].append(dirAbsolute)
+        with LOCK_DELETE_IDENTICAL_FILES:
+            HASH_AND_FILES[hashCode][0].append(itemName)
+            HASH_AND_FILES[hashCode][1].append(dirAbsolute)
         wbm.incrementFileCount(ws)
-        return 3
+        return (3,)
     else:
-        HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
-        return False
+        with LOCK_DELETE_IDENTICAL_FILES:
+            HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
+        return (False,)
 
 
 def deleteIdenticalFilesRecommendPost(ws):

@@ -26,6 +26,8 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
     if allowModify and addRecommendations:
         return -7
     
+    
+    
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
 

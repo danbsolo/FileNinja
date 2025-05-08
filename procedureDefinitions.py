@@ -14,7 +14,7 @@ FIND_PROCEDURES = {
     SPACE_FOLDER_FIND: FindProcedure(SPACE_FOLDER_FIND, spaceFolderFind, True, isFileFind=False),
     BAD_CHARACTER_FOLDER_FIND: FindProcedure(BAD_CHARACTER_FOLDER_FIND, badCharFolderFind, True, isFileFind=False),
     CHARACTER_LIMIT_FIND: FindProcedure(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
-    IDENTICAL_FILE_ERROR:FindProcedure(IDENTICAL_FILE_ERROR, duplicateContentConcurrent, False, duplicateContentPost),
+    IDENTICAL_FILE_ERROR:FindProcedure(IDENTICAL_FILE_ERROR, duplicateContentConcurrent, False, duplicateContentPost, startFunction=duplicateContentStart),
     FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost, startFunction=fileExtensionStart),
     LIST_ALL_OWNER: FindProcedure(LIST_ALL_OWNER, listAllOwner, True, startFunction=writeOwnerHeader),
 }
