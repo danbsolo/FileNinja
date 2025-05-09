@@ -172,9 +172,7 @@ def deleteOldFilesLowerboundHelper(longFileAbsolute: str, arg) -> int:
 
 
 def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
-    print("BEING RAN", end= "\t")
     daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
-    print(daysOld)
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
     # If it's greater than the upperbound, exit
     if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
