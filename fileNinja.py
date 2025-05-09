@@ -249,6 +249,33 @@ def view(isAdmin: bool):
 
         tk.messagebox.showinfo("HELPME DNE", "HELPME file does not exist.")
 
+
+    def changeColorMode():
+        global onDefaultColorMode
+        if onDefaultColorMode:
+            onDefaultColorMode = False
+            changeChildrenColor(root, "#202124", "white", "gray20", "gray20")
+        else:
+            onDefaultColorMode = True
+            changeChildrenColor(root, originalBg, originalFg, originalActiveBg, originalSelectColor)
+
+
+    def changeChildrenColor(widget, bgColor, fgColor, activeBgColor, selectColor):
+        widgetAttributes = widget.keys()
+
+        if "bg" in widgetAttributes:
+            widget.config(bg=bgColor)
+        if "fg" in widgetAttributes:
+            widget.config(fg=fgColor)
+        if "activebackground" in widgetAttributes:
+            widget.config(activebackground=activeBgColor)
+        if "activeforeground" in widgetAttributes:
+            widget.config(activeforeground=fgColor)
+        if "selectcolor" in widgetAttributes:
+            widget.config(selectcolor=selectColor)
+
+        for child in widget.winfo_children():
+            changeChildrenColor(child, bgColor, fgColor, activeBgColor,selectColor)
         
 
     listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
@@ -381,46 +408,24 @@ def view(isAdmin: bool):
         addRecommendationsTip = Hovertip(addRecommendationsButton, "Turn on to add recommendations to some procedures.", hover_delay=tooltipHoverDelay)
     
 
+    # color mode stuff
+    global onDefaultColorMode
+    onDefaultColorMode = True
+    originalBg = browseButton.cget("bg")
+    originalFg = browseButton.cget("fg")
+    originalActiveBg = browseButton.cget("activebackground")
+    originalSelectColor = includeSubfoldersCheckbutton.cget("selectcolor")
+
+
     # bindings
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
     if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
     root.bind('<Control-Key-w>', lambda e: root.destroy())
     root.bind('<Control-Key-W>', lambda e: root.destroy())
+    root.bind("<Button-2>", lambda _: changeColorMode()) # middle click
     root.protocol("WM_DELETE_WINDOW", closeWindow)
 
-    global onWhiteMode
-    onWhiteMode = True
-    def changeColorMode():
-        global onWhiteMode
-        if onWhiteMode:
-            onWhiteMode = False
-            changeChildrenColor(root, "#202124", "white", "gray20", "gray20")
-        else:
-            onWhiteMode = True
-            changeChildrenColor(
-        root, originalBg, originalFg, originalActiveBg, originalSelectColor)
-    
-    def changeChildrenColor(widget, bgColor, fgColor, activeBgColor, selectColor):
-        try:
-            widget.config(bg=bgColor)
-            widget.config(fg=fgColor)
-            widget.config(activebackground=activeBgColor, activeforeground=fgColor)
-            widget.config(selectcolor=selectColor)
-        except: pass
-
-        for child in widget.winfo_children():
-            changeChildrenColor(child, bgColor, fgColor, activeBgColor,selectColor)
-
-
-    originalBg = browseButton.cget("bg")
-    originalFg = browseButton.cget("fg")
-    originalActiveBg = browseButton.cget("activebackground")
-    originalSelectColor = includeSubfoldersCheckbutton.cget("selectcolor")
-
-    root.bind("<Button-2>", lambda _: changeColorMode())
-    # root.bind("<Button-3>", lambda _: changeColorMode())
-    
 
     # set icon image (if available)
     if os.path.exists(LOGO_PATH):
@@ -431,8 +436,10 @@ def view(isAdmin: bool):
     root.mainloop()
         
 
+
 def main():
     view(True)
+
 
 
 if __name__ == "__main__":
