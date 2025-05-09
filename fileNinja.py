@@ -389,9 +389,40 @@ def view(isAdmin: bool):
     root.bind('<Control-Key-W>', lambda e: root.destroy())
     root.protocol("WM_DELETE_WINDOW", closeWindow)
 
+    global onWhiteMode
+    onWhiteMode = True
+    def changeColorMode():
+        global onWhiteMode
+        if onWhiteMode:
+            onWhiteMode = False
+            changeChildrenColor(root, "#202124", "white", "gray20", "gray20")
+        else:
+            onWhiteMode = True
+            changeChildrenColor(
+        root, originalBg, originalFg, originalActiveBg, originalSelectColor)
+    
+    def changeChildrenColor(widget, bgColor, fgColor, activeBgColor, selectColor):
+        try:
+            widget.config(bg=bgColor)
+            widget.config(fg=fgColor)
+            widget.config(activebackground=activeBgColor, activeforeground=fgColor)
+            widget.config(selectcolor=selectColor)
+        except: pass
+
+        for child in widget.winfo_children():
+            changeChildrenColor(child, bgColor, fgColor, activeBgColor,selectColor)
+
+
+    originalBg = browseButton.cget("bg")
+    originalFg = browseButton.cget("fg")
+    originalActiveBg = browseButton.cget("activebackground")
+    originalSelectColor = includeSubfoldersCheckbutton.cget("selectcolor")
+
+    root.bind("<Button-2>", lambda _: changeColorMode())
+    # root.bind("<Button-3>", lambda _: changeColorMode())
+    
 
     # set icon image (if available)
-
     if os.path.exists(LOGO_PATH):
         logoImg = tk.PhotoImage(file=LOGO_PATH)
         root.iconphoto(False, logoImg)
