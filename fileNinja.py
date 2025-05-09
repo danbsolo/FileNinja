@@ -432,7 +432,7 @@ def view(isAdmin: bool):
         logoImg = tk.PhotoImage(file=LOGO_PATH)
         root.iconphoto(False, logoImg)
 
-
+    changeColorMode()
     root.mainloop()
         
 
