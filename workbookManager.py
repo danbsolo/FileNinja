@@ -318,8 +318,22 @@ class WorkbookManager:
         return self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
 
     def initFileFolderCrawl(self, longDirAbsolute, dirAbsolute, dirFiles, dirFolders):
-        return self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
+        fileCrawlFuture = self.crawlThreadPoolExecutor.submit(
+            self.fileCrawl,
+            longDirAbsolute,
+            dirAbsolute,
+            dirFiles
+        )
 
+        folderCrawlFuture = self.crawlThreadPoolExecutor.submit(
+            self.folderCrawl,
+            dirAbsolute,
+            dirFolders,
+            dirFiles
+        )
+        
+        return folderCrawlFuture.result() | fileCrawlFuture.result()
+    
 
     def createFileThreads(self):
         ## Create thread pool executors and necessary locks
@@ -344,7 +358,6 @@ class WorkbookManager:
         self.lockFileNeedsFolderWritten = Lock()
         self.lockFileScan = Lock()
 
-
     def createFolderThreads(self):
         numFolderProcedures = len(self.folderFindProcedures) + len(self.folderFixProcedures)
         self.folderProcedureThreadPoolExecutor = ThreadPoolExecutor(max_workers = numFolderProcedures)
@@ -355,6 +368,10 @@ class WorkbookManager:
         self.sheetLocks = {}
         for ws in self.getAllProcedureSheets():
             self.sheetLocks[ws] = Lock()
+
+    def createCrawlThreads(self):
+        # One for file crawl and one for folder crawl
+        self.crawlThreadPoolExecutor = ThreadPoolExecutor(max_workers = 2)
 
 
     def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
@@ -380,6 +397,7 @@ class WorkbookManager:
 
             if self.doFolderProceduresExist():
                 self.createFolderThreads()
+                self.createCrawlThreads()
                 crawlFunction = self.initFileFolderCrawl
             else:
                 crawlFunction = self.initFileCrawlOnly
@@ -481,7 +499,11 @@ class WorkbookManager:
             for i in range(self.numFileThreads):
                 self.fileProcedureThreadPoolExecutors[i].shutdown(wait=True)
 
-        if self.doFolderProceduresExist():
+            if self.doFolderProceduresExist():
+                self.folderProcedureThreadPoolExecutor.shutdown(wait=True)
+                self.crawlThreadPoolExecutor.shutdown(wait=True)
+
+        elif self.doFolderProceduresExist():
             self.folderProcedureThreadPoolExecutor.shutdown(wait=True)
 
         self.executionTime = time() - start
