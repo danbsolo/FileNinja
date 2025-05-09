@@ -364,14 +364,14 @@ class WorkbookManager:
 
         self.lockFolderNeedsFolderWritten = Lock()
 
+    def createCrawlThreads(self):
+        # One for file crawl and one for folder crawl
+        self.crawlThreadPoolExecutor = ThreadPoolExecutor(max_workers = 2)
+
     def createSheetLocks(self):
         self.sheetLocks = {}
         for ws in self.getAllProcedureSheets():
             self.sheetLocks[ws] = Lock()
-
-    def createCrawlThreads(self):
-        # One for file crawl and one for folder crawl
-        self.crawlThreadPoolExecutor = ThreadPoolExecutor(max_workers = 2)
 
 
     def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
