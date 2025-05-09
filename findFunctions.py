@@ -211,16 +211,15 @@ def duplicateContentConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:s
     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
         return (False,)
     
-    if hashCode in HASH_AND_FILES:
-        with LOCK_DUPLICATE_CONTENT:
+    with LOCK_DUPLICATE_CONTENT:
+        if hashCode in HASH_AND_FILES:
             HASH_AND_FILES[hashCode][0].append(itemName)
             HASH_AND_FILES[hashCode][1].append(dirAbsolute)
-        wbm.incrementFileCount(ws)
-        return (3,)
-    else:
-        with LOCK_DUPLICATE_CONTENT:
+            wbm.incrementFileCount(ws)
+            return (3,)
+        else:
             HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
-        return (False,)
+            return (False,)
 
 def duplicateContentPost(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
