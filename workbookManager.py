@@ -3,7 +3,6 @@ from typing import List
 from time import time, sleep
 import os
 import stat
-from defs import *
 import filesScannedSharedVar
 from ExcelWritePackage import ExcelWritePackage
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -509,42 +508,6 @@ class WorkbookManager:
         self.executionTime = time() - start
 
 
-    # def writeDir(self, ws, text, format=None):
-    #     self.writeHelper(ws, self.DIR_COL, text, format)
-    
-    # def writeDirAndIncrement(self, ws, text, format=None):
-    #     self.writeDir(ws, text, format)
-    #     self.incrementRow(ws)
-    #     self.incrementFileCount(ws)
-
-    # def writeItem(self, ws, text, format=None):
-    #     self.writeHelper(ws, self.ITEM_COL, text, format)
-
-    # def writeItemAndIncrement(self, ws, text, format=None):
-    #     self.writeItem(ws, text, format)
-    #     self.incrementRow(ws)
-    #     self.incrementFileCount(ws)
-
-    # def writeOutcome(self, ws, text, format=None):
-    #     self.writeHelper(ws, self.OUTCOME_COL, text, format)
-
-    # def writeOutcomeAndIncrement(self, ws, text, format=None):
-    #     self.writeOutcome(ws, text, format)
-    #     self.incrementRow(ws)
-    #     self.incrementFileCount(ws)
-
-    # def writeAuxiliary(self, ws, text, format=None):
-    #     self.writeHelper(ws, self.AUXILIARY_COL, text, format)
-
-    # def writeAuxiliaryAndIncrement(self, ws, text, format=None):
-    #     self.writeAuxiliary(ws, text, format)
-    #     self.incrementRow(ws)
-    #     self.incrementFileCount(ws)
-
-    # def writeHelper(self, ws, col: str, text: str, format=None):
-    #     if (format): ws.write(self.sheetRows[ws], col, text, format)
-    #     else: ws.write(self.sheetRows[ws], col, text)
-
     def incrementRow(self, ws):
         with self.sheetLocks[ws]:
             self.sheetRows[ws] += 1
@@ -617,39 +580,6 @@ class WorkbookManager:
             self.summarySheet.write(self.sheetRows[self.summarySheet] + i, 1, self.summaryCounts[ws], self.summaryValueFormat)
             i += 1
 
-        
-    def createHelpMeSheet(self):
-        # If it exists, open HELPME-Admin. If it doesn't, try HELPME-Lite. And if that doesn't exist, do nothing.
-        # Only tries locally, not through network
-        try: helpMeFile = open(HELPME_ADMIN, "r")
-        except FileNotFoundError:
-            try: helpMeFile = open(HELPME_LITE, "r")
-            except FileNotFoundError: return
-
-        termDict = {}
-        lines = helpMeFile.readlines()
-        linesLength = len(lines)
-
-        i = 0
-        while i < linesLength:
-            if lines[i][0] == "-":
-                term = lines[i][1:].strip()
-                definition = lines[i+1].strip()
-                termDict[term] = definition
-                i += 1
-            i += 1
-
-        helpMeSheet = self.wb.add_worksheet("HelpMe")
-        helpMeSheet.write(0, 0, "Term", self.headerFormat)
-        helpMeSheet.write(0, 1, "Definition", self.headerFormat)
-
-        row = 1
-        for termKey in termDict:
-            helpMeSheet.write(row, 0, termKey)
-            helpMeSheet.write(row, 1, termDict[termKey])
-            row += 1
-
-        helpMeSheet.autofit()
 
 
     def autofitSheets(self):
@@ -662,5 +592,4 @@ class WorkbookManager:
     def close(self):
         self.populateSummarySheet()
         self.autofitSheets()
-        self.createHelpMeSheet()
         self.wb.close()

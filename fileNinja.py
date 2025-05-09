@@ -361,7 +361,7 @@ def view(isAdmin: bool):
     frames[4].pack(fill="x", padx=10, pady=(0, 3))
 
     if isAdmin:
-        parameterLabel = tk.Label(frames[5], text="Parameter:", font=fontGeneral)
+        parameterLabel = tk.Label(frames[5], text="Parameter#:", font=fontGeneral)
         argumentEntry = tk.Entry(frames[5], textvariable=parameterVar, width=rootWidth, font=fontSmall)
         parameterLabel.pack(side=tk.LEFT)
         argumentEntry.pack(side=tk.LEFT)
@@ -377,7 +377,7 @@ def view(isAdmin: bool):
     if isAdmin:
         includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
         includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
-        addRecommendationsButton = tk.Checkbutton(frames[7], text="Add Recommendations", variable=addRecommendationsState, font=fontGeneral)
+        addRecommendationsButton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
         addRecommendationsButton.pack(side=tk.LEFT)
 
     executeButton = tk.Button(frames[8], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
@@ -395,17 +395,17 @@ def view(isAdmin: bool):
     browseTip = Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay)  
     dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
     excludeTip = Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay)
-    findTip = Hovertip(findLabel, "Run a Find procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
-    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Turn on to also delve into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
+    findTip = Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay)
+    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
     helpMeTip = Hovertip(helpMeButton, "Open HELPME file.", hover_delay=tooltipHoverDelay)
-    executeTip = Hovertip(executeButton, "Execute the program.", hover_delay=tooltipHoverDelay)
-    resultsTip = Hovertip(resultsButton, "Open folder containing all excel files of previous executions.", hover_delay=tooltipHoverDelay)
+    executeTip = Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay)
+    resultsTip = Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay)
     if isAdmin: 
-        fixTip = Hovertip(fixLabel, "Run a Fix procedure.\nCheck the HELPME.txt file for more info.", hover_delay=tooltipHoverDelay)
-        parameterTip = Hovertip(parameterLabel, "Input a number, string, etc. Required for some Fix procedures.", hover_delay=tooltipHoverDelay)
-        modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this feature, leave this off.", hover_delay=tooltipHoverDelay)
-        includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Turn on to include hidden files in Find procedure output. Fix procedures ignore hidden files irregardless.", hover_delay=tooltipHoverDelay)
-        addRecommendationsTip = Hovertip(addRecommendationsButton, "Turn on to add recommendations to some procedures.", hover_delay=tooltipHoverDelay)
+        fixTip = Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay)
+        parameterTip = Hovertip(parameterLabel, "\"#\" = requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay)
+        modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
+        includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures ignore hidden files by default.", hover_delay=tooltipHoverDelay)
+        addRecommendationsTip = Hovertip(addRecommendationsButton, "\"~\" = has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay)
     
 
     # color mode stuff
