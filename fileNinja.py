@@ -228,26 +228,17 @@ def view(isAdmin: bool):
                 fixListbox.selection_clear(selectedIndex)
 
     
-    def openHelpMe():
+    def openReadMe():
         # try local
-        if isAdmin:
-            if os.path.exists(HELPME_ADMIN):
-                os.startfile(HELPME_ADMIN)
-                return
-            elif os.path.exists(HCS_ASSETS_PATH + HELPME_ADMIN):
-                os.startfile(HCS_ASSETS_PATH + HELPME_ADMIN)
-                return
-        # Do not open helpMeLite as Admin, even if it's available and helpMeAdmin isn't
+        if os.path.exists(README):
+            os.startfile(README)
+            return
         # try HCS
-        else:
-            if os.path.exists(HELPME_LITE):
-                os.startfile(HELPME_LITE)
-                return
-            elif os.path.exists(HCS_ASSETS_PATH + HELPME_LITE):
-                os.startfile(HCS_ASSETS_PATH + HELPME_LITE)
-                return
+        elif os.path.exists(HCS_ASSETS_PATH + README):
+            os.startfile(HCS_ASSETS_PATH + README)
+            return
 
-        tk.messagebox.showinfo("HELPME DNE", "HELPME file does not exist.")
+        tk.messagebox.showinfo(f"README DNE", f"{README} does not exist.")
 
 
     def changeColorMode():
@@ -371,8 +362,8 @@ def view(isAdmin: bool):
     if isAdmin:
         modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=modifyState, font=fontGeneral)
         modifyCheckbutton.pack(side=tk.LEFT)  # , padx=(0, 50)
-    helpMeButton = tk.Button(frames[6], text="HELPME", command=openHelpMe, width=rootWidth, font=fontGeneral)
-    helpMeButton.pack(side=tk.LEFT)
+    readMeButton = tk.Button(frames[6], text="README", command=openReadMe, width=rootWidth, font=fontGeneral)
+    readMeButton.pack(side=tk.LEFT)
 
     if isAdmin:
         includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
@@ -397,7 +388,7 @@ def view(isAdmin: bool):
     excludeTip = Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay)
     findTip = Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay)
     includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
-    helpMeTip = Hovertip(helpMeButton, "Open HELPME file.", hover_delay=tooltipHoverDelay)
+    readMeTip = Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay)
     resultsTip = Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay)
     if isAdmin: 
