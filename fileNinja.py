@@ -230,16 +230,25 @@ def view(isAdmin: bool):
     
     def openReadMe():
         # try local
-        if os.path.exists(README):
-            os.startfile(README)
-            return
-        # try HCS
-        elif os.path.exists(HCS_ASSETS_PATH + README):
-            os.startfile(HCS_ASSETS_PATH + README)
-            return
+        if isAdmin:
+            if os.path.exists(README_ADMIN):
+                os.startfile(README_ADMIN)
+                return
+            # try HCS
+            elif os.path.exists(HCS_ASSETS_PATH + README_ADMIN):
+                os.startfile(HCS_ASSETS_PATH + README_ADMIN)
+                return
+            
+        # Do not open readMeLite as Admin, even if it's available and readMeAdmin isn't
+        else:
+            if os.path.exists(README_LITE):
+                os.startfile(README_LITE)
+                return
+            elif os.path.exists(HCS_ASSETS_PATH + README_LITE):
+                os.startfile(HCS_ASSETS_PATH + README_LITE)
+                return
 
-        tk.messagebox.showinfo(f"README DNE", f"{README} does not exist.")
-
+        tk.messagebox.showinfo("README DNE", "README file does not exist.")
 
     def changeColorMode():
         global onDefaultColorMode
