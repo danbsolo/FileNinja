@@ -111,6 +111,9 @@ class WorkbookManager:
 
         return self.setFixArg(fixProcedureObject, arg)
 
+    def setFindArg(self, findProcedureObject, arg) -> bool:
+        return True
+
 
     def setFixArg(self, fixProcedureObject, arg) -> bool:
         if not fixProcedureObject.isArgumentValid(arg):

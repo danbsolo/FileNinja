@@ -1,5 +1,5 @@
 class FindProcedure:
-    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None, recommendMainFunction=None, recommendPostFunction=None):
+    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None, recommendMainFunction=None, recommendPostFunction=None, validatorFunction=None, argBoundary=None):
         self.name = name
         self.mainFunction = mainFunction
         self.isFileFind = isFileFind # If False, isFolderFind
@@ -8,6 +8,9 @@ class FindProcedure:
         self.startFunction = startFunction
         self.recommendMainFunction = recommendMainFunction
         self.recommendPostFunction = recommendPostFunction
+        self.validatorFunction = validatorFunction
+        self.argBoundary = argBoundary
+        self.lastValidatedArgument = None
 
     def getStartFunction(self):
         return self.startFunction
