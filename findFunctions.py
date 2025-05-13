@@ -1,8 +1,5 @@
 from procedureFunctions import *
 
-# Used by oldFileFind (1095 days == 3 years old)
-DAYS_TOO_OLD = 1095
-
 # Used by emptyDirectory
 TOO_FEW_AMOUNT = 0
 
@@ -12,11 +9,6 @@ def setWorkbookManager(newManager: WorkbookManager):
     # Globally declare the WorkbookManager object
     global wbm
     wbm = newManager
-
-
-def writeOwnerHeader(ws):
-    # importGetOwner()
-    ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 
 
 def listAll(_1:str, _2:str, itemName:str, ws):
@@ -98,61 +90,87 @@ def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     return (False,)
 
 
+def oldFileFindStart(arg, ws):
+    writeOwnerHeader(arg, ws)
+
+    global DAYS_LOWER_BOUND
+    DAYS_LOWER_BOUND = arg[0]
+    # # Double-checking that this value is usable. Dire consequences if not.
+    # if (DAYS_LOWER_BOUND <= 0):
+    #     raise Exception("OldFile's lower bound argument cannot be less than 1.")
+
+    global DAYS_UPPER_BOUND
+    if len(arg) == 2:
+        DAYS_UPPER_BOUND = arg[1]
+    else:
+        DAYS_UPPER_BOUND = MAXSIZE
 
 def oldFileFindHelper(longFileAbsolute):
-    try:
-        fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
-    except:
-        return -1
+    # NOTE: A file that is 23 hours and 59 minutes old is still considered 0 days old.
+    
+    # Get date of file. This *can* error virtue of the library functions, hence try/except.
+    try: fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
+    except: return -1
     
     fileDaysAgoLastAccessed = (TODAY - fileDate).days
 
-    if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD): return fileDaysAgoLastAccessed
+    if (fileDaysAgoLastAccessed >= DAYS_LOWER_BOUND): return fileDaysAgoLastAccessed
     else: return 0
 
 def oldFileFind(longFileAbsolute:str, _:str, itemName:str, ws):
     fileDaysAgoLastAccessed = oldFileFindHelper(longFileAbsolute)
 
-    if fileDaysAgoLastAccessed == 0:
+    # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
+    # If it's greater than the upperbound, exit
+    if fileDaysAgoLastAccessed == 0 or fileDaysAgoLastAccessed >= DAYS_UPPER_BOUND:
         return (False,)
     
-    elif fileDaysAgoLastAccessed != -1:
-        wbm.incrementRowAndFileCount(ws)
-        row = wbm.sheetRows[ws]
+    wbm.incrementRow(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
+    
+    if fileDaysAgoLastAccessed != -1:
+        wbm.incrementFileCount(ws)
         return (True,
+                itemEwp,
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
-                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
-                ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws))
+                ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws, wbm.errorFormat))
     
     # This executes if fromtimestamp() threw an exception
     else:
-        wbm.incrementRow(ws)
-        row = wbm.sheetRows[ws]
         return (2,
-                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                itemEwp,
                 ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE.", ws, wbm.errorFormat))    
+
 
 def oldFileFindRecommend(longFileAbsolute:str, _:str, itemName:str, ws):
     fileDaysAgoLastAccessed = oldFileFindHelper(longFileAbsolute)
 
-    if fileDaysAgoLastAccessed == 0:
-        return (False,)
-    
-    elif fileDaysAgoLastAccessed != -1:
-        wbm.incrementRowAndFileCount(ws)
-        row = wbm.sheetRows[ws]
-        return (True,
-                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
-                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
-                ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws, wbm.warningWeakFormat))
-    
-    else:
-        wbm.incrementRow(ws)
-        row = wbm.sheetRows[ws]
-        return (2,
-                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
-                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE.", ws, wbm.errorFormat))    
+    if (fileDaysAgoLastAccessed == 0): return (False,)
 
+    wbm.incrementRow(ws)
+    row = wbm.sheetRows[ws]
+    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
+
+    if fileDaysAgoLastAccessed != -1:
+        # Unlike the other variants, this will still log (and flag) items above the UPPER_BOUND threshold
+        if fileDaysAgoLastAccessed >= DAYS_UPPER_BOUND:
+            dynamicFormat = wbm.warningStrongFormat
+        else:
+            dynamicFormat = wbm.warningWeakFormat
+
+        wbm.incrementFileCount(ws)
+
+        return (True,
+                itemEwp,
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws, dynamicFormat))
+    else:
+        return (2,
+                itemEwp,
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
+
+###
 
 def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)

@@ -151,7 +151,7 @@ class WorkbookManager:
                 longFileAbsolute,
                 dirAbsolute,
                 fileName,
-                self.findSheets[findProcedureObject]
+                self.findSheets[findProcedureObject],
             ): self.findSheets[findProcedureObject]
             for findProcedureObject in self.fileFindProcedures
         }
@@ -438,7 +438,7 @@ class WorkbookManager:
         for findProcedureObject in self.findSheets.keys():
             potentialStartFunction = findProcedureObject.getStartFunction()
             if potentialStartFunction:
-                potentialStartFunction(self.findSheets[findProcedureObject])
+                potentialStartFunction(self.findProcedureArgs[findProcedureObject], self.findSheets[findProcedureObject])
 
         for fixProcedureObject in self.fixSheets.keys():
            potentialStartFunction = fixProcedureObject.getStartFunction()
@@ -542,6 +542,16 @@ class WorkbookManager:
 
     def populateSummarySheet(self):
         col = 1
+
+        for findProcedureObject in self.findProcedureArgs.keys():
+            arg = self.findProcedureArgs[findProcedureObject]
+            
+            if arg == None:
+                continue
+            
+            self.summarySheet.write(6, col, f"{arg[0] if len(arg) <= 1 else arg} : {findProcedureObject.name}", self.summaryValueFormat)
+            col += 1
+
         for fixProcedureObject in self.fixProcedureArgs.keys():
             arg = self.fixProcedureArgs[fixProcedureObject]
             

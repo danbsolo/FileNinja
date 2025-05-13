@@ -1,4 +1,3 @@
-from sys import maxsize as MAXSIZE
 from procedureFunctions import *
 
 
@@ -142,137 +141,137 @@ def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:st
             outcomeEwp)
 
 
-def deleteOldFilesStart(arg, ws):
-    writeOwnerHeader(ws)
+# def deleteOldFilesStart(arg, ws):
+#     writeOwnerHeader(arg, ws)
     
-    global DAYS_LOWER_BOUND
-    DAYS_LOWER_BOUND = arg[0]
-    # Double-checking that this value is usable. Dire consequences if not.
-    if (DAYS_LOWER_BOUND <= 0):
-        raise Exception("DeleteOldFiles lower bound argument cannot be less than 1.")
+#     global DAYS_LOWER_BOUND
+#     DAYS_LOWER_BOUND = arg[0]
+#     # Double-checking that this value is usable. Dire consequences if not.
+#     if (DAYS_LOWER_BOUND <= 0):
+#         raise Exception("DeleteOldFile's lower bound argument cannot be less than 1.")
 
-    global DAYS_UPPER_BOUND
-    if len(arg) == 2:
-        DAYS_UPPER_BOUND = arg[1]
-    else:
-        DAYS_UPPER_BOUND = MAXSIZE
-
-
-def deleteOldFilesLowerboundHelper(longFileAbsolute: str, arg) -> int:
-    """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
-
-    # Get date of file. This *can* error virtue of the library functions, hence try/except
-    try: fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
-    except: return -1
-
-    fileDaysAgo = (TODAY - fileDate).days
-
-    if (DAYS_LOWER_BOUND <= fileDaysAgo): return fileDaysAgo
-    else: return 0
+#     global DAYS_UPPER_BOUND
+#     if len(arg) == 2:
+#         DAYS_UPPER_BOUND = arg[1]
+#     else:
+#         DAYS_UPPER_BOUND = MAXSIZE
 
 
-def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
-    daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
-    # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
-    # If it's greater than the upperbound, exit
-    if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
-        return (False,)
+# def deleteOldFilesLowerboundHelper(longFileAbsolute: str, arg) -> int:
+#     """Note that a file that is 23 hours and 59 minutes old is still considered 0 days old."""
 
-    # wbm.writeItem(ws, itemName)
-    wbm.incrementRow(ws)
-    row = wbm.sheetRows[ws]
-    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
+#     # Get date of file. This *can* error virtue of the library functions, hence try/except
+#     try: fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
+#     except: return -1
 
-    if (daysOld == -1):
-        #wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
-        #wbm.incrementRow(ws)
-        return (2,
-                itemEwp,
-                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
-    else:
-        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        #wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
-        wbm.incrementFileCount(ws)
-        return (True,
-                itemEwp,
-                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
-                ExcelWritePackage(row, wbm.OUTCOME_COL, daysOld, ws, wbm.logFormat))
+#     fileDaysAgo = (TODAY - fileDate).days
+
+#     if (DAYS_LOWER_BOUND <= fileDaysAgo): return fileDaysAgo
+#     else: return 0
 
 
-###
-def deleteOldFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
-    daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
+# def deleteOldFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
+#     daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
+#     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
+#     # If it's greater than the upperbound, exit
+#     if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
+#         return (False,)
 
-    if (daysOld == 0): return (False,)
+#     # wbm.writeItem(ws, itemName)
+#     wbm.incrementRow(ws)
+#     row = wbm.sheetRows[ws]
+#     itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
 
-    wbm.incrementRow(ws)
-    row = wbm.sheetRows[ws]
-    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
-
-    if (daysOld == -1):
-        #wbm.writeItem(ws, itemName)
-        #wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
-        #wbm.incrementRow(ws)
-        return (2,
-                itemEwp,
-                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
-    else:
-        # Unlike the other variants, this will still log (and flag) items above the UPPER_BOUND threshold
-        if daysOld >= DAYS_UPPER_BOUND:
-            dynamicFormat = wbm.warningStrongFormat
-        else:
-            dynamicFormat = wbm.warningWeakFormat
-
-        wbm.incrementFileCount(ws)
-
-        #wbm.writeItem(ws, itemName, wbm.errorFormat)
-        #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-        #wbm.writeOutcomeAndIncrement(ws, daysOld, dynamicFormat)
-    return (True,
-            itemEwp,
-            ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
-            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
-            ExcelWritePackage(row, wbm.OUTCOME_COL, daysOld, ws, dynamicFormat))
-###
+#     if (daysOld == -1):
+#         #wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
+#         #wbm.incrementRow(ws)
+#         return (2,
+#                 itemEwp,
+#                 ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
+#     else:
+#         #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+#         #wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.logFormat)
+#         wbm.incrementFileCount(ws)
+#         return (True,
+#                 itemEwp,
+#                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+#                 ExcelWritePackage(row, wbm.OUTCOME_COL, daysOld, ws, wbm.logFormat))
 
 
-def deleteOldFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
-    daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
+# ###
+# def deleteOldFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
+#     daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
 
-    # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
-    # If it's greater than the upperbound, exit
-    if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
-        return (False,)
+#     if (daysOld == 0): return (False,)
 
-    # wbm.writeItem(ws, itemName)
-    wbm.incrementRow(ws)
-    row = wbm.sheetRows[ws]
-    itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
+#     wbm.incrementRow(ws)
+#     row = wbm.sheetRows[ws]
+#     itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
 
-    if (daysOld == -1):
-        # wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
-        # wbm.incrementRow(ws)
+#     if (daysOld == -1):
+#         #wbm.writeItem(ws, itemName)
+#         #wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat)
+#         #wbm.incrementRow(ws)
+#         return (2,
+#                 itemEwp,
+#                 ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
+#     else:
+#         # Unlike the other variants, this will still log (and flag) items above the UPPER_BOUND threshold
+#         if daysOld >= DAYS_UPPER_BOUND:
+#             dynamicFormat = wbm.warningStrongFormat
+#         else:
+#             dynamicFormat = wbm.warningWeakFormat
+
+#         wbm.incrementFileCount(ws)
+
+#         #wbm.writeItem(ws, itemName, wbm.errorFormat)
+#         #wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+#         #wbm.writeOutcomeAndIncrement(ws, daysOld, dynamicFormat)
+#     return (True,
+#             itemEwp,
+#             ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+#             ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+#             ExcelWritePackage(row, wbm.OUTCOME_COL, daysOld, ws, dynamicFormat))
+# ###
+
+
+# def deleteOldFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, arg):
+#     daysOld = deleteOldFilesLowerboundHelper(longFileAbsolute, arg)
+
+#     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
+#     # If it's greater than the upperbound, exit
+#     if (daysOld == 0 or daysOld >= DAYS_UPPER_BOUND):
+#         return (False,)
+
+#     # wbm.writeItem(ws, itemName)
+#     wbm.incrementRow(ws)
+#     row = wbm.sheetRows[ws]
+#     itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
+
+#     if (daysOld == -1):
+#         # wbm.writeOutcome(ws, "UNABLE TO READ DATE.", wbm.errorFormat) 
+#         # wbm.incrementRow(ws)
         
-        return (2,
-                itemEwp,
-                ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
-    else:
-        wbm.incrementFileCount(ws)
+#         return (2,
+#                 itemEwp,
+#                 ExcelWritePackage(row, wbm.OUTCOME_COL, "UNABLE TO READ DATE.", ws, wbm.errorFormat))
+#     else:
+#         wbm.incrementFileCount(ws)
 
-        try:
-            # wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
-            os.remove(longFileAbsolute)
-            #wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
-        except PermissionError:
-            #wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
-            outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, "FAILED TO DELETE. PERMISSION ERROR.", ws, wbm.errorFormat)
-        except Exception as e:
-            #wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
-            outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, f"FAILED TO DELETE. {e}", ws, wbm.errorFormat)
-    return (True,
-            itemEwp,
-            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
-            outcomeEwp)
+#         try:
+#             # wbm.writeAuxiliary(ws, getOwnerCatch(longFileAbsolute))
+#             os.remove(longFileAbsolute)
+#             #wbm.writeOutcomeAndIncrement(ws, daysOld, wbm.modifyFormat)
+#         except PermissionError:
+#             #wbm.writeOutcomeAndIncrement(ws, "FAILED TO DELETE. PERMISSION ERROR.", wbm.errorFormat)
+#             outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, "FAILED TO DELETE. PERMISSION ERROR.", ws, wbm.errorFormat)
+#         except Exception as e:
+#             #wbm.writeOutcomeAndIncrement(ws, f"FAILED TO DELETE. {e}", wbm.errorFormat)
+#             outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, f"FAILED TO DELETE. {e}", ws, wbm.errorFormat)
+#     return (True,
+#             itemEwp,
+#             ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+#             outcomeEwp)
 
 
 def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
@@ -438,7 +437,7 @@ def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbs
 
 
 def deleteEmptyFilesStart(_, ws):
-    writeOwnerHeader(ws)
+    writeOwnerHeader(_, ws)
 
 
 def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):

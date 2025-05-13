@@ -7,6 +7,7 @@ from getFileOwner import getOwnerCatch
 from collections import defaultdict
 from ExcelWritePackage import ExcelWritePackage
 from threading import Lock
+from sys import maxsize as MAXSIZE
 
 
 # Used by badCharFind
@@ -34,7 +35,7 @@ def addLongPathPrefix(dirAbsolute):
 
 
 
-def writeOwnerHeader(ws):
+def writeOwnerHeader(_, ws):
     # importGetOwner()
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
     
