@@ -1,6 +1,6 @@
 import xlsxwriter
 from typing import List
-from time import time, sleep
+from time import time
 import os
 import stat
 import filesScannedSharedVar
@@ -22,14 +22,17 @@ class WorkbookManager:
 
         self.findSheets = {} # procedureObject : worksheet
         self.fixSheets = {}
+        # self.findProcedureArgs = {}
         self.fixProcedureArgs = {}
+        self.findProcedureFunctions = {}  # NOTE: NEW
         self.fixProcedureFunctions = {}
+        
+
         # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write variable number of procedure metrics.
         self.sheetRows = {self.summarySheet: 14} # worksheet : Integer
         self.summaryCounts = {}  # worksheet : Integer
 
         # Lists to avoid many redundant if statements
-        self.findProceduresConcurrentOnly = []
         self.fileFindProcedures = []
         self.fileFixProcedures = []
         self.folderFindProcedures = []
@@ -69,16 +72,17 @@ class WorkbookManager:
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, findProcedureObject.name + " count", self.headerFormat)
         
         self.findSheets[findProcedureObject] = tmpWsVar
-        self.sheetRows[tmpWsVar] = 0  # NOTE: CHANGED HERE FROM 0 SO SHEETROW TRACKS LAST ROW WRITTEN TO
+        self.sheetRows[tmpWsVar] = 0  # NOTE: These keep track of the last row written to, not the next row to write to.
         self.summaryCounts[tmpWsVar] = 0
+
+        ##
+        #self.findProcedureFunctions[findProcedureObject] = findProcedureObject.getMainFunction( .... )
 
         if findProcedureObject.isConcurrentOnly:
             tmpWsVar.freeze_panes(1, 0)
             tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
             tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
             tmpWsVar.write(0, self.OUTCOME_COL, "Error", self.headerFormat)
-
-            self.findProceduresConcurrentOnly.append(findProcedureObject)
         
         if findProcedureObject.isFileFind:
             self.fileFindProcedures.append(findProcedureObject)
@@ -94,17 +98,7 @@ class WorkbookManager:
         self.sheetRows[tmpWsVar] = 0
         self.summaryCounts[tmpWsVar] = 0
 
-        if allowModify:
-            self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.modifyFunction
-        elif addRecommendations and fixProcedureObject.recommendLogFunction:
-            self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.recommendLogFunction
-        else:
-            self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.logFunction
-
-        ###
-        #if fixProcedureObject.recommendLogFunction:
-        #    self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.recommendLogFunction
-        ###
+        self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.getMainFunction(allowModify, addRecommendations)
 
         if fixProcedureObject.isFileFix:
             self.fileFixProcedures.append(fixProcedureObject)

@@ -21,6 +21,18 @@ class FixProcedure:
         self.recommendLogFunction = recommendLogFunction
         self.recommendPostFunction = recommendPostFunction
 
+    def getMainFunction(self, allowModify, addRecommendations):
+        if allowModify:
+            return self.modifyFunction
+        elif addRecommendations and self.recommendLogFunction:
+            return self.recommendLogFunction
+        else:
+            return self.logFunction
+
+
+
+
+
 
 def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
     try:
