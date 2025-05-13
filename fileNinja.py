@@ -273,6 +273,8 @@ def view(isAdmin: bool):
             widget.config(activeforeground=fgColor)
         if "selectcolor" in widgetAttributes:
             widget.config(selectcolor=selectColor)
+        if "insertbackground" in widgetAttributes:
+            widget.config(insertbackground=fgColor)
 
         for child in widget.winfo_children():
             changeChildrenColor(child, bgColor, fgColor, activeBgColor,selectColor)
