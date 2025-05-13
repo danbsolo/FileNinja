@@ -13,13 +13,16 @@ class FindProcedure:
         return self.startFunction
 
     def getMainFunction(self, addRecommendations):
-        if addRecommendations:
+        if addRecommendations and self.recommendMainFunction:
             return self.recommendMainFunction
         else:
             return self.mainFunction
     
-    def getPostFunction(self):
-        return self.postFunction
+    def getPostFunction(self, addRecommendations):
+        if addRecommendations and self.recommendPostFunction:
+            return self.recommendPostFunction
+        if self.postFunction:
+            return self.postFunction
 
 
 class FixProcedure:
@@ -50,7 +53,6 @@ class FixProcedure:
     def getPostFunction(self, addRecommendations):
         if addRecommendations and self.recommendPostFunction:
             return self.recommendPostFunction
-        
         if self.postFunction:
             return self.postFunction
          

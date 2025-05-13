@@ -12,11 +12,11 @@ SPACE_FILE_FIND = "Space Error (FILE)"
 SPACE_FOLDER_FIND = "Space Error (DIR)"
 BAD_CHARACTER_FILE_FIND = "Bad Character (FILE)"
 BAD_CHARACTER_FOLDER_FIND = "Bad Character (DIR)"
-OLD_FILE_FIND = "Old File"  # @owner
-EMPTY_DIRECTORY_FIND = "Empty Directory"
-EMPTY_FILE_FIND = "Empty File"  # @owner
+OLD_FILE_FIND = "Old File~"  # @owner
+EMPTY_DIRECTORY_FIND = "Empty Directory~"
+EMPTY_FILE_FIND = "Empty File~"  # @owner
 CHARACTER_LIMIT_FIND = "Exceed Character Limit"
-IDENTICAL_FILE_ERROR = "Identical File"
+IDENTICAL_FILE_ERROR = "Identical File~"
 # DUPLICATE_NAME_FIND = "Duplicate Names Error"
 FILE_EXTENSION_SUMMARY = "Large File Size"
 

@@ -598,16 +598,15 @@ def deleteIdenticalFilesLogConcurrent(longFileAbsolute:str, longDirAbsolute:str,
     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
         return (False,)
     
-    if hashCode in HASH_AND_FILES:
-        with LOCK_DELETE_IDENTICAL_FILES:
+    with LOCK_DELETE_IDENTICAL_FILES:
+        if hashCode in HASH_AND_FILES:
             HASH_AND_FILES[hashCode][0].append(itemName)
             HASH_AND_FILES[hashCode][1].append(dirAbsolute)
-        wbm.incrementFileCount(ws)
-        return (3,)
-    else:
-        with LOCK_DELETE_IDENTICAL_FILES:
+            wbm.incrementFileCount(ws)
+            return (3,)
+        else:
             HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
-        return (False,)
+            return (False,)
 
 
 def deleteIdenticalFilesRecommendPost(ws):

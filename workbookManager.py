@@ -105,8 +105,8 @@ class WorkbookManager:
             self.folderFixProcedures.append(fixProcedureObject)
 
         tmpWsVar.freeze_panes(1, 0)
-        tmpWsVar.write(0, self.DIR_COL, "Directories", self.headerFormat)
-        tmpWsVar.write(0, self.ITEM_COL, "Items", self.headerFormat)
+        tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
+        tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
         tmpWsVar.write(0, self.OUTCOME_COL, fixProcedureObject.columnName, self.headerFormat)
 
         return self.setFixArg(fixProcedureObject, arg)
@@ -467,7 +467,7 @@ class WorkbookManager:
 
 
         for findProcedureObject in self.findSheets.keys():
-            potentialPostFunction = findProcedureObject.getPostFunction()
+            potentialPostFunction = findProcedureObject.getPostFunction(addRecommendations)
             if potentialPostFunction:
                 potentialPostFunction(self.findSheets[findProcedureObject])
 

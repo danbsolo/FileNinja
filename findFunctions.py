@@ -1,7 +1,7 @@
 from procedureFunctions import *
 
 # Used by oldFileFind (1095 days == 3 years old)
-DAYS_TOO_OLD = 2
+DAYS_TOO_OLD = 1095
 
 # Used by emptyDirectory
 TOO_FEW_AMOUNT = 0
@@ -98,6 +98,7 @@ def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     return (False,)
 
 
+
 def oldFileFindHelper(longFileAbsolute):
     try:
         fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
@@ -153,15 +154,26 @@ def oldFileFindRecommend(longFileAbsolute:str, _:str, itemName:str, ws):
                 ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE.", ws, wbm.errorFormat))    
 
 
-
-
 def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)
+    numFilesContained = len(dirFiles)
 
-    if len(dirFolders) == 0 and len(dirFiles) <= TOO_FEW_AMOUNT:
+    if len(dirFolders) == 0 and numFilesContained <= TOO_FEW_AMOUNT:
         wbm.incrementRowAndFileCount(ws)
         return (True,
-                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat))
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat),
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, numFilesContained, ws, wbm.errorFormat))
+    return (False,)
+
+def emptyDirectoryRecommend(dirAbsolute:str, dirFolders, dirFiles, ws):
+    folderName = getDirectoryBaseName(dirAbsolute)
+    numFilesContained = len(dirFiles)
+
+    if len(dirFolders) == 0 and numFilesContained <= TOO_FEW_AMOUNT:
+        wbm.incrementRowAndFileCount(ws)
+        return (True,
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat),
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, numFilesContained, ws, wbm.warningWeakFormat))
     return (False,)
 
 
@@ -275,6 +287,69 @@ def duplicateContentPost(ws):
     HASH_AND_FILES.clear()
     ws.freeze_panes(1, 0)
 
+def duplicateContentPostRecommend(ws):
+    ws.write(0, 0, "Separator", wbm.headerFormat)
+    ws.write(0, 1, "Files", wbm.headerFormat)
+    ws.write(0, 2, "Directories", wbm.headerFormat)
+    ws.write(0, 3, "Owner", wbm.headerFormat)
+
+    row = 1
+    folderAndItem = defaultdict(list)
+
+    for hashCode in HASH_AND_FILES.keys():
+        if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
+            ws.write(row, 0, "------------", wbm.logFormat)
+
+            # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
+            if (numOfFiles >= 3):
+                defaultItemFormat = wbm.warningWeakFormat
+            else:
+                defaultItemFormat = wbm.errorFormat
+
+            # Sort this group of identical files with dirAbsolute as the key, and itemName as the values
+            for i in range(numOfFiles):
+                folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(HASH_AND_FILES[hashCode][0][i])
+
+            for dirAbsoluteKey in folderAndItem.keys():
+                # If 2 or more files are identical AND reside in the same folder
+                if (dirAbsoluteNumOfFiles := len(folderAndItem[dirAbsoluteKey])) > 1:
+
+                    # Sort the list of items in descending order, ordered by number of characters
+                    folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
+
+                    # Write the first one normally
+                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
+                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+                    ws.write(row, 3, getOwnerCatch(
+                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
+                    row += 1
+
+                    # Write the rest in strong warning format
+                    for i in range(1, dirAbsoluteNumOfFiles):
+                        ws.write(row, 1, folderAndItem[dirAbsoluteKey][i], wbm.warningStrongFormat)
+                        ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+                        ws.write(row, 3, getOwnerCatch(
+                            joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][i])))
+                        row += 1
+                
+                # If this file is only duplicated once in this directory, just write it normally
+                else:
+                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
+                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+                    ws.write(row, 3, getOwnerCatch(
+                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
+                    row += 1
+
+            folderAndItem.clear()
+                
+    HASH_AND_FILES.clear()
+    ws.freeze_panes(1, 0)
+
+
+
+
+
+
 
 def emptyFileFind(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
@@ -298,5 +373,31 @@ def emptyFileFind(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
         return (True,
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat))
+    
+    return (False,)
+
+def emptyFileFindRecommend(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
+    try:
+        fileSize = os.path.getsize(longFileAbsolute)
+    except PermissionError:
+        wbm.incrementRow(ws)
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. PERMISSION ERROR.", ws, wbm.errorFormat))
+    except Exception as e:
+        wbm.incrementRow(ws)
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ. {e}", ws, wbm.errorFormat))
+    
+    if fileSize == 0:
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.warningStrongFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.warningStrongFormat))
     
     return (False,)
