@@ -418,7 +418,7 @@ def view(isAdmin: bool):
     originalActiveBg = browseButton.cget("activebackground")
     originalSelectColor = includeSubfoldersCheckbutton.cget("selectcolor")
 
-
+    #
     # bindings
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
