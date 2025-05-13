@@ -1,7 +1,7 @@
 from procedureFunctions import *
 
 # Used by oldFileFind (1095 days == 3 years old)
-DAYS_TOO_OLD = 1095
+DAYS_TOO_OLD = 2
 
 # Used by emptyDirectory
 TOO_FEW_AMOUNT = 0
@@ -22,12 +22,6 @@ def writeOwnerHeader(ws):
 def listAll(_1:str, _2:str, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
     return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))  # SPECIAL CASE
-
-###
-# def listAllRecommendTest(_1:str, _2:str, itemName:str, ws):
-#     wbm.incrementRowAndFileCount(ws)
-#     return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, "kek" + itemName, ws, wbm.warningWeakFormat))  # SPECIAL CASE
-
 
 def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
@@ -104,27 +98,61 @@ def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
     return (False,)
 
 
-def oldFileFind(longFileAbsolute:str, _:str, itemName:str, ws):
+def oldFileFindHelper(longFileAbsolute):
     try:
         fileDate = datetime.fromtimestamp(os.path.getatime(longFileAbsolute))
-    except Exception as e:
-        wbm.incrementRow(ws)
-        row = wbm.sheetRows[ws]
-        return (2,
-                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
-                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE. {e}", ws, wbm.errorFormat))
-
+    except:
+        return -1
+    
     fileDaysAgoLastAccessed = (TODAY - fileDate).days
 
-    if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD):
+    if (fileDaysAgoLastAccessed >= DAYS_TOO_OLD): return fileDaysAgoLastAccessed
+    else: return 0
+
+def oldFileFind(longFileAbsolute:str, _:str, itemName:str, ws):
+    fileDaysAgoLastAccessed = oldFileFindHelper(longFileAbsolute)
+
+    if fileDaysAgoLastAccessed == 0:
+        return (False,)
+    
+    elif fileDaysAgoLastAccessed != -1:
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
         return (True,
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws))
+    
+    # This executes if fromtimestamp() threw an exception
     else:
+        wbm.incrementRow(ws)
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE.", ws, wbm.errorFormat))    
+
+def oldFileFindRecommend(longFileAbsolute:str, _:str, itemName:str, ws):
+    fileDaysAgoLastAccessed = oldFileFindHelper(longFileAbsolute)
+
+    if fileDaysAgoLastAccessed == 0:
         return (False,)
+    
+    elif fileDaysAgoLastAccessed != -1:
+        wbm.incrementRowAndFileCount(ws)
+        row = wbm.sheetRows[ws]
+        return (True,
+                ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws, wbm.warningWeakFormat))
+    
+    else:
+        wbm.incrementRow(ws)
+        row = wbm.sheetRows[ws]
+        return (2,
+                ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE.", ws, wbm.errorFormat))    
+
+
 
 
 def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
