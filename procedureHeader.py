@@ -26,6 +26,16 @@ class FindProcedure:
             return self.recommendPostFunction
         if self.postFunction:
             return self.postFunction
+        
+    def isArgumentValid(self, arg):
+        if not self.validatorFunction:
+            return True
+        
+        if (potentialArg := self.validatorFunction(arg, self.argBoundary)):
+            self.lastValidatedArgument = potentialArg
+            return True
+
+        return False
 
 
 class FixProcedure:
@@ -69,8 +79,6 @@ class FixProcedure:
             return True
 
         return False
-
-
 
 
 

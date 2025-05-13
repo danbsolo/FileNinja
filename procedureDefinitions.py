@@ -8,7 +8,7 @@ FIND_PROCEDURES = {
     LIST_ALL: FindProcedure(LIST_ALL, listAll, True),
     SPACE_FILE_FIND: FindProcedure(SPACE_FILE_FIND, spaceFileFind, True),
     BAD_CHARACTER_FILE_FIND: FindProcedure(BAD_CHARACTER_FILE_FIND, badCharFileFind, True),
-    OLD_FILE_FIND: FindProcedure(OLD_FILE_FIND, oldFileFind, True, startFunction=writeOwnerHeader, recommendMainFunction=oldFileFindRecommend),
+    OLD_FILE_FIND: FindProcedure(OLD_FILE_FIND, oldFileFind, True, startFunction=writeOwnerHeader, recommendMainFunction=oldFileFindRecommend, validatorFunction=minimumIntToInfinityOrMaxValidator, argBoundary=1),
     EMPTY_DIRECTORY_FIND: FindProcedure(EMPTY_DIRECTORY_FIND, emptyDirectory, True, isFileFind=False, recommendMainFunction=emptyDirectoryRecommend),
     EMPTY_FILE_FIND: FindProcedure(EMPTY_FILE_FIND, emptyFileFind, True, startFunction=writeOwnerHeader, recommendMainFunction=emptyFileFindRecommend),
     SPACE_FOLDER_FIND: FindProcedure(SPACE_FOLDER_FIND, spaceFolderFind, True, isFileFind=False),

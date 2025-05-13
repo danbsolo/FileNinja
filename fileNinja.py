@@ -60,14 +60,28 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
     findFunctions.setWorkbookManager(wbm)
     fixFunctions.setWorkbookManager(wbm)
     
-    # Add selected findProcedures
-    for findProcedureName in selectedFindProcedures:
-        wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations)
+    # # Add selected findProcedures
+    # for findProcedureName in selectedFindProcedures:
+    #     wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations)
 
     # Add selected fixProcedures
     argsList = argUnprocessed.split("/")
     argsListLength = len(argsList)
     currentArg = 0
+
+    # TODO: Exhibit 3000: Why Find procedures and Fix procedures should merge. This code is literally (almost) identical.
+    for findProcedureName in selectedFindProcedures:
+        arg = None
+
+        if FIND_PROCEDURES[findProcedureName].validatorFunction:
+            if currentArg >= argsListLength:
+                return -6
+
+            arg = argsList[currentArg]
+            currentArg += 1
+        
+        if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations, arg)):
+            return -3
 
     for fixProcedureName in selectedFixProcedures:
         arg = None

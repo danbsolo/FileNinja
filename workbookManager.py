@@ -22,7 +22,7 @@ class WorkbookManager:
 
         self.findSheets = {} # procedureObject : worksheet
         self.fixSheets = {}
-        # self.findProcedureArgs = {}
+        self.findProcedureArgs = {}
         self.fixProcedureArgs = {}
         self.findProcedureFunctions = {}  # NOTE: NEW
         self.fixProcedureFunctions = {}
@@ -67,7 +67,7 @@ class WorkbookManager:
         return (list(self.findSheets.values()) + list(self.fixSheets.values()))
 
 
-    def addFindProcedure(self, findProcedureObject, addRecommendations):
+    def addFindProcedure(self, findProcedureObject, addRecommendations, arg) -> bool:
         tmpWsVar = self.wb.add_worksheet(findProcedureObject.name)
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, findProcedureObject.name + " count", self.headerFormat)
         
@@ -87,7 +87,17 @@ class WorkbookManager:
             self.fileFindProcedures.append(findProcedureObject)
         else:
             self.folderFindProcedures.append(findProcedureObject)
-            
+
+        return self.setFindArg(findProcedureObject, arg)
+
+    def setFindArg(self, findProcedureObject, arg) -> bool:
+        if not findProcedureObject.isArgumentValid(arg):
+            return False
+        
+        self.findProcedureArgs[findProcedureObject] = findProcedureObject.lastValidatedArgument
+        # print(f"{findProcedureObject.name} -> {findProcedureObject.lastValidatedArgument}")
+        return True
+
 
     def addFixProcedure(self, fixProcedureObject, allowModify, addRecommendations, arg) -> bool:
         tmpWsVar = self.wb.add_worksheet(fixProcedureObject.name)
@@ -110,10 +120,6 @@ class WorkbookManager:
         tmpWsVar.write(0, self.OUTCOME_COL, fixProcedureObject.columnName, self.headerFormat)
 
         return self.setFixArg(fixProcedureObject, arg)
-
-    def setFindArg(self, findProcedureObject, arg) -> bool:
-        return True
-
 
     def setFixArg(self, fixProcedureObject, arg) -> bool:
         if not fixProcedureObject.isArgumentValid(arg):
