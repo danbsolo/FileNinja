@@ -75,8 +75,7 @@ class WorkbookManager:
         self.sheetRows[tmpWsVar] = 0  # NOTE: These keep track of the last row written to, not the next row to write to.
         self.summaryCounts[tmpWsVar] = 0
 
-        ##
-        #self.findProcedureFunctions[findProcedureObject] = findProcedureObject.getMainFunction( .... )
+        self.findProcedureFunctions[findProcedureObject] = findProcedureObject.getMainFunction()
 
         if findProcedureObject.isConcurrentOnly:
             tmpWsVar.freeze_panes(1, 0)
@@ -141,7 +140,7 @@ class WorkbookManager:
         ## THREADING STUFF STARTS
         futures = {
             self.fileProcedureThreadPoolExecutors[tpeIndex].submit(
-                findProcedureObject.mainFunction,
+                self.findProcedureFunctions[findProcedureObject],
                 longFileAbsolute,
                 dirAbsolute,
                 fileName,
@@ -186,8 +185,6 @@ class WorkbookManager:
 
         # So two files don't finish and try to increment these counters simultaneously
         with self.lockFileScan:
-            filesScannedSharedVar.FILES_SCANNED += 1
-            self.filesScannedCount += 1
             if countAsError:
                 self.fileErrorCount += 1
 
@@ -216,9 +213,7 @@ class WorkbookManager:
             fut.result()
 
         return needsFolderWritten            
-    
-    #def processFolder(self, ...):
-    #    pass
+
 
     def folderCrawl(self, dirAbsolute, dirFolders, dirFiles):
         needsFolderWritten = set()
@@ -228,7 +223,7 @@ class WorkbookManager:
 
         for findProcedureObject in self.folderFindProcedures:
             futures[self.folderProcedureThreadPoolExecutor.submit(
-                findProcedureObject.mainFunction,
+                self.findProcedureFunctions[findProcedureObject],
                 dirAbsolute,
                 dirFolders,
                 dirFiles,
@@ -266,9 +261,6 @@ class WorkbookManager:
                 for ewp in result[1:]:
                     ewp.executeWrite()
 
-
-        # NOTE: if creating another layer of threading, need some sort of lock here
-        self.foldersScannedCount += 1
         if countAsError:
             self.folderErrorCount += 1
 
@@ -435,12 +427,14 @@ class WorkbookManager:
 
         ###
         for findProcedureObject in self.findSheets.keys():
-            if findProcedureObject.startFunction:
-                findProcedureObject.startFunction(self.findSheets[findProcedureObject])
+            potentialStartFunction = findProcedureObject.getStartFunction()
+            if potentialStartFunction:
+                potentialStartFunction(self.findSheets[findProcedureObject])
 
         for fixProcedureObject in self.fixSheets.keys():
-           if fixProcedureObject.startFunction:
-               fixProcedureObject.startFunction(self.fixProcedureArgs[fixProcedureObject], self.fixSheets[fixProcedureObject])
+           potentialStartFunction = fixProcedureObject.getStartFunction()
+           if potentialStartFunction:
+               potentialStartFunction(self.fixProcedureArgs[fixProcedureObject], self.fixSheets[fixProcedureObject])
         ###
         
         # TODO: Clean this up?
@@ -467,24 +461,23 @@ class WorkbookManager:
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
 
+            
+            self.foldersScannedCount += 1
+            fileIncrement = len(dirFiles)
+            filesScannedSharedVar.FILES_SCANNED += fileIncrement
+            self.filesScannedCount += fileIncrement
+
 
         for findProcedureObject in self.findSheets.keys():
-            if findProcedureObject.postFunction:
-                findProcedureObject.postFunction(self.findSheets[findProcedureObject])
+            potentialPostFunction = findProcedureObject.getPostFunction()
+            if potentialPostFunction:
+                potentialPostFunction(self.findSheets[findProcedureObject])
 
-        ###
-        # TODO: Change this (and everywhere else where applicable) to just call a procedureObject function that returns (ala, a getter) the proper function so that it is encapsulated
-        if addRecommendations:
-            for fixProcedureObject in self.fixSheets.keys():
-                if fixProcedureObject.recommendPostFunction:
-                    fixProcedureObject.recommendPostFunction(self.fixSheets[fixProcedureObject])
-                elif fixProcedureObject.postFunction:
-                    fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
-        else:
-            for fixProcedureObject in self.fixSheets.keys():
-                if fixProcedureObject.postFunction:
-                    fixProcedureObject.postFunction(self.fixSheets[fixProcedureObject])
-        ###
+        for fixProcedureObject in self.fixSheets.keys():
+            potentialPostFunction = fixProcedureObject.getPostFunction(addRecommendations)
+            if potentialPostFunction:
+                potentialPostFunction(self.fixSheets[fixProcedureObject])
+
 
         # shutdown threads
         if self.doFileProceduresExist():
@@ -498,6 +491,7 @@ class WorkbookManager:
 
         elif self.doFolderProceduresExist():
             self.folderProcedureThreadPoolExecutor.shutdown(wait=True)
+        #
 
         self.executionTime = time() - start
 

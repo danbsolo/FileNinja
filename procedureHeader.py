@@ -1,11 +1,23 @@
 class FindProcedure:
-    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None):
+    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None, recommendLogFunction=None, recommendPostFunction=None):
         self.name = name
         self.mainFunction = mainFunction
         self.isFileFind = isFileFind # If False, isFolderFind
         self.isConcurrentOnly = isConcurrentOnly
         self.postFunction = postFunction
         self.startFunction = startFunction
+        self.recommendLogFunction = recommendLogFunction
+        self.recommendPostFunction = recommendPostFunction
+
+    def getStartFunction(self):
+        return self.startFunction
+
+    def getMainFunction(self):
+        return self.mainFunction
+    
+    def getPostFunction(self):
+        return self.postFunction
+
 
 class FixProcedure:
     def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modifications", postFunction=None, startFunction=None, recommendLogFunction=None, recommendPostFunction=None):
@@ -21,6 +33,9 @@ class FixProcedure:
         self.recommendLogFunction = recommendLogFunction
         self.recommendPostFunction = recommendPostFunction
 
+    def getStartFunction(self):
+        return self.startFunction
+    
     def getMainFunction(self, allowModify, addRecommendations):
         if allowModify:
             return self.modifyFunction
@@ -28,6 +43,15 @@ class FixProcedure:
             return self.recommendLogFunction
         else:
             return self.logFunction
+        
+    def getPostFunction(self, addRecommendations):
+        if addRecommendations and self.recommendPostFunction:
+            return self.recommendPostFunction
+        
+        if self.postFunction:
+            return self.postFunction
+         
+
 
 
 
