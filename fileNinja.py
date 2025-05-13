@@ -62,7 +62,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
     
     # Add selected findProcedures
     for findProcedureName in selectedFindProcedures:
-        wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName])
+        wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations)
 
     # Add selected fixProcedures
     argsList = argUnprocessed.split("/")

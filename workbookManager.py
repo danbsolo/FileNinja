@@ -67,7 +67,7 @@ class WorkbookManager:
         return (list(self.findSheets.values()) + list(self.fixSheets.values()))
 
 
-    def addFindProcedure(self, findProcedureObject):
+    def addFindProcedure(self, findProcedureObject, addRecommendations):
         tmpWsVar = self.wb.add_worksheet(findProcedureObject.name)
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, findProcedureObject.name + " count", self.headerFormat)
         
@@ -75,7 +75,7 @@ class WorkbookManager:
         self.sheetRows[tmpWsVar] = 0  # NOTE: These keep track of the last row written to, not the next row to write to.
         self.summaryCounts[tmpWsVar] = 0
 
-        self.findProcedureFunctions[findProcedureObject] = findProcedureObject.getMainFunction()
+        self.findProcedureFunctions[findProcedureObject] = findProcedureObject.getMainFunction(addRecommendations)
 
         if findProcedureObject.isConcurrentOnly:
             tmpWsVar.freeze_panes(1, 0)
@@ -317,6 +317,7 @@ class WorkbookManager:
             dirFiles
         )
         
+        # union operator usage, lol
         return folderCrawlFuture.result() | fileCrawlFuture.result()
     
 
@@ -452,16 +453,13 @@ class WorkbookManager:
 
             initialRows.clear()
             for ws in sheetsSansNonConcurrent:
-                initialRows[ws] = self.sheetRows[ws] + 1  # CHANGE HERE TO GET NEXT AVAILABLE ROW
+                initialRows[ws] = self.sheetRows[ws] + 1
 
-            # union operator usage, lol
-            # needsFolderWritten = self.fileCrawl(longDirAbsolute, dirAbsolute, dirFiles) | self.folderCrawl(dirAbsolute, dirFolders, dirFiles)
             needsFolderWritten = crawlFunction(longDirAbsolute, dirAbsolute, dirFiles, dirFolders)
 
             for ws in needsFolderWritten:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
-
-            
+ 
             self.foldersScannedCount += 1
             fileIncrement = len(dirFiles)
             filesScannedSharedVar.FILES_SCANNED += fileIncrement

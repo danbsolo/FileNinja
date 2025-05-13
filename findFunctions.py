@@ -23,6 +23,11 @@ def listAll(_1:str, _2:str, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
     return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))  # SPECIAL CASE
 
+###
+# def listAllRecommendTest(_1:str, _2:str, itemName:str, ws):
+#     wbm.incrementRowAndFileCount(ws)
+#     return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, "kek" + itemName, ws, wbm.warningWeakFormat))  # SPECIAL CASE
+
 
 def listAllOwner(longFileAbsolute:str, _:str, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
