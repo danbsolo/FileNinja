@@ -113,12 +113,10 @@ class WorkbookManager:
 
 
     def setFixArg(self, fixProcedureObject, arg) -> bool:
-        if not fixProcedureObject.validatorFunction:
-            pass
-        elif ((arg := fixProcedureObject.validatorFunction(arg, fixProcedureObject.argBoundary)) is None):
+        if not fixProcedureObject.isArgumentValid(arg):
             return False
 
-        self.fixProcedureArgs[fixProcedureObject] = arg
+        self.fixProcedureArgs[fixProcedureObject] = fixProcedureObject.lastValidatedArgument
         return True
     
     
@@ -392,6 +390,7 @@ class WorkbookManager:
             self.createFolderThreads()
             crawlFunction = self.initFolderCrawlOnly
         else:
+            # TODO: Change this to a more graceful end. Possibly with a boolean or status code.
             raise Exception("No procedures selected.")
         
         self.createSheetLocks()

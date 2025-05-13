@@ -38,6 +38,7 @@ class FixProcedure:
         self.startFunction = startFunction
         self.recommendLogFunction = recommendLogFunction
         self.recommendPostFunction = recommendPostFunction
+        self.lastValidatedArgument = None
 
     def getStartFunction(self):
         return self.startFunction
@@ -55,7 +56,16 @@ class FixProcedure:
             return self.recommendPostFunction
         if self.postFunction:
             return self.postFunction
-         
+    
+    def isArgumentValid(self, arg):
+        if not self.validatorFunction:
+            return True
+        
+        if (potentialArg := self.validatorFunction(arg, self.argBoundary)):
+            self.lastValidatedArgument = potentialArg
+            return True
+
+        return False
 
 
 
