@@ -81,7 +81,10 @@ class WorkbookManager:
             tmpWsVar.freeze_panes(1, 0)
             tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
             tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
-            tmpWsVar.write(0, self.OUTCOME_COL, "Error", self.headerFormat)
+
+            if not (outcomeColName := findProcedureObject.getColumnName()):
+                outcomeColName = "Error"
+            tmpWsVar.write(0, self.OUTCOME_COL, outcomeColName, self.headerFormat)
         
         if findProcedureObject.isFileFind:
             self.fileFindProcedures.append(findProcedureObject)

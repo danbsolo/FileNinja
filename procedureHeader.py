@@ -1,5 +1,5 @@
 class FindProcedure:
-    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None, recommendMainFunction=None, recommendPostFunction=None, validatorFunction=None, argBoundary=None, defaultArgument=None):
+    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None, recommendMainFunction=None, recommendPostFunction=None, validatorFunction=None, argBoundary=None, defaultArgument=None, columnName=None):
         self.name = name
         self.mainFunction = mainFunction
         self.isFileFind = isFileFind # If False, isFolderFind
@@ -12,6 +12,7 @@ class FindProcedure:
         self.argBoundary = argBoundary
         self.lastValidatedArgument = None
         self.defaultArgument = defaultArgument
+        self.columnName = columnName
 
     def getStartFunction(self):
         return self.startFunction
@@ -39,6 +40,9 @@ class FindProcedure:
     
     def getDefaultArgument(self):
         return self.defaultArgument
+    
+    def getColumnName(self):
+        return self.columnName
 
 
 class FixProcedure:
