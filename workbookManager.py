@@ -512,14 +512,14 @@ class WorkbookManager:
         with self.sheetLocks[ws]:
             self.sheetRows[ws] += 1
 
-    def incrementFileCount(self, ws):
+    def incrementFileCount(self, ws, amount=1):
         with self.sheetLocks[ws]:
-            self.summaryCounts[ws] += 1
+            self.summaryCounts[ws] += amount
 
-    def incrementRowAndFileCount(self, ws):
+    def incrementRowAndFileCount(self, ws, amount=1):
        with self.sheetLocks[ws]:
-            self.sheetRows[ws] += 1
-            self.summaryCounts[ws] += 1
+            self.sheetRows[ws] += amount
+            self.summaryCounts[ws] += amount
 
 
     def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles, addRecommendations):

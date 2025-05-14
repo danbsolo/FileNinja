@@ -244,7 +244,7 @@ def fileExtensionPost(ws):
         # only count as an error if the average size is above a threshold
         if (averageSize >= TOO_LARGE_SIZE_MB):
             ws.write_string(row, 0, extension, wbm.warningWeakFormat)
-            wbm.incrementFileCount(ws)
+            wbm.incrementFileCount(ws, EXTENSION_COUNT[extension])
         else:
             ws.write_string(row, 0, extension)
 
@@ -262,12 +262,20 @@ def duplicateContentStart(arg, ws):
     global HASH_AND_FILES
     global EMPTY_INPUT_HASH_CODE
     global LOCK_DUPLICATE_CONTENT
-    
+    global EXTENSIONS_TO_IGNORE
+
     HASH_AND_FILES = {}
     hashFunc = hashlib.new("sha256")
     hashFunc.update("".encode())
     EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
     LOCK_DUPLICATE_CONTENT = Lock()
+
+    EXTENSIONS_TO_IGNORE = {
+        ".shx", ".shp", ".gbd", ".sbd", ".sbx", 
+        ".dbf", ".qpj", ".atx", ".gdbtablx", ".gdbtable",
+        ".freelist", ".horizon", ".gdbindexes", ".cpg", ".prj" 
+    }
+
 
 def duplicateContentHelper(longFileAbsolute:str):    
     hashFunc = hashlib.new("sha256")
@@ -279,6 +287,10 @@ def duplicateContentHelper(longFileAbsolute:str):
     return hashFunc.hexdigest()
 
 def duplicateContentConcurrent(longFileAbsolute:str, dirAbsolute:str, itemName:str, ws):
+    _, ext = getRootNameAndExtension(longFileAbsolute)
+    if ext in EXTENSIONS_TO_IGNORE:
+        return (False,)
+
     try:
         hashCode = duplicateContentHelper(longFileAbsolute)
     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
