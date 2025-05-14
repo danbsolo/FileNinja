@@ -29,6 +29,18 @@ class Procedure:
             return True
         return False
     
+    def hasDefaultArgument(self):
+        return (self.defaultArgument != None)
+    
+    # def getValidArgument(self, arg):
+    #     # Blanketly assume that empty strings and "None" are not valid, and should return the default argument instead
+    #     if (arg != None) and self.isArgumentValid(arg):
+    #         return self.lastValidatedArgument
+    #     else:
+    #         # If arg isn't valid, give default argument
+    #         return self.defaultArgument
+    
+
     def getMainFunction(self, allowModify, addRecommendations):
         if allowModify and self.modifyFunction:
             return self.modifyFunction

@@ -62,9 +62,53 @@ class WorkbookManager:
         self.warningWeakFormat = self.wb.add_format({"bg_color": "#FFEB9C", "bold": True})  # yellowish
         self.warningStrongFormat = self.wb.add_format({"bg_color": "#FFC7CE", "bold": True})  # reddish
 
+        # addProcedure()
+        self.procedureSheets = {}
+        self.procedureFunctions = {}
+        self.procedureArgs = {}
+        self.fileProcedures = []
+        self.folderProcedures = []
+
 
     def getAllProcedureSheets(self):
         return (list(self.findSheets.values()) + list(self.fixSheets.values()))
+
+    def addProcedure(self, procedureObject, allowModify, addRecommendations, arg) -> bool:
+        tmpWsVar = self.wb.add_worksheet(procedureObject.name)
+        self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, procedureObject.name + " count", self.headerFormat)
+
+        self.procedureSheets[procedureObject] = tmpWsVar
+        self.sheetRows[tmpWsVar] = 0
+        self.summaryCounts[tmpWsVar] = 0
+
+        self.procedureFunctions[procedureObject] = procedureObject.getMainFunction(allowModify, addRecommendations)
+
+        # NOTE: As I write this, no Fix procedures would proc here
+        if procedureObject.getIsConcurrentOnly():
+            tmpWsVar.freeze_panes(1, 0)
+            tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
+            tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
+
+            if not (outcomeColName := procedureObject.getColumnName()):
+                outcomeColName = "Outcome"
+            tmpWsVar.write(0, self.OUTCOME_COL, outcomeColName, self.headerFormat)
+
+
+        if procedureObject.getIsFileProcedure():
+            self.fileProcedures.append(procedureObject)
+        else:
+            self.folderProcedures.append(procedureObject)
+
+        # TODO: DOUBLE-CHECK THIS LATER
+        if not procedureObject.isArgumentValid(arg):
+            if procedureObject.hasDefaultArgument():
+                self.findProcedureArgs[procedureObject] = procedureObject.getDefaultArgument()
+            else:
+                return False
+        else:
+            self.findProcedureArgs[procedureObject] = procedureObject.lastValidatedArgument
+        return True
+        
 
 
     def addFindProcedure(self, findProcedureObject, allowModify, addRecommendations, arg) -> bool:
@@ -96,15 +140,12 @@ class WorkbookManager:
     def setFindArg(self, findProcedureObject, arg) -> bool:
         # If the argument isn't valid (because, say, it's an empty string), return its default argument
         if not findProcedureObject.isArgumentValid(arg):
-            potentialArg = findProcedureObject.getDefaultArgument()
-
-            if potentialArg == None:
-                return False
+            if findProcedureObject.hasDefaultArgument():
+                self.findProcedureArgs[findProcedureObject] = findProcedureObject.getDefaultArgument()
             else:
-                self.findProcedureArgs[findProcedureObject] = potentialArg    
+                return False
         else:
             self.findProcedureArgs[findProcedureObject] = findProcedureObject.lastValidatedArgument
-        # print(f"{findProcedureObject.name} -> {findProcedureObject.lastValidatedArgument}")
         return True
 
 
