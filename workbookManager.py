@@ -99,15 +99,15 @@ class WorkbookManager:
         else:
             self.folderProcedures.append(procedureObject)
 
-        # TODO: DOUBLE-CHECK THIS LATER
-        if not procedureObject.isArgumentValid(arg):
-            if procedureObject.hasDefaultArgument():
-                self.findProcedureArgs[procedureObject] = procedureObject.getDefaultArgument()
-            else:
-                return False
-        else:
-            self.findProcedureArgs[procedureObject] = procedureObject.lastValidatedArgument
+        # # TODO: DOUBLE-CHECK THIS LATER
+        potentialArg = procedureObject.getValidArgument(arg)
+
+        if potentialArg == None:
+            return False
+
+        self.findProcedureArgs[procedureObject] = potentialArg
         return True
+
         
 
 
@@ -138,14 +138,21 @@ class WorkbookManager:
         return self.setFindArg(findProcedureObject, arg)
 
     def setFindArg(self, findProcedureObject, arg) -> bool:
-        # If the argument isn't valid (because, say, it's an empty string), return its default argument
-        if not findProcedureObject.isArgumentValid(arg):
-            if findProcedureObject.hasDefaultArgument():
-                self.findProcedureArgs[findProcedureObject] = findProcedureObject.getDefaultArgument()
-            else:
-                return False
-        else:
-            self.findProcedureArgs[findProcedureObject] = findProcedureObject.lastValidatedArgument
+        # # If the argument isn't valid (because, say, it's an empty string), return its default argument
+        # if not findProcedureObject.isArgumentValid(arg):
+        #     if findProcedureObject.hasDefaultArgument():
+        #         self.findProcedureArgs[findProcedureObject] = findProcedureObject.getDefaultArgument()
+        #     else:
+        #         return False
+        # else:
+        #     self.findProcedureArgs[findProcedureObject] = findProcedureObject.lastValidatedArgument
+        # return True
+        potentialArg = findProcedureObject.getValidArgument(arg)
+
+        if potentialArg == None:
+            return False
+
+        self.findProcedureArgs[findProcedureObject] = potentialArg
         return True
 
 
@@ -598,7 +605,7 @@ class WorkbookManager:
         for findProcedureObject in self.findProcedureArgs.keys():
             arg = self.findProcedureArgs[findProcedureObject]
             
-            if arg == None:
+            if not arg:
                 continue
             
             self.summarySheet.write(6, col, f"{arg[0] if len(arg) <= 1 else arg} : {findProcedureObject.name}", self.summaryValueFormat)
