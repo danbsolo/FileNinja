@@ -1,28 +1,19 @@
-class FindProcedure:
-    def __init__(self, name, mainFunction, isConcurrentOnly=True, postFunction=None, isFileFind=True, startFunction=None, recommendMainFunction=None, recommendPostFunction=None, validatorFunction=None, argBoundary=None, defaultArgument=None, columnName=None):
+class Procedure:
+    def __init__(self, name, isFileProcedure, baseFunction, modifyFunction=None, validatorFunction=None, argBoundary=None, defaultArgument=None, columnName=None, startFunction=None, postFunction=None, recommendBaseFunction=None, recommendPostFunction=None):
         self.name = name
-        self.mainFunction = mainFunction
-        self.isFileFind = isFileFind # If False, isFolderFind
-        self.isConcurrentOnly = isConcurrentOnly
-        self.postFunction = postFunction
+        self.isFileProcedure = isFileProcedure # If False, isFolderFind
+        self.baseFunction = baseFunction
+        self.modifyFunction = modifyFunction
+        self.columnName = columnName
         self.startFunction = startFunction
-        self.recommendMainFunction = recommendMainFunction
+        self.postFunction = postFunction
+        self.recommendBaseFunction = recommendBaseFunction
         self.recommendPostFunction = recommendPostFunction
         self.validatorFunction = validatorFunction
         self.argBoundary = argBoundary
-        self.lastValidatedArgument = None
         self.defaultArgument = defaultArgument
-        self.columnName = columnName
+        self.lastValidatedArgument = None
 
-    def getStartFunction(self):
-        return self.startFunction
-
-    def getMainFunction(self, addRecommendations):
-        if addRecommendations and self.recommendMainFunction:
-            return self.recommendMainFunction
-        else:
-            return self.mainFunction
-    
     def getPostFunction(self, addRecommendations):
         if addRecommendations and self.recommendPostFunction:
             return self.recommendPostFunction
@@ -37,55 +28,44 @@ class FindProcedure:
             self.lastValidatedArgument = potentialArg
             return True
         return False
+    
+    def getMainFunction(self, allowModify, addRecommendations):
+        if allowModify and self.modifyFunction:
+            return self.modifyFunction
+        elif addRecommendations and self.recommendBaseFunction:
+            return self.recommendBaseFunction
+        else:
+            return self.baseFunction
+
+    def isFixFunction(self):
+        # As opposed to a "Find" function
+        return bool(self.modifyFunction)
+
+    def getIsConcurrentOnly(self):
+        return not bool(self.postFunction)
+
+    def getStartFunction(self):
+        return self.startFunction
     
     def getDefaultArgument(self):
         return self.defaultArgument
     
     def getColumnName(self):
         return self.columnName
-
-
-class FixProcedure:
-    def __init__(self, name, logFunction, modifyFunction, isFileFix, validatorFunction=None, argBoundary=None, columnName="Modifications", postFunction=None, startFunction=None, recommendLogFunction=None, recommendPostFunction=None):
-        self.name = name
-        self.logFunction = logFunction
-        self.modifyFunction = modifyFunction
-        self.columnName = columnName
-        self.isFileFix = isFileFix  # If False, isFolderFix
-        self.validatorFunction = validatorFunction
-        self.argBoundary = argBoundary
-        self.postFunction = postFunction
-        self.startFunction = startFunction
-        self.recommendLogFunction = recommendLogFunction
-        self.recommendPostFunction = recommendPostFunction
-        self.lastValidatedArgument = None
-
-    def getStartFunction(self):
-        return self.startFunction
     
-    def getMainFunction(self, allowModify, addRecommendations):
-        if allowModify:
-            return self.modifyFunction
-        elif addRecommendations and self.recommendLogFunction:
-            return self.recommendLogFunction
-        else:
-            return self.logFunction
-        
-    def getPostFunction(self, addRecommendations):
-        if addRecommendations and self.recommendPostFunction:
-            return self.recommendPostFunction
-        if self.postFunction:
-            return self.postFunction
-    
-    def isArgumentValid(self, arg):
-        if not self.validatorFunction:
-            return True
-        
-        if (potentialArg := self.validatorFunction(arg, self.argBoundary)):
-            self.lastValidatedArgument = potentialArg
-            return True
+    def getIsFileProcedure(self):
+        return self.isFileProcedure
 
-        return False
+
+class FindProcedure(Procedure):
+    def kek():
+        pass
+
+
+class FixProcedure(Procedure):
+    def kek():
+        pass
+
 
 
 def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
@@ -103,6 +83,7 @@ def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
     except:
         return
 
+
 def minimumIntToInfinityValidator(arg:str, minimum:int):
     try:
         arg.strip()
@@ -110,6 +91,7 @@ def minimumIntToInfinityValidator(arg:str, minimum:int):
         if (arg >= minimum): return (arg,)
     except:
         return
+
 
 def pairOfStringsValidator(arg:str, separator:str):
     try:
@@ -121,6 +103,7 @@ def pairOfStringsValidator(arg:str, separator:str):
         if (toBeReplaced) and (toBeReplaced != replacer): return (toBeReplaced, replacer)
     except:
         return
+
 
 def multiplePairsOfStringsValidator(arg:str, separator:str):
     multiplePairs = tuple()

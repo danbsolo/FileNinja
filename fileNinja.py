@@ -84,14 +84,14 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
                 arg = argsList[currentArg]
                 currentArg += 1
             
-            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations, arg)):
+            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], allowModify, addRecommendations, arg)):
                 return -3
     else:
         for findProcedureName in selectedFindProcedures:
 
             # This procs if a procedure doesn't *have* a default value
             # For find procedures, this really shouldn't ever proc
-            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations, None)):
+            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], allowModify, addRecommendations, None)):
                 return -3
 
 

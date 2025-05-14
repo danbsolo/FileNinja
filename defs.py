@@ -6,26 +6,23 @@ README_LITE = "README-Lite.docx"
 LOGO_PATH = HCS_ASSETS_PATH + "File-Ninja-Logo-Square.png"
 
 # NOTE: Excel worksheet name must be <= 31 characters
+# The following characters are also invalid: / \ ? * : [ ]
 LIST_ALL = "List All Files"
-LIST_ALL_OWNER = "List All Files (Owner)"  # @owner
+LIST_ALL_OWNER = "List All Files (Owner)"
 SPACE_FILE_FIND = "Space Error (FILE)"
-SPACE_FOLDER_FIND = "Space Error (DIR)"
-BAD_CHARACTER_FILE_FIND = "Bad Character (FILE)"
-BAD_CHARACTER_FOLDER_FIND = "Bad Character (DIR)"
-OLD_FILE_FIND = "Old File#~"  # @owner
-EMPTY_DIRECTORY_FIND = "Empty Directory#~"
-EMPTY_FILE_FIND = "Empty File~"  # @owner
-CHARACTER_LIMIT_FIND = "Exceed Character Limit"
-IDENTICAL_FILE_ERROR = "Identical File~"
-# DUPLICATE_NAME_FIND = "Duplicate Names Error"
+SPACE_DIRECTORY_FIND = "Space Error (DIR)"
+BAD_CHARACTER_FILE = "Bad Character (FILE)"
+BAD_CHARACTER_DIRECTORY = "Bad Character (DIR)"
+OLD_FILE = "Old File#~"
+EMPTY_DIRECTORY = "Empty Directory#~"
+EMPTY_FILE = "Empty File~"
+CHARACTER_LIMIT = "Exceed Character Limit"
+IDENTICAL_FILE = "Identical File~"
 FILE_EXTENSION_SUMMARY = "Large File Size"
 
-# NULL_OPTION = ""
+DELETE_EMPTY_FILE = "Delete Empty File~"
 SPACE_FILE_FIX = "Replace Space w Hyphen (FILE)"
-SEARCH_AND_REPLACE_FILE = "Replace Character (FILE)#"
-# DELETE_OLD_FILES = "Delete Old File#~"  # @owner
-# DELETE_EMPTY_DIRECTORIES_FIX = "Delete Empty Directory#~"
-DELETE_EMPTY_FILES = "Delete Empty File~"  # @owner
 SPACE_FOLDER_FIX = "Replace Space w Hyphen (DIR)"
-SEARCH_AND_REPLACE_FOLDER = "Replace Character (DIR)#"
-DELETE_IDENTICAL_FILES = "Delete Identical File~"
+REPLACE_CHARACTER_FILE = "Replace Character (FILE)#"
+REPLACE_CHARACTER_FOLDER = "Replace Character (DIR)#"
+

@@ -67,7 +67,7 @@ class WorkbookManager:
         return (list(self.findSheets.values()) + list(self.fixSheets.values()))
 
 
-    def addFindProcedure(self, findProcedureObject, addRecommendations, arg) -> bool:
+    def addFindProcedure(self, findProcedureObject, allowModify, addRecommendations, arg) -> bool:
         tmpWsVar = self.wb.add_worksheet(findProcedureObject.name)
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, findProcedureObject.name + " count", self.headerFormat)
         
@@ -75,9 +75,9 @@ class WorkbookManager:
         self.sheetRows[tmpWsVar] = 0  # NOTE: These keep track of the last row written to, not the next row to write to.
         self.summaryCounts[tmpWsVar] = 0
 
-        self.findProcedureFunctions[findProcedureObject] = findProcedureObject.getMainFunction(addRecommendations)
+        self.findProcedureFunctions[findProcedureObject] = findProcedureObject.getMainFunction(allowModify, addRecommendations)
 
-        if findProcedureObject.isConcurrentOnly:
+        if findProcedureObject.getIsConcurrentOnly():
             tmpWsVar.freeze_panes(1, 0)
             tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
             tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
@@ -86,7 +86,7 @@ class WorkbookManager:
                 outcomeColName = "Error"
             tmpWsVar.write(0, self.OUTCOME_COL, outcomeColName, self.headerFormat)
         
-        if findProcedureObject.isFileFind:
+        if findProcedureObject.getIsFileProcedure():
             self.fileFindProcedures.append(findProcedureObject)
         else:
             self.folderFindProcedures.append(findProcedureObject)
@@ -118,7 +118,7 @@ class WorkbookManager:
 
         self.fixProcedureFunctions[fixProcedureObject] = fixProcedureObject.getMainFunction(allowModify, addRecommendations)
 
-        if fixProcedureObject.isFileFix:
+        if fixProcedureObject.getIsFileProcedure():
             self.fileFixProcedures.append(fixProcedureObject)
         else:
             self.folderFixProcedures.append(fixProcedureObject)
@@ -126,7 +126,9 @@ class WorkbookManager:
         tmpWsVar.freeze_panes(1, 0)
         tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
         tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
-        tmpWsVar.write(0, self.OUTCOME_COL, fixProcedureObject.columnName, self.headerFormat)
+        if not (outcomeColName := fixProcedureObject.getColumnName()):
+            outcomeColName = "Modifications"
+        tmpWsVar.write(0, self.OUTCOME_COL, outcomeColName, self.headerFormat)
 
         return self.setFixArg(fixProcedureObject, arg)
 
@@ -420,7 +422,7 @@ class WorkbookManager:
         #
         sheetsSansNonConcurrent = []
         for findProcedureObject in list(self.findSheets.keys()):
-            if findProcedureObject.isConcurrentOnly:
+            if findProcedureObject.getIsConcurrentOnly():
                 sheetsSansNonConcurrent.append(self.findSheets[findProcedureObject])
         sheetsSansNonConcurrent.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
 

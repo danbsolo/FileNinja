@@ -1,66 +1,177 @@
-# from procedureFunctions import *
 from findFunctions import *
 from fixFunctions import *
 from procedureHeader import *
 from defs import *
 
+
 FIND_PROCEDURES = {
-    LIST_ALL: FindProcedure(LIST_ALL, listAll, True),
-    SPACE_FILE_FIND: FindProcedure(SPACE_FILE_FIND, spaceFileFind, True),
-    BAD_CHARACTER_FILE_FIND: FindProcedure(BAD_CHARACTER_FILE_FIND, badCharFileFind, True),
-    OLD_FILE_FIND: FindProcedure(OLD_FILE_FIND, oldFileFind, True, startFunction=oldFileFindStart, recommendMainFunction=oldFileFindRecommend, validatorFunction=minimumIntToInfinityOrMaxValidator, argBoundary=1, defaultArgument=(1095,), columnName="# Days Last Accessed"),
-    EMPTY_DIRECTORY_FIND: FindProcedure(EMPTY_DIRECTORY_FIND, emptyDirectory, True, isFileFind=False, recommendMainFunction=emptyDirectoryRecommend, startFunction=emptyDirectoryStart, validatorFunction=minimumIntToInfinityValidator, argBoundary=0, defaultArgument=(0,), columnName="# Files Contained"),
-    EMPTY_FILE_FIND: FindProcedure(EMPTY_FILE_FIND, emptyFileFind, True, startFunction=writeOwnerHeader, recommendMainFunction=emptyFileFindRecommend),
-    SPACE_FOLDER_FIND: FindProcedure(SPACE_FOLDER_FIND, spaceFolderFind, True, isFileFind=False),
-    BAD_CHARACTER_FOLDER_FIND: FindProcedure(BAD_CHARACTER_FOLDER_FIND, badCharFolderFind, True, isFileFind=False),
-    CHARACTER_LIMIT_FIND: FindProcedure(CHARACTER_LIMIT_FIND, overCharLimitFind, True),
-    IDENTICAL_FILE_ERROR:FindProcedure(IDENTICAL_FILE_ERROR, duplicateContentConcurrent, False, duplicateContentPost, startFunction=duplicateContentStart, recommendPostFunction=duplicateContentPostRecommend),
-    FILE_EXTENSION_SUMMARY: FindProcedure(FILE_EXTENSION_SUMMARY, fileExtensionConcurrent, False, fileExtensionPost, startFunction=fileExtensionStart),
-    LIST_ALL_OWNER: FindProcedure(LIST_ALL_OWNER, listAllOwner, True, startFunction=writeOwnerHeader),
+    LIST_ALL: FindProcedure(
+        LIST_ALL,
+        True,
+        listAll,
+    ),
+
+    LIST_ALL_OWNER: FindProcedure(
+        LIST_ALL_OWNER,
+        True,
+        listAllOwner,
+        startFunction=writeOwnerHeader
+    ),
+
+    IDENTICAL_FILE: FindProcedure(
+        IDENTICAL_FILE,
+        True,
+        duplicateContentConcurrent,
+        startFunction=duplicateContentStart,
+        postFunction=duplicateContentPost,
+        recommendPostFunction=duplicateContentPostRecommend
+    ),
+
+    FILE_EXTENSION_SUMMARY: FindProcedure(
+        FILE_EXTENSION_SUMMARY,
+        True,
+        fileExtensionConcurrent,
+        startFunction=fileExtensionStart,
+        postFunction=fileExtensionPost
+    ),
+
+    OLD_FILE: FindProcedure(
+        OLD_FILE,
+        True,
+        oldFileFind,
+        validatorFunction=minimumIntToInfinityOrMaxValidator,
+        argBoundary=1,
+        defaultArgument=(1095,),
+        columnName="# Days Last Accessed",
+        startFunction=oldFileFindStart,
+        recommendBaseFunction=oldFileFindRecommend
+    ),
+
+    EMPTY_DIRECTORY: FindProcedure(
+        EMPTY_DIRECTORY,
+        False,
+        emptyDirectory,
+        validatorFunction=minimumIntToInfinityValidator,
+        argBoundary=0,
+        defaultArgument=(0,),
+        columnName="# Files Contained",
+        startFunction=emptyDirectoryStart,
+        recommendBaseFunction=emptyDirectoryRecommend
+    ),
+
+    EMPTY_FILE: FindProcedure(
+        EMPTY_FILE,
+        True,
+        emptyFileFind,
+        startFunction=writeOwnerHeader,
+        recommendBaseFunction=emptyFileFindRecommend
+    ),
+
+    SPACE_FILE_FIND: FindProcedure(
+        SPACE_FILE_FIND,
+        True,
+        spaceFileFind,
+    ),
+
+    SPACE_DIRECTORY_FIND: FindProcedure(
+        SPACE_DIRECTORY_FIND,
+        False,
+        spaceFolderFind,
+    ),
+
+    BAD_CHARACTER_DIRECTORY: FindProcedure(
+        BAD_CHARACTER_DIRECTORY,
+        False,
+        badCharFolderFind,
+    ),
+
+    BAD_CHARACTER_FILE: FindProcedure(
+        BAD_CHARACTER_FILE,
+        True,
+        badCharFileFind,
+    ),
+
+    CHARACTER_LIMIT: FindProcedure(
+        CHARACTER_LIMIT,
+        True,
+        overCharLimitFind,
+    ),
 }
 
-FIND_PROCEDURES_DISPLAY = [
-    LIST_ALL,
-    LIST_ALL_OWNER,
-    IDENTICAL_FILE_ERROR,
-    FILE_EXTENSION_SUMMARY,
-    OLD_FILE_FIND,
-    EMPTY_DIRECTORY_FIND,
-    EMPTY_FILE_FIND,
-    SPACE_FOLDER_FIND,
-    SPACE_FILE_FIND,
-    BAD_CHARACTER_FOLDER_FIND,
-    BAD_CHARACTER_FILE_FIND,
-    CHARACTER_LIMIT_FIND
-]
+FIX_PROCEDURES = {
+    DELETE_EMPTY_FILE: FixProcedure(
+        DELETE_EMPTY_FILE,
+        True,
+        deleteEmptyFilesLog,
+        deleteEmptyFilesModify,
+        columnName="Staged for Deletion",
+        startFunction=deleteEmptyFilesStart,
+        recommendBaseFunction=deleteEmptyFilesRecommendLog
+    ),
+
+    SPACE_FILE_FIX: FixProcedure(
+        SPACE_FILE_FIX,
+        True,
+        spaceFileFixLog,
+        spaceFileFixModify,
+    ),
+
+    SPACE_FOLDER_FIX: FixProcedure(
+        SPACE_FOLDER_FIX,
+        False,
+        spaceFolderFixLog,
+        spaceFolderFixModify,
+        postFunction=fixfolderModifyPost
+    ),
+
+    REPLACE_CHARACTER_FOLDER: FixProcedure(
+        REPLACE_CHARACTER_FOLDER,
+        False,
+        searchAndReplaceFolderLog,
+        searchAndReplaceFolderModify,
+        validatorFunction=multiplePairsOfStringsValidator,
+        argBoundary=">",
+        postFunction=fixfolderModifyPost
+    ),
+
+    REPLACE_CHARACTER_FILE: FixProcedure(
+        REPLACE_CHARACTER_FILE,
+        True,
+        searchAndReplaceFileLog,
+        searchAndReplaceFileModify,
+        validatorFunction=multiplePairsOfStringsValidator,
+        argBoundary=">"
+    ),
+}
 
 
 # NOTE: The functions that require an argument must still be in the order as set in FIX_PROCEDURES_DISPLAY below
 # This is so the "/" separated list of arguments from the "Parameter" field are properly distributed.
-FIX_PROCEDURES = {
-    SPACE_FILE_FIX: FixProcedure(SPACE_FILE_FIX, spaceFileFixLog, spaceFileFixModify, True),
-    # DELETE_OLD_FILES: FixProcedure(DELETE_OLD_FILES, deleteOldFilesLog, deleteOldFilesModify, True, minimumIntToInfinityOrMaxValidator, 1, "# Days Last Accessed", startFunction=deleteOldFilesStart, recommendLogFunction=deleteOldFilesRecommendLog),
-    # DELETE_EMPTY_DIRECTORIES_FIX: FixProcedure(DELETE_EMPTY_DIRECTORIES_FIX, deleteEmptyDirectoriesLog, deleteEmptyDirectoriesModify, False, minimumIntToInfinityValidator, 0, "# Files Contained", recommendLogFunction=deleteEmptyDirectoriesRecommendLog),
-    DELETE_EMPTY_FILES: FixProcedure(DELETE_EMPTY_FILES, deleteEmptyFilesLog, deleteEmptyFilesModify, True, columnName="Staged for Deletion", startFunction=deleteEmptyFilesStart, recommendLogFunction=deleteEmptyFilesRecommendLog),
-    SEARCH_AND_REPLACE_FOLDER: FixProcedure(SEARCH_AND_REPLACE_FOLDER, searchAndReplaceFolderLog, searchAndReplaceFolderModify, False, multiplePairsOfStringsValidator, ">", postFunction=fixfolderModifyPost),
-    SEARCH_AND_REPLACE_FILE: FixProcedure(SEARCH_AND_REPLACE_FILE, searchAndReplaceFileLog, searchAndReplaceFileModify, True, multiplePairsOfStringsValidator, ">"),
-    SPACE_FOLDER_FIX: FixProcedure(SPACE_FOLDER_FIX, spaceFolderFixLog, spaceFolderFixModify, False, postFunction=fixfolderModifyPost),
-    # DELETE_IDENTICAL_FILES: FixProcedure(DELETE_IDENTICAL_FILES, deleteIdenticalFilesLogConcurrent, deleteIdenticalFilesLogConcurrent, True, startFunction=deleteIdenticalFilesStart, postFunction=deleteIdenticalFilesPost, recommendPostFunction=deleteIdenticalFilesRecommendPost)
-}
+FIND_PROCEDURES_DISPLAY = [
+    LIST_ALL,
+    LIST_ALL_OWNER,
+    IDENTICAL_FILE,
+    FILE_EXTENSION_SUMMARY,
+    OLD_FILE,
+    EMPTY_DIRECTORY,
+    EMPTY_FILE,
+    SPACE_DIRECTORY_FIND,
+    SPACE_FILE_FIND,
+    BAD_CHARACTER_DIRECTORY,
+    BAD_CHARACTER_FILE,
+    CHARACTER_LIMIT
+]
 
 FIX_PROCEDURES_DISPLAY = [
     "",
     "",
     "",
-    # DELETE_IDENTICAL_FILES,
-    "",
-    # DELETE_OLD_FILES,
-    # DELETE_EMPTY_DIRECTORIES_FIX,
     "",
     "",
-    DELETE_EMPTY_FILES,
+    "",
+    DELETE_EMPTY_FILE,
     SPACE_FOLDER_FIX,
     SPACE_FILE_FIX,
-    SEARCH_AND_REPLACE_FOLDER,
-    SEARCH_AND_REPLACE_FILE
+    REPLACE_CHARACTER_FOLDER,
+    REPLACE_CHARACTER_FILE
 ]
