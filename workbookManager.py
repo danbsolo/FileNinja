@@ -91,10 +91,16 @@ class WorkbookManager:
         return self.setFindArg(findProcedureObject, arg)
 
     def setFindArg(self, findProcedureObject, arg) -> bool:
+        # If the argument isn't valid (because, say, it's an empty string), return its default argument
         if not findProcedureObject.isArgumentValid(arg):
-            return False
-        
-        self.findProcedureArgs[findProcedureObject] = findProcedureObject.lastValidatedArgument
+            potentialArg = findProcedureObject.getDefaultArgument()
+
+            if potentialArg == None:
+                return False
+            else:
+                self.findProcedureArgs[findProcedureObject] = potentialArg    
+        else:
+            self.findProcedureArgs[findProcedureObject] = findProcedureObject.lastValidatedArgument
         # print(f"{findProcedureObject.name} -> {findProcedureObject.lastValidatedArgument}")
         return True
 
@@ -192,6 +198,7 @@ class WorkbookManager:
 
         # So two files don't finish and try to increment these counters simultaneously
         with self.lockFileScan:
+            self.filesScannedCount += 1
             if countAsError:
                 self.fileErrorCount += 1
 
@@ -469,9 +476,8 @@ class WorkbookManager:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
  
             self.foldersScannedCount += 1
-            fileIncrement = len(dirFiles)
-            filesScannedSharedVar.FILES_SCANNED += fileIncrement
-            self.filesScannedCount += fileIncrement
+            # just a rough estimate of the number of files scanned
+            filesScannedSharedVar.FILES_SCANNED += len(dirFiles)
 
 
         for findProcedureObject in self.findSheets.keys():

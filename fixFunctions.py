@@ -274,78 +274,78 @@ def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:st
 #             outcomeEwp)
 
 
-def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
-    tooFewAmount = arg[0]
+# def deleteEmptyDirectoriesLog(_, dirFolders, dirFiles, ws, arg):
+#     tooFewAmount = arg[0]
 
-    # If even 1 folder exists, this isn't empty
-    if len(dirFolders) != 0: return (False,)
+#     # If even 1 folder exists, this isn't empty
+#     if len(dirFolders) != 0: return (False,)
 
-    # If equal to tooFewAmount or less, then this folder needs to be at least flagged
-    fileAmount = len(dirFiles)
-    if fileAmount <= tooFewAmount:
-        #wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
-        wbm.incrementRowAndFileCount(ws)
-        return (True,
-                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.logFormat))
-    return (False,)
+#     # If equal to tooFewAmount or less, then this folder needs to be at least flagged
+#     fileAmount = len(dirFiles)
+#     if fileAmount <= tooFewAmount:
+#         #wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
+#         wbm.incrementRowAndFileCount(ws)
+#         return (True,
+#                 ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.logFormat))
+#     return (False,)
 
 
-###
-def deleteEmptyDirectoriesRecommendLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
-    tooFewAmount = arg[0]
+# ###
+# def deleteEmptyDirectoriesRecommendLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
+#     tooFewAmount = arg[0]
 
-    if len(dirFolders) != 0: return (False,)
+#     if len(dirFolders) != 0: return (False,)
 
-    fileAmount = len(dirFiles)
-    if fileAmount <= tooFewAmount:
+#     fileAmount = len(dirFiles)
+#     if fileAmount <= tooFewAmount:
         
-        ## HARD CODED RECOMMENDATION VALUES
-        # Dynamic Format
-        if fileAmount <= 1:
-            dynamicFormat = wbm.warningStrongFormat
-        elif fileAmount == 2:
-            dynamicFormat = wbm.warningWeakFormat
-        else:
-            dynamicFormat = wbm.logFormat
+#         ## HARD CODED RECOMMENDATION VALUES
+#         # Dynamic Format
+#         if fileAmount <= 1:
+#             dynamicFormat = wbm.warningStrongFormat
+#         elif fileAmount == 2:
+#             dynamicFormat = wbm.warningWeakFormat
+#         else:
+#             dynamicFormat = wbm.logFormat
 
-        # wbm.writeOutcomeAndIncrement(ws, fileAmount, dynamicFormat)
-        wbm.incrementRowAndFileCount(ws)
-        return (True,
-                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, dynamicFormat))
-    return (False,)
-###
+#         # wbm.writeOutcomeAndIncrement(ws, fileAmount, dynamicFormat)
+#         wbm.incrementRowAndFileCount(ws)
+#         return (True,
+#                 ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, dynamicFormat))
+#     return (False,)
+# ###
     
     
-def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
-    tooFewAmount = arg[0]
+# def deleteEmptyDirectoriesModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
+#     tooFewAmount = arg[0]
 
-    if len(dirFolders) != 0: return (False,)
+#     if len(dirFolders) != 0: return (False,)
 
-    fileAmount = len(dirFiles)
-    if fileAmount <= tooFewAmount:
-        wbm.incrementRowAndFileCount(ws)
+#     fileAmount = len(dirFiles)
+#     if fileAmount <= tooFewAmount:
+#         wbm.incrementRowAndFileCount(ws)
 
-        # If it specifically has 0 files, delete the folder
-        if (fileAmount == 0):
-            try: 
-                os.rmdir(addLongPathPrefix(dirAbsolute))
-                # wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.modifyFormat)
-                outcomeEwp = ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.modifyFormat)
-            except Exception as e:
-                # wbm.writeOutcomeAndIncrement(ws, f"0 FILES. UNABLE TO DELETE. {e}", wbm.errorFormat)
-                outcomeEwp = ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, f"0 FILES. UNABLE TO DELETE. {e}", ws, wbm.errorFormat)
+#         # If it specifically has 0 files, delete the folder
+#         if (fileAmount == 0):
+#             try: 
+#                 os.rmdir(addLongPathPrefix(dirAbsolute))
+#                 # wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.modifyFormat)
+#                 outcomeEwp = ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.modifyFormat)
+#             except Exception as e:
+#                 # wbm.writeOutcomeAndIncrement(ws, f"0 FILES. UNABLE TO DELETE. {e}", wbm.errorFormat)
+#                 outcomeEwp = ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, f"0 FILES. UNABLE TO DELETE. {e}", ws, wbm.errorFormat)
 
-            return (True,
-                    outcomeEwp
-                    )
+#             return (True,
+#                     outcomeEwp
+#                     )
         
-        # Otherwise, just flag as usual
-        else:
-            # wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
+#         # Otherwise, just flag as usual
+#         else:
+#             # wbm.writeOutcomeAndIncrement(ws, fileAmount, wbm.logFormat)
 
-            return (True,
-                    ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.logFormat))
-    return (False,)
+#             return (True,
+#                     ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, wbm.logFormat))
+#     return (False,)
 
 
 def searchAndReplaceFolderHelper(oldFolderName:str, arg):
@@ -567,122 +567,122 @@ def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolut
 
 
 
-def deleteIdenticalFilesStart(_, ws):
-    global HASH_AND_FILES
-    global EMPTY_INPUT_HASH_CODE
-    global LOCK_DELETE_IDENTICAL_FILES
+# def deleteIdenticalFilesStart(_, ws):
+#     global HASH_AND_FILES
+#     global EMPTY_INPUT_HASH_CODE
+#     global LOCK_DELETE_IDENTICAL_FILES
 
-    HASH_AND_FILES = {}
-    hashFunc = hashlib.new("sha256")
-    hashFunc.update("".encode())
-    EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
-    LOCK_DELETE_IDENTICAL_FILES = Lock()
+#     HASH_AND_FILES = {}
+#     hashFunc = hashlib.new("sha256")
+#     hashFunc.update("".encode())
+#     EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
+#     LOCK_DELETE_IDENTICAL_FILES = Lock()
 
-def deleteIdenticalFilesHelper(longFileAbsolute:str):    
-    hashFunc = hashlib.new("sha256")
+# def deleteIdenticalFilesHelper(longFileAbsolute:str):    
+#     hashFunc = hashlib.new("sha256")
     
-    with open(longFileAbsolute, "rb") as file:
-        while chunk := file.read(8192):
-            hashFunc.update(chunk)
+#     with open(longFileAbsolute, "rb") as file:
+#         while chunk := file.read(8192):
+#             hashFunc.update(chunk)
 
-    return hashFunc.hexdigest()
+#     return hashFunc.hexdigest()
 
-def deleteIdenticalFilesLogConcurrent(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
-    try:
-        hashCode = deleteIdenticalFilesHelper(longFileAbsolute)
-    except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
-        # Unlike other procedures, this won't print out the error; it'll just assume it's not a duplicate.
-        return (False,)
+# def deleteIdenticalFilesLogConcurrent(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws, _):
+#     try:
+#         hashCode = deleteIdenticalFilesHelper(longFileAbsolute)
+#     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
+#         # Unlike other procedures, this won't print out the error; it'll just assume it's not a duplicate.
+#         return (False,)
     
-    if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
-        return (False,)
+#     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
+#         return (False,)
     
-    with LOCK_DELETE_IDENTICAL_FILES:
-        if hashCode in HASH_AND_FILES:
-            HASH_AND_FILES[hashCode][0].append(itemName)
-            HASH_AND_FILES[hashCode][1].append(dirAbsolute)
-            wbm.incrementFileCount(ws)
-            return (3,)
-        else:
-            HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
-            return (False,)
+#     with LOCK_DELETE_IDENTICAL_FILES:
+#         if hashCode in HASH_AND_FILES:
+#             HASH_AND_FILES[hashCode][0].append(itemName)
+#             HASH_AND_FILES[hashCode][1].append(dirAbsolute)
+#             wbm.incrementFileCount(ws)
+#             return (3,)
+#         else:
+#             HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
+#             return (False,)
 
 
-def deleteIdenticalFilesRecommendPost(ws):
-    ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Files", wbm.headerFormat)
-    ws.write(0, 2, "Directories", wbm.headerFormat)
-    ws.write(0, 3, "Owner", wbm.headerFormat)
+# def deleteIdenticalFilesRecommendPost(ws):
+#     ws.write(0, 0, "Separator", wbm.headerFormat)
+#     ws.write(0, 1, "Files", wbm.headerFormat)
+#     ws.write(0, 2, "Directories", wbm.headerFormat)
+#     ws.write(0, 3, "Owner", wbm.headerFormat)
 
-    row = 1
-    folderAndItem = defaultdict(list)
+#     row = 1
+#     folderAndItem = defaultdict(list)
 
-    for hashCode in HASH_AND_FILES.keys():
-        if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "------------", wbm.logFormat)
+#     for hashCode in HASH_AND_FILES.keys():
+#         if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
+#             ws.write(row, 0, "------------", wbm.logFormat)
 
-            # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
-            if (numOfFiles >= 3):
-                defaultItemFormat = wbm.warningWeakFormat
-            else:
-                defaultItemFormat = wbm.errorFormat
+#             # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
+#             if (numOfFiles >= 3):
+#                 defaultItemFormat = wbm.warningWeakFormat
+#             else:
+#                 defaultItemFormat = wbm.errorFormat
 
-            # Sort this group of identical files with dirAbsolute as the key, and itemName as the values
-            for i in range(numOfFiles):
-                folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(HASH_AND_FILES[hashCode][0][i])
+#             # Sort this group of identical files with dirAbsolute as the key, and itemName as the values
+#             for i in range(numOfFiles):
+#                 folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(HASH_AND_FILES[hashCode][0][i])
 
-            for dirAbsoluteKey in folderAndItem.keys():
-                # If 2 or more files are identical AND reside in the same folder
-                if (dirAbsoluteNumOfFiles := len(folderAndItem[dirAbsoluteKey])) > 1:
+#             for dirAbsoluteKey in folderAndItem.keys():
+#                 # If 2 or more files are identical AND reside in the same folder
+#                 if (dirAbsoluteNumOfFiles := len(folderAndItem[dirAbsoluteKey])) > 1:
 
-                    # Sort the list of items in descending order, ordered by number of characters
-                    folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
+#                     # Sort the list of items in descending order, ordered by number of characters
+#                     folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
 
-                    # Write the first one normally
-                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
-                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(
-                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
-                    row += 1
+#                     # Write the first one normally
+#                     ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
+#                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+#                     ws.write(row, 3, getOwnerCatch(
+#                         joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
+#                     row += 1
 
-                    # Write the rest in strong warning format
-                    for i in range(1, dirAbsoluteNumOfFiles):
-                        ws.write(row, 1, folderAndItem[dirAbsoluteKey][i], wbm.warningStrongFormat)
-                        ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                        ws.write(row, 3, getOwnerCatch(
-                            joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][i])))
-                        row += 1
+#                     # Write the rest in strong warning format
+#                     for i in range(1, dirAbsoluteNumOfFiles):
+#                         ws.write(row, 1, folderAndItem[dirAbsoluteKey][i], wbm.warningStrongFormat)
+#                         ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+#                         ws.write(row, 3, getOwnerCatch(
+#                             joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][i])))
+#                         row += 1
                 
-                # If this file is only duplicated once in this directory, just write it normally
-                else:
-                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
-                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(
-                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
-                    row += 1
+#                 # If this file is only duplicated once in this directory, just write it normally
+#                 else:
+#                     ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
+#                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+#                     ws.write(row, 3, getOwnerCatch(
+#                         joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
+#                     row += 1
 
-            folderAndItem.clear()
+#             folderAndItem.clear()
                 
-    HASH_AND_FILES.clear()
-    ws.freeze_panes(1, 0)
+#     HASH_AND_FILES.clear()
+#     ws.freeze_panes(1, 0)
 
 
-def deleteIdenticalFilesPost(ws):
-    ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Files", wbm.headerFormat)
-    ws.write(0, 2, "Directories", wbm.headerFormat)
-    ws.write(0, 3, "Owner", wbm.headerFormat)
+# def deleteIdenticalFilesPost(ws):
+#     ws.write(0, 0, "Separator", wbm.headerFormat)
+#     ws.write(0, 1, "Files", wbm.headerFormat)
+#     ws.write(0, 2, "Directories", wbm.headerFormat)
+#     ws.write(0, 3, "Owner", wbm.headerFormat)
 
-    row = 1
-    for hashCode in HASH_AND_FILES.keys():
-        if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "------------", wbm.logFormat)
+#     row = 1
+#     for hashCode in HASH_AND_FILES.keys():
+#         if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
+#             ws.write(row, 0, "------------", wbm.logFormat)
 
-            for i in range(numOfFiles):
-                ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
-                ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
-                ws.write(row, 3, joinDirToFileName(HASH_AND_FILES[hashCode][1][i], HASH_AND_FILES[hashCode][0][i]))
-                row += 1
+#             for i in range(numOfFiles):
+#                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
+#                 ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
+#                 ws.write(row, 3, joinDirToFileName(HASH_AND_FILES[hashCode][1][i], HASH_AND_FILES[hashCode][0][i]))
+#                 row += 1
                 
-    HASH_AND_FILES.clear()
-    ws.freeze_panes(1, 0)
+#     HASH_AND_FILES.clear()
+#     ws.freeze_panes(1, 0)

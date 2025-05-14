@@ -72,12 +72,8 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
 
     # TODO: Exhibit 3000: Why Find procedures and Fix procedures should merge. This code is literally (almost) identical.
     
-    # TODO: This following functionality isn't really great, but it's okay for now
-    # If arguments were inputted, each Find procedure needs an explicit argument set
-    
-    # print(f"argsListLength = {argsListLength} -> {argsList} -> |{argUnprocessed}|")
-    
-    if argsListLength:
+    # If arguments were inputted, each procedure needs to be accounted for via "/"s
+    if argsList:
         for findProcedureName in selectedFindProcedures:
             arg = None
 
@@ -90,11 +86,12 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
             
             if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations, arg)):
                 return -3
-    # If no arguments were inputted, every Find procedure must use its default
     else:
         for findProcedureName in selectedFindProcedures:
-            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations,
-                                         FIND_PROCEDURES[findProcedureName].getDefaultArgument())):
+
+            # This procs if a procedure doesn't *have* a default value
+            # For find procedures, this really shouldn't ever proc
+            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], addRecommendations, None)):
                 return -3
 
 

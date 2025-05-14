@@ -84,9 +84,6 @@ class FixProcedure:
         return False
 
 
-
-
-
 def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
     try:
         arg = arg.split("-")
@@ -99,7 +96,6 @@ def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
 
         if (minimum <= lowerBound) and (lowerBound <= upperBound):
             return (lowerBound, upperBound)
-    
     except:
         return
 

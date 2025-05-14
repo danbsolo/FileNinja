@@ -1,9 +1,5 @@
 from procedureFunctions import *
 
-# Used by emptyDirectory
-TOO_FEW_AMOUNT = 0
-
-
 
 def setWorkbookManager(newManager: WorkbookManager):
     # Globally declare the WorkbookManager object
@@ -172,6 +168,10 @@ def oldFileFindRecommend(longFileAbsolute:str, _:str, itemName:str, ws):
 
 ###
 
+def emptyDirectoryStart(arg, ws):
+    global TOO_FEW_AMOUNT
+    TOO_FEW_AMOUNT = arg[0]
+
 def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
     folderName = getDirectoryBaseName(dirAbsolute)
     numFilesContained = len(dirFiles)
@@ -184,18 +184,32 @@ def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
     return (False,)
 
 def emptyDirectoryRecommend(dirAbsolute:str, dirFolders, dirFiles, ws):
-    folderName = getDirectoryBaseName(dirAbsolute)
-    numFilesContained = len(dirFiles)
+    if len(dirFolders) != 0: return (False,)
 
-    if len(dirFolders) == 0 and numFilesContained <= TOO_FEW_AMOUNT:
+    folderName = getDirectoryBaseName(dirAbsolute)
+
+    fileAmount = len(dirFiles)
+    if fileAmount <= TOO_FEW_AMOUNT:
+        
+        ## HARD CODED RECOMMENDATION VALUES
+        # Dynamic Format
+        if fileAmount <= 1:
+            dynamicFormat = wbm.warningStrongFormat
+        elif fileAmount == 2:
+            dynamicFormat = wbm.warningWeakFormat
+        else:
+            dynamicFormat = wbm.errorFormat
+
+        # wbm.writeOutcomeAndIncrement(ws, fileAmount, dynamicFormat)
         wbm.incrementRowAndFileCount(ws)
         return (True,
-                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat),
-                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, numFilesContained, ws, wbm.warningWeakFormat))
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws),
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, dynamicFormat))
     return (False,)
+###
 
 
-def fileExtensionStart(ws):
+def fileExtensionStart(arg, ws):
     global EXTENSION_COUNT
     global EXTENSION_TOTAL_SIZE
     global TOO_LARGE_SIZE_MB
@@ -244,7 +258,7 @@ def fileExtensionPost(ws):
     ws.freeze_panes(1, 0)
 
 
-def duplicateContentStart(ws):
+def duplicateContentStart(arg, ws):
     global HASH_AND_FILES
     global EMPTY_INPUT_HASH_CODE
     global LOCK_DUPLICATE_CONTENT
