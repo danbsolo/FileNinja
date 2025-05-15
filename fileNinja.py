@@ -4,9 +4,8 @@ import os
 from workbookManager import WorkbookManager
 from datetime import datetime
 from procedureDefinitions import *
+import procedureHelpers
 import procedureFunctions
-import findFunctions
-import fixFunctions
 from defs import *
 from sys import exit
 from idlelib.tooltip import Hovertip
@@ -23,10 +22,9 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
         return -5
     
     # If allowModify and addRecommendations are both turned on, even if it would be of no consequence, exit
-    if allowModify and addRecommendations:
+    # If allowModify and includeHiddenFiles are both turned on, abort
+    if allowModify and (addRecommendations or includeHiddenFiles):
         return -7
-    
-    
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
@@ -56,9 +54,8 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
 
     # Initialize objects
     wbm = WorkbookManager(workbookPathName)
+    procedureHelpers.setWorkbookManager(wbm)
     procedureFunctions.setWorkbookManager(wbm)
-    findFunctions.setWorkbookManager(wbm)
-    fixFunctions.setWorkbookManager(wbm)
 
 
     # If argUnprocessed is just an empty string or *just* whitespace
@@ -70,44 +67,28 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
     argsListLength = len(argsList)
     currentArg = 0
 
-    # TODO: Exhibit 3000: Why Find procedures and Fix procedures should merge. This code is literally (almost) identical.
-    
+
     # If arguments were inputted, each procedure needs to be accounted for via "/"s
     if argsList:
-        for findProcedureName in selectedFindProcedures:
+        for procedureName in selectedFindProcedures + selectedFixProcedures:
             arg = None
 
-            if FIND_PROCEDURES[findProcedureName].validatorFunction:
+            if ALL_PROCEDURES[procedureName].validatorFunction:
                 if currentArg >= argsListLength:
                     return -6
 
                 arg = argsList[currentArg]
                 currentArg += 1
             
-            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], allowModify, addRecommendations, arg)):
+            if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], allowModify, addRecommendations, arg)):
                 return -3
     else:
-        for findProcedureName in selectedFindProcedures:
+        for procedureName in selectedFindProcedures + selectedFixProcedures:
 
             # This procs if a procedure doesn't *have* a default value
-            # For find procedures, this really shouldn't ever proc
-            if (not wbm.addFindProcedure(FIND_PROCEDURES[findProcedureName], allowModify, addRecommendations, None)):
+            # For find procedures, since they're all available in Lite, this really shouldn't ever proc
+            if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], allowModify, addRecommendations, None)):
                 return -3
-
-
-    for fixProcedureName in selectedFixProcedures:
-        arg = None
-        
-        if FIX_PROCEDURES[fixProcedureName].validatorFunction:
-            if currentArg >= argsListLength:
-                return -6
-            
-            arg = argsList[currentArg]
-            currentArg += 1
-        
-        if (not wbm.addFixProcedure(FIX_PROCEDURES[fixProcedureName], allowModify, addRecommendations, arg)):
-            return -3
-
 
     try:
         wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs)
@@ -164,7 +145,7 @@ def view(isAdmin: bool):
             elif (exitStatus == -6):
                 errorMessage = "Invalid arguments. Separate with \"/\""
             elif (exitStatus == -7):
-                errorMessage = "Invalid settings. Cannot run recommendations and modifications simultaneously."
+                errorMessage = "Invalid settings. Cannot run modifications simultaneously with recommendations and/or hidden files."
             else:
                 # In this case, "exitStatus" is the text from "traceback.format_exc()", before we change it to -999
                 errorMessage = f"TAKE A SCREENSHOT -- an error has occured.\n\n{exitStatus}"

@@ -1,10 +1,9 @@
-from findFunctions import *
-from fixFunctions import *
+from procedureFunctions import *
 from procedureHeader import *
 from defs import *
 
 
-FIND_PROCEDURES = {
+ALL_PROCEDURES = {
     LIST_ALL: FindProcedure(
         LIST_ALL,
         True,
@@ -96,9 +95,7 @@ FIND_PROCEDURES = {
         True,
         overCharLimitFind,
     ),
-}
 
-FIX_PROCEDURES = {
     DELETE_EMPTY_FILE: FixProcedure(
         DELETE_EMPTY_FILE,
         True,
