@@ -17,8 +17,6 @@ class WorkbookManager:
         self.summarySheet = self.wb.add_worksheet("Summary")
         self.summarySheet.activate()  # view this worksheet on startup
 
-        self.excludedDirs = []  # set within initiateCrawl()
-
         self.procedureObjectSheets = {} # procedureObject : worksheet
         self.procedureObjectFunctions = {}
         self.procedureObjectArgs = {}
@@ -30,6 +28,10 @@ class WorkbookManager:
         # Lists to avoid many redundant if statements
         self.fileProcedures = []
         self.folderProcedures = []
+
+        # Differentiated so that Fix functions can access hidden files
+        self.fileFindProcedures = []
+        self.fileFixProcedures = []
 
         # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write a variable number of procedure metrics.
         self.sheetRows = {self.summarySheet: 14} # worksheet : Integer
@@ -80,6 +82,12 @@ class WorkbookManager:
         # Add to either fileProcedures or folderProcedures lists
         if procedureObject.getIsFileProcedure():
             self.fileProcedures.append(procedureObject)
+
+            if procedureObject.isFixFunction():
+                self.fileFixProcedures.append(procedureObject)
+            else:
+                self.fileFindProcedures.append(procedureObject)
+
         else:
             self.folderProcedures.append(procedureObject)
 
@@ -102,7 +110,8 @@ class WorkbookManager:
     
         longFileAbsolute = longDirAbsolute + "\\" + fileName
 
-        if self.hiddenFileCheck(longFileAbsolute) == 2:
+        hiddenStatus = self.hiddenFileCheck(longFileAbsolute)
+        if hiddenStatus == 2:
             return
         
         countAsError = False
@@ -117,8 +126,19 @@ class WorkbookManager:
                 fileName,
                 self.procedureObjectSheets[procedureObject],
             ): self.procedureObjectSheets[procedureObject]
-            for procedureObject in self.fileProcedures
+            for procedureObject in self.fileFindProcedures
         }
+
+        if hiddenStatus == 0:
+            for procedureObject in self.fileFixProcedures:
+                futures[self.fileProcedureThreadPoolExecutors[tpeIndex].submit(
+                        self.procedureObjectFunctions[procedureObject],
+                        longFileAbsolute,
+                        longDirAbsolute,
+                        dirAbsolute,
+                        fileName,
+                        self.procedureObjectSheets[procedureObject])] = self.procedureObjectSheets[procedureObject]
+
 
         for fut in as_completed(futures):
             result = fut.result()
@@ -324,7 +344,6 @@ class WorkbookManager:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
         
         self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
-        self.excludedDirs = excludedDirs
         
 
         if self.doFileProceduresExist():
@@ -423,6 +442,8 @@ class WorkbookManager:
             self.folderProcedureThreadPoolExecutor.shutdown(wait=True)
         #
 
+        self.populateSummarySheet(excludedDirs)
+        self.autofitSheets()
         self.executionTime = time() - start
 
 
@@ -464,7 +485,7 @@ class WorkbookManager:
         self.summarySheet.write(5, 1, str(addRecommendations), self.summaryValueFormat)
 
 
-    def populateSummarySheet(self):
+    def populateSummarySheet(self, excludedDirs):
         col = 1
 
         for procedureObject in self.procedureObjects:
@@ -490,7 +511,7 @@ class WorkbookManager:
         self.summarySheet.write_number(12, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 1
-        for exDir in self.excludedDirs:
+        for exDir in excludedDirs:
             self.summarySheet.write_string(1, i, exDir, self.summaryValueFormat)
             i += 1
 
@@ -506,6 +527,4 @@ class WorkbookManager:
 
 
     def close(self):
-        self.populateSummarySheet()
-        self.autofitSheets()
         self.wb.close()
