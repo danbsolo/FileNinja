@@ -1,4 +1,10 @@
 from procedureHelpers import *
+import hashlib
+from getFileOwner import getOwnerCatch
+from collections import defaultdict
+from ExcelWritePackage import ExcelWritePackage
+from threading import Lock
+from sys import maxsize as MAXSIZE
 
 
 def setWorkbookManager(newManager: WorkbookManager):

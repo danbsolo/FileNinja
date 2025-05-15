@@ -55,16 +55,6 @@ class Procedure:
         return self.isFileProcedure
 
 
-class FindProcedure(Procedure):
-    def kek():
-        pass
-
-
-class FixProcedure(Procedure):
-    def kek():
-        pass
-
-
 
 def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
     try:

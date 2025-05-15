@@ -17,6 +17,10 @@ import filesScannedSharedVar
 def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
 
+    # If no procedures are selected, exit
+    if len(selectedFindProcedures + selectedFixProcedures) == 0:
+        return -8
+
     # If multiple fix procedures are selected and allowModify is checked, exit
     if allowModify and len(selectedFixProcedures) > 1:
         return -5
@@ -25,6 +29,10 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
     # If allowModify and includeHiddenFiles are both turned on, exit
     if allowModify and (addRecommendations or includeHiddenFiles):
         return -7
+    
+    # Double check that the user wants to allow modifications
+    if allowModify and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
+        return 0
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
@@ -146,6 +154,8 @@ def view(isAdmin: bool):
                 errorMessage = "Invalid arguments. Separate with \"/\""
             elif (exitStatus == -7):
                 errorMessage = "Invalid settings. Cannot run modifications simultaneously with recommendations and/or hidden files."
+            elif (exitStatus == -8):
+                errorMessage = "No procedures selected."
             else:
                 # In this case, "exitStatus" is the text from "traceback.format_exc()", before we change it to -999
                 errorMessage = f"TAKE A SCREENSHOT -- an error has occured.\n\n{exitStatus}"
@@ -160,10 +170,7 @@ def view(isAdmin: bool):
             scheduleCheckIfDone(t)
     
 
-    def launchController():
-        if modifyState.get() and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
-            return
-            
+    def launchController():            
         root.title(FILE_NINJA + ": RUNNING...")
         executeButton.config(text="RUNNING....", state="disabled")
 

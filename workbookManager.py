@@ -340,9 +340,6 @@ class WorkbookManager:
         elif self.doFolderProceduresExist():
             self.createFolderThreads()
             crawlFunction = self.initFolderCrawlOnly
-        else:
-            # TODO: Change this to a more graceful end. Possibly with a boolean or status code.
-            raise Exception("No procedures selected.")
         
         self.createSheetLocks()
 
@@ -353,7 +350,6 @@ class WorkbookManager:
         for procedureObject in self.procedureObjects:
             if procedureObject.getIsConcurrentOnly():
                 sheetsSansNonConcurrent.append(self.procedureObjectSheets[procedureObject])
-        # sheetsSansNonConcurrent.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
 
 
         walkObject = []

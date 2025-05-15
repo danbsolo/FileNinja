@@ -1,24 +1,25 @@
 from procedureFunctions import *
-from procedureHeader import *
+from procedureClass import *
 from defs import *
 
 
 ALL_PROCEDURES = {
-    LIST_ALL: FindProcedure(
+### FIND PROCEDURES ################################################################################
+    LIST_ALL: Procedure(
         LIST_ALL,
         True,
         listAll,
         startFunction=writeDefaultHeaders
     ),
 
-    LIST_ALL_OWNER: FindProcedure(
+    LIST_ALL_OWNER: Procedure(
         LIST_ALL_OWNER,
         True,
         listAllOwner,
         startFunction=writeDefaultAndOwnerHeaders
     ),
 
-    IDENTICAL_FILE: FindProcedure(
+    IDENTICAL_FILE: Procedure(
         IDENTICAL_FILE,
         True,
         duplicateContentConcurrent,
@@ -28,7 +29,7 @@ ALL_PROCEDURES = {
         isConcurrentOnly=False
     ),
 
-    FILE_EXTENSION_SUMMARY: FindProcedure(
+    FILE_EXTENSION_SUMMARY: Procedure(
         FILE_EXTENSION_SUMMARY,
         True,
         fileExtensionConcurrent,
@@ -37,7 +38,7 @@ ALL_PROCEDURES = {
         isConcurrentOnly=False
     ),
 
-    OLD_FILE: FindProcedure(
+    OLD_FILE: Procedure(
         OLD_FILE,
         True,
         oldFileFind,
@@ -48,7 +49,7 @@ ALL_PROCEDURES = {
         recommendBaseFunction=oldFileFindRecommend
     ),
 
-    EMPTY_DIRECTORY: FindProcedure(
+    EMPTY_DIRECTORY: Procedure(
         EMPTY_DIRECTORY,
         False,
         emptyDirectory,
@@ -59,7 +60,7 @@ ALL_PROCEDURES = {
         recommendBaseFunction=emptyDirectoryRecommend
     ),
 
-    EMPTY_FILE: FindProcedure(
+    EMPTY_FILE: Procedure(
         EMPTY_FILE,
         True,
         emptyFileFind,
@@ -67,42 +68,43 @@ ALL_PROCEDURES = {
         recommendBaseFunction=emptyFileFindRecommend
     ),
 
-    SPACE_FILE_FIND: FindProcedure(
+    SPACE_FILE_FIND: Procedure(
         SPACE_FILE_FIND,
         True,
         spaceFileFind,
         startFunction=writeDefaultHeaders
     ),
 
-    SPACE_DIRECTORY_FIND: FindProcedure(
+    SPACE_DIRECTORY_FIND: Procedure(
         SPACE_DIRECTORY_FIND,
         False,
         spaceFolderFind,
         startFunction=writeDefaultHeaders
     ),
 
-    BAD_CHARACTER_DIRECTORY: FindProcedure(
+    BAD_CHARACTER_DIRECTORY: Procedure(
         BAD_CHARACTER_DIRECTORY,
         False,
         badCharFolderFind,
         startFunction=writeDefaultHeaders
     ),
 
-    BAD_CHARACTER_FILE: FindProcedure(
+    BAD_CHARACTER_FILE: Procedure(
         BAD_CHARACTER_FILE,
         True,
         badCharFileFind,
         startFunction=writeDefaultHeaders
     ),
 
-    CHARACTER_LIMIT: FindProcedure(
+    CHARACTER_LIMIT: Procedure(
         CHARACTER_LIMIT,
         True,
         overCharLimitFind,
         startFunction=writeDefaultHeaders
     ),
 
-    DELETE_EMPTY_FILE: FixProcedure(
+### FIX PROCEDURES ################################################################################
+    DELETE_EMPTY_FILE: Procedure(
         DELETE_EMPTY_FILE,
         True,
         deleteEmptyFilesLog,
@@ -111,7 +113,7 @@ ALL_PROCEDURES = {
         recommendBaseFunction=deleteEmptyFilesRecommendLog
     ),
 
-    SPACE_FILE_FIX: FixProcedure(
+    SPACE_FILE_FIX: Procedure(
         SPACE_FILE_FIX,
         True,
         spaceFileFixLog,
@@ -119,7 +121,7 @@ ALL_PROCEDURES = {
         startFunction=writeDefaultHeaders
     ),
 
-    SPACE_FOLDER_FIX: FixProcedure(
+    SPACE_FOLDER_FIX: Procedure(
         SPACE_FOLDER_FIX,
         False,
         spaceFolderFixLog,
@@ -128,7 +130,7 @@ ALL_PROCEDURES = {
         postFunction=fixfolderModifyPost
     ),
 
-    REPLACE_CHARACTER_FOLDER: FixProcedure(
+    REPLACE_CHARACTER_FOLDER: Procedure(
         REPLACE_CHARACTER_FOLDER,
         False,
         searchAndReplaceFolderLog,
@@ -139,7 +141,7 @@ ALL_PROCEDURES = {
         postFunction=fixfolderModifyPost
     ),
 
-    REPLACE_CHARACTER_FILE: FixProcedure(
+    REPLACE_CHARACTER_FILE: Procedure(
         REPLACE_CHARACTER_FILE,
         True,
         searchAndReplaceFileLog,
