@@ -8,13 +8,14 @@ ALL_PROCEDURES = {
         LIST_ALL,
         True,
         listAll,
+        startFunction=writeDefaultHeaders
     ),
 
     LIST_ALL_OWNER: FindProcedure(
         LIST_ALL_OWNER,
         True,
         listAllOwner,
-        startFunction=writeOwnerHeader
+        startFunction=writeDefaultAndOwnerHeaders
     ),
 
     IDENTICAL_FILE: FindProcedure(
@@ -41,7 +42,6 @@ ALL_PROCEDURES = {
         validatorFunction=minimumIntToInfinityOrMaxValidator,
         argBoundary=1,
         defaultArgument=(1095,),
-        columnName="# Days Last Accessed",
         startFunction=oldFileFindStart,
         recommendBaseFunction=oldFileFindRecommend
     ),
@@ -53,7 +53,6 @@ ALL_PROCEDURES = {
         validatorFunction=minimumIntToInfinityValidator,
         argBoundary=0,
         defaultArgument=(0,),
-        columnName="# Files Contained",
         startFunction=emptyDirectoryStart,
         recommendBaseFunction=emptyDirectoryRecommend
     ),
@@ -62,7 +61,7 @@ ALL_PROCEDURES = {
         EMPTY_FILE,
         True,
         emptyFileFind,
-        startFunction=writeOwnerHeader,
+        startFunction=writeDefaultAndOwnerHeaders,
         recommendBaseFunction=emptyFileFindRecommend
     ),
 
@@ -70,30 +69,35 @@ ALL_PROCEDURES = {
         SPACE_FILE_FIND,
         True,
         spaceFileFind,
+        startFunction=writeDefaultHeaders
     ),
 
     SPACE_DIRECTORY_FIND: FindProcedure(
         SPACE_DIRECTORY_FIND,
         False,
         spaceFolderFind,
+        startFunction=writeDefaultHeaders
     ),
 
     BAD_CHARACTER_DIRECTORY: FindProcedure(
         BAD_CHARACTER_DIRECTORY,
         False,
         badCharFolderFind,
+        startFunction=writeDefaultHeaders
     ),
 
     BAD_CHARACTER_FILE: FindProcedure(
         BAD_CHARACTER_FILE,
         True,
         badCharFileFind,
+        startFunction=writeDefaultHeaders
     ),
 
     CHARACTER_LIMIT: FindProcedure(
         CHARACTER_LIMIT,
         True,
         overCharLimitFind,
+        startFunction=writeDefaultHeaders
     ),
 
     DELETE_EMPTY_FILE: FixProcedure(
@@ -101,7 +105,6 @@ ALL_PROCEDURES = {
         True,
         deleteEmptyFilesLog,
         deleteEmptyFilesModify,
-        columnName="Staged for Deletion",
         startFunction=deleteEmptyFilesStart,
         recommendBaseFunction=deleteEmptyFilesRecommendLog
     ),
@@ -111,6 +114,7 @@ ALL_PROCEDURES = {
         True,
         spaceFileFixLog,
         spaceFileFixModify,
+        startFunction=writeDefaultHeaders
     ),
 
     SPACE_FOLDER_FIX: FixProcedure(
@@ -118,6 +122,7 @@ ALL_PROCEDURES = {
         False,
         spaceFolderFixLog,
         spaceFolderFixModify,
+        startFunction=writeDefaultHeaders,
         postFunction=fixfolderModifyPost
     ),
 
@@ -126,6 +131,7 @@ ALL_PROCEDURES = {
         False,
         searchAndReplaceFolderLog,
         searchAndReplaceFolderModify,
+        startFunction=writeDefaultHeaders,
         validatorFunction=multiplePairsOfStringsValidator,
         argBoundary=">",
         postFunction=fixfolderModifyPost
@@ -136,6 +142,7 @@ ALL_PROCEDURES = {
         True,
         searchAndReplaceFileLog,
         searchAndReplaceFileModify,
+        startFunction=searchAndReplaceFileStart,
         validatorFunction=multiplePairsOfStringsValidator,
         argBoundary=">"
     ),

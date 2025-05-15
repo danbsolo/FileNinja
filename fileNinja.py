@@ -22,7 +22,7 @@ def control(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHi
         return -5
     
     # If allowModify and addRecommendations are both turned on, even if it would be of no consequence, exit
-    # If allowModify and includeHiddenFiles are both turned on, abort
+    # If allowModify and includeHiddenFiles are both turned on, exit
     if allowModify and (addRecommendations or includeHiddenFiles):
         return -7
     

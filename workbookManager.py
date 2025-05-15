@@ -19,17 +19,21 @@ class WorkbookManager:
 
         self.excludedDirs = []  # set within initiateCrawl()
 
-        self.procedureSheets = {} # procedureObject : worksheet
-        self.procedureFunctions = {}
-        self.procedureArgs = {}
+        self.procedureObjectSheets = {} # procedureObject : worksheet
+        self.procedureObjectFunctions = {}
+        self.procedureObjectArgs = {}
 
-        # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write a variable number of procedure metrics.
-        self.sheetRows = {self.summarySheet: 14} # worksheet : Integer
-        self.summaryCounts = {}  # worksheet : Integer
+        # Lists to avoid making objects with .keys() and .values() every time
+        self.procedureObjects = []
+        self.procedureSheets = []
 
         # Lists to avoid many redundant if statements
         self.fileProcedures = []
         self.folderProcedures = []
+
+        # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write a variable number of procedure metrics.
+        self.sheetRows = {self.summarySheet: 14} # worksheet : Integer
+        self.summaryCounts = {}  # worksheet : Integer
 
         # Summary metrics
         self.filesScannedCount = 0
@@ -57,7 +61,7 @@ class WorkbookManager:
 
 
     def getAllProcedureSheets(self):
-        return list(self.procedureSheets.values())
+        return self.procedureSheets
 
 
     def addProcedure(self, procedureObject, allowModify, addRecommendations, arg) -> bool:
@@ -65,21 +69,13 @@ class WorkbookManager:
         tmpWsVar = self.wb.add_worksheet(procedureObject.name)
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, procedureObject.name + " count", self.headerFormat)
 
-        self.procedureSheets[procedureObject] = tmpWsVar
+        self.procedureObjects.append(procedureObject)
+        self.procedureObjectSheets[procedureObject] = tmpWsVar
+        self.procedureSheets.append(tmpWsVar)
         self.sheetRows[tmpWsVar] = 0
         self.summaryCounts[tmpWsVar] = 0
 
-        self.procedureFunctions[procedureObject] = procedureObject.getMainFunction(allowModify, addRecommendations)
-
-        # TODO: TEMPORARY CODE. THIS FUNCTIONALITY SHOULD BE MOVED TO STARTER FUNCTIONS INSTEAD.
-        if procedureObject.getIsConcurrentOnly():
-            tmpWsVar.freeze_panes(1, 0)
-            tmpWsVar.write(0, self.DIR_COL, "Directory", self.headerFormat)
-            tmpWsVar.write(0, self.ITEM_COL, "Item", self.headerFormat)
-
-            if not (outcomeColName := procedureObject.getColumnName()):
-                outcomeColName = "Outcome"
-            tmpWsVar.write(0, self.OUTCOME_COL, outcomeColName, self.headerFormat)
+        self.procedureObjectFunctions[procedureObject] = procedureObject.getMainFunction(allowModify, addRecommendations)
 
         # Add to either fileProcedures or folderProcedures lists
         if procedureObject.getIsFileProcedure():
@@ -93,7 +89,7 @@ class WorkbookManager:
         if potentialArg == None:
             return False
 
-        self.procedureArgs[procedureObject] = potentialArg
+        self.procedureObjectArgs[procedureObject] = potentialArg
         return True
     
     
@@ -114,13 +110,13 @@ class WorkbookManager:
         ## THREADING STUFF STARTS
         futures = {
             self.fileProcedureThreadPoolExecutors[tpeIndex].submit(
-                self.procedureFunctions[procedureObject],
+                self.procedureObjectFunctions[procedureObject],
                 longFileAbsolute,
                 longDirAbsolute,
                 dirAbsolute,
                 fileName,
-                self.procedureSheets[procedureObject],
-            ): self.procedureSheets[procedureObject]
+                self.procedureObjectSheets[procedureObject],
+            ): self.procedureObjectSheets[procedureObject]
             for procedureObject in self.fileProcedures
         }
 
@@ -186,12 +182,12 @@ class WorkbookManager:
 
         for procedureObject in self.folderProcedures:
             futures[self.folderProcedureThreadPoolExecutor.submit(
-                self.procedureFunctions[procedureObject],
+                self.procedureObjectFunctions[procedureObject],
                 dirAbsolute,
                 dirFolders,
                 dirFiles,
-                self.procedureSheets[procedureObject]
-            )] = self.procedureSheets[procedureObject]
+                self.procedureObjectSheets[procedureObject]
+            )] = self.procedureObjectSheets[procedureObject]
 
         for fut in as_completed(futures):
             result = fut.result()
@@ -206,7 +202,7 @@ class WorkbookManager:
                 pass
             elif status == 2:
                 with self.lockFolderNeedsFolderWritten:
-                    needsFolderWritten.add(self.procedureSheets[procedureObject])
+                    needsFolderWritten.add(self.procedureObjectSheets[procedureObject])
             elif status == 3:
                 countAsError = True
 
@@ -353,14 +349,15 @@ class WorkbookManager:
         # Only one thread can access the workbook at a time, hence a lock
         self.workbookLock = Lock()
 
-        #
-        sheetsSansNonConcurrent = []
-        for procedureObject in list(self.procedureSheets.keys()):
-            if procedureObject.getIsConcurrentOnly():
-                sheetsSansNonConcurrent.append(self.procedureSheets[procedureObject])
-        # sheetsSansNonConcurrent.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
 
-        ##
+        # TODO: Reintroduce this functionality later
+        # sheetsSansNonConcurrent = []
+        # for procedureObject in list(self.procedureSheets.keys()):
+        #     if procedureObject.getIsConcurrentOnly():
+        #         sheetsSansNonConcurrent.append(self.procedureSheets[procedureObject])
+        # # sheetsSansNonConcurrent.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
+
+
         walkObject = []
 
         if (includeSubfolders):
@@ -378,13 +375,12 @@ class WorkbookManager:
                     dirFolders.append(item)
 
             walkObject = [(baseDirAbsolute, dirFolders, dirFiles)]
-        ##
 
-        ###
-        for procedureObject in self.procedureSheets.keys():
+
+        for procedureObject in self.procedureObjects:
             potentialStartFunction = procedureObject.getStartFunction()
             if potentialStartFunction:
-                potentialStartFunction(self.procedureArgs[procedureObject], self.procedureSheets[procedureObject])
+                potentialStartFunction(self.procedureObjectArgs[procedureObject], self.procedureObjectSheets[procedureObject])
         
         # TODO: Clean this up?
         excludedDirsSet = set(excludedDirs)
@@ -400,7 +396,7 @@ class WorkbookManager:
                 continue
 
             initialRows.clear()
-            for ws in sheetsSansNonConcurrent:
+            for ws in self.procedureSheets:
                 initialRows[ws] = self.sheetRows[ws] + 1
 
             needsFolderWritten = crawlFunction(longDirAbsolute, dirAbsolute, dirFiles, dirFolders)
@@ -413,10 +409,10 @@ class WorkbookManager:
             filesScannedSharedVar.FILES_SCANNED += len(dirFiles)
 
 
-        for procedureObject in self.procedureSheets.keys():
+        for procedureObject in self.procedureObjects:
             potentialPostFunction = procedureObject.getPostFunction(addRecommendations)
             if potentialPostFunction:
-                potentialPostFunction(self.procedureSheets[procedureObject])
+                potentialPostFunction(self.procedureObjectSheets[procedureObject])
 
 
         # shutdown threads
@@ -477,8 +473,8 @@ class WorkbookManager:
     def populateSummarySheet(self):
         col = 1
 
-        for procedureObject in self.procedureArgs.keys():
-            arg = self.procedureArgs[procedureObject]
+        for procedureObject in self.procedureObjects:
+            arg = self.procedureObjectArgs[procedureObject]
             
             if arg == ():
                 continue
@@ -512,8 +508,8 @@ class WorkbookManager:
 
     # TODO: THIS SHOULD BE HANDLED IN POST FUNCTIONS AS WELL. Probably.
     def autofitSheets(self):
-        for procedureSheet in self.procedureSheets.values():
-            procedureSheet.autofit()
+        for ws in self.procedureSheets:
+            ws.autofit()
 
 
 

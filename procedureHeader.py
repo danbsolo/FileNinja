@@ -1,10 +1,9 @@
 class Procedure:
-    def __init__(self, name, isFileProcedure, baseFunction, modifyFunction=None, validatorFunction=None, argBoundary=None, defaultArgument=None, columnName=None, startFunction=None, postFunction=None, recommendBaseFunction=None, recommendPostFunction=None):
+    def __init__(self, name, isFileProcedure, baseFunction, modifyFunction=None, validatorFunction=None, argBoundary=None, defaultArgument=None, startFunction=None, postFunction=None, recommendBaseFunction=None, recommendPostFunction=None):
         self.name = name
         self.isFileProcedure = isFileProcedure # If False, isFolderFind
         self.baseFunction = baseFunction
         self.modifyFunction = modifyFunction
-        self.columnName = columnName
         self.startFunction = startFunction
         self.postFunction = postFunction
         self.recommendBaseFunction = recommendBaseFunction
@@ -19,20 +18,6 @@ class Procedure:
             return self.recommendPostFunction
         if self.postFunction:
             return self.postFunction
-    
-    # TODO: TO BE DELETED AFTER MERGING OF FIND and FIX PROCEDURES CODE in workbookManager
-    def isArgumentValid(self, arg):
-        if not self.validatorFunction:
-            return True
-        
-        if (potentialArg := self.validatorFunction(arg, self.argBoundary)):
-            self.lastValidatedArgument = potentialArg
-            return True
-        return False
-    
-    # def hasDefaultArgument(self):
-    #     return (self.defaultArgument != None)
-    
 
     def getValidArgument(self, arg):
         if not self.validatorFunction:
@@ -44,7 +29,6 @@ class Procedure:
         else:
             return self.defaultArgument
     
-
     def getMainFunction(self, allowModify, addRecommendations):
         if allowModify and self.modifyFunction:
             return self.modifyFunction
@@ -65,9 +49,6 @@ class Procedure:
     
     def getDefaultArgument(self):
         return self.defaultArgument
-    
-    def getColumnName(self):
-        return self.columnName
     
     def getIsFileProcedure(self):
         return self.isFileProcedure

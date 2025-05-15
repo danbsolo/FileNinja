@@ -38,15 +38,15 @@ def addLongPathPrefix(dirAbsolute):
 def writeOwnerHeader(_, ws):
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 
-# def writeDefaultHeaders(_, ws):
-#     ws.freeze_panes(1, 0)
-#     ws.write(0, wbm.DIR_COL, "Directory", wbm.headerFormat)
-#     ws.write(0, wbm.ITEM_COL, "Item", wbm.headerFormat)
-#     ws.write(0, wbm.OUTCOME_COL, "Outcome", wbm.headerFormat)
+def writeDefaultHeaders(_, ws):
+    ws.freeze_panes(1, 0)
+    ws.write(0, wbm.DIR_COL, "Directory", wbm.headerFormat)
+    ws.write(0, wbm.ITEM_COL, "Item", wbm.headerFormat)
+    ws.write(0, wbm.OUTCOME_COL, "Outcome", wbm.headerFormat)
 
-# def writeDefaultAndOwnerHeaders(_, ws):
-#     writeDefaultAndOwnerHeaders(_, ws)
-#     writeOwnerHeader(_, ws)
+def writeDefaultAndOwnerHeaders(_, ws):
+    writeDefaultHeaders(_, ws)
+    writeOwnerHeader(_, ws)
 
 
 def joinDirToFileName(dirAbsolute, fileName):

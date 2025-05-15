@@ -87,7 +87,8 @@ def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
 
 
 def oldFileFindStart(arg, ws):
-    writeOwnerHeader(arg, ws)
+    writeDefaultAndOwnerHeaders(arg, ws)
+    ws.write(0, wbm.OUTCOME_COL, "# Days Last Accessed", wbm.headerFormat)
 
     global DAYS_LOWER_BOUND
     DAYS_LOWER_BOUND = arg[0]
@@ -167,6 +168,9 @@ def oldFileFindRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
 
 
 def emptyDirectoryStart(arg, ws):
+    writeDefaultAndOwnerHeaders(arg, ws)
+    ws.write(0, wbm.OUTCOME_COL, "# Files Contained", wbm.headerFormat)
+
     global TOO_FEW_AMOUNT
     TOO_FEW_AMOUNT = arg[0]
 
@@ -491,14 +495,12 @@ def fixfolderModifyPost(ws):
     FOLDER_RENAMES.clear()
 
 
-
 def spaceFolderFixHelper(oldFolderName) -> str:
     if (" " not in oldFolderName) and ("--" not in oldFolderName):
         return
     return "-".join(oldFolderName.replace("-", " ").split())
 
-
-def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
+def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
     newFolderName = spaceFolderFixHelper(oldFolderName)
 
@@ -512,8 +514,7 @@ def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
             ExcelWritePackage(row, wbm.ITEM_COL, oldFolderName, ws, wbm.errorFormat),
             ExcelWritePackage(row, wbm.OUTCOME_COL, newFolderName, ws, wbm.logFormat))
 
-
-def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
+def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
     newFolderName = spaceFolderFixHelper(oldFolderName)
 
@@ -590,7 +591,6 @@ def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
             ExcelWritePackage(row, wbm.OUTCOME_COL, newFolderName, ws, wbm.logFormat)
             )
 
-
 def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
 
@@ -602,21 +602,26 @@ def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
     return (3,)
 
 
-def searchAndReplaceFileHelper(oldItemName:str, arg):
+def searchAndReplaceFileStart(arg, ws):
+    writeDefaultHeaders(arg, ws)
+
+    global PAIRS_OF_REPLACEMENTS
+    PAIRS_OF_REPLACEMENTS = arg
+    numOfPairs = len(arg)
+
+def searchAndReplaceFileHelper(oldItemName:str):
     oldItemNameSansExt, extension = getRootNameAndExtension(oldItemName)
     
     # Order of argument pairs given matters.
     newItemNameSansExt = oldItemNameSansExt
-    for argPair in arg:
-        toBeReplaced, replacer = argPair
+    for toBeReplaced, replacer in PAIRS_OF_REPLACEMENTS:
         newItemNameSansExt = newItemNameSansExt.replace(toBeReplaced, replacer)
 
     if (oldItemNameSansExt == newItemNameSansExt): return
     return newItemNameSansExt + extension
 
-
-def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, oldItemName:str, ws, arg):
-    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return (False,)
+def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, oldItemName:str, ws):
+    if not (newItemName := searchAndReplaceFileHelper(oldItemName)): return (False,)
 
     wbm.incrementRowAndFileCount(ws)
     row = wbm.sheetRows[ws]
@@ -625,8 +630,8 @@ def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, ol
             ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.logFormat))
 
 
-def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws, arg):
-    if not (newItemName := searchAndReplaceFileHelper(oldItemName, arg)): return (False,)
+def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws):
+    if not (newItemName := searchAndReplaceFileHelper(oldItemName)): return (False,)
 
     wbm.incrementRowAndFileCount(ws)
     row = wbm.sheetRows[ws]
@@ -645,8 +650,8 @@ def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbs
 
 
 def deleteEmptyFilesStart(_, ws):
-    writeOwnerHeader(_, ws)
-
+    writeDefaultAndOwnerHeaders(_, ws)
+    ws.write(0, wbm.OUTCOME_COL, "Staged for Deletion", wbm.headerFormat)
 
 def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
