@@ -349,13 +349,11 @@ class WorkbookManager:
         # Only one thread can access the workbook at a time, hence a lock
         self.workbookLock = Lock()
 
-
-        # TODO: Reintroduce this functionality later
-        # sheetsSansNonConcurrent = []
-        # for procedureObject in list(self.procedureSheets.keys()):
-        #     if procedureObject.getIsConcurrentOnly():
-        #         sheetsSansNonConcurrent.append(self.procedureSheets[procedureObject])
-        # # sheetsSansNonConcurrent.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
+        sheetsSansNonConcurrent = []
+        for procedureObject in self.procedureObjects:
+            if procedureObject.getIsConcurrentOnly():
+                sheetsSansNonConcurrent.append(self.procedureObjectSheets[procedureObject])
+        # sheetsSansNonConcurrent.extend(list(self.fixSheets.values()))  # Adds all fix procedures indiscriminately
 
 
         walkObject = []
@@ -396,7 +394,7 @@ class WorkbookManager:
                 continue
 
             initialRows.clear()
-            for ws in self.procedureSheets:
+            for ws in sheetsSansNonConcurrent:
                 initialRows[ws] = self.sheetRows[ws] + 1
 
             needsFolderWritten = crawlFunction(longDirAbsolute, dirAbsolute, dirFiles, dirFolders)
@@ -506,11 +504,9 @@ class WorkbookManager:
             i += 1
 
 
-    # TODO: THIS SHOULD BE HANDLED IN POST FUNCTIONS AS WELL. Probably.
     def autofitSheets(self):
         for ws in self.procedureSheets:
             ws.autofit()
-
 
 
     def close(self):

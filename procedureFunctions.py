@@ -565,21 +565,26 @@ def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:st
             itemEwp,
             outcomeEwp)
 
-# TODO: REQUIRES START FUNCTION TO INITIALIZE ARGUMENT
-def searchAndReplaceFolderHelper(oldFolderName:str, arg):
+
+def searchAndReplaceFolderStart(arg, ws):
+    writeDefaultHeaders(arg, ws)
+
+    global PAIRS_OF_FOLDER_REPLACEMENTS
+    PAIRS_OF_FOLDER_REPLACEMENTS = arg
+
+def searchAndReplaceFolderHelper(oldFolderName:str):
     newFolderName = oldFolderName
-    for argPair in arg:
+    for argPair in PAIRS_OF_FOLDER_REPLACEMENTS:
         toBeReplaced, replacer = argPair
         newFolderName = newFolderName.replace(toBeReplaced, replacer)
 
     if (oldFolderName == newFolderName): return
     return newFolderName
 
-
-def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
+def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
 
-    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
+    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName)):
         return (False,)
     
     wbm.incrementRowAndFileCount(ws)
@@ -591,10 +596,10 @@ def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws, arg):
             ExcelWritePackage(row, wbm.OUTCOME_COL, newFolderName, ws, wbm.logFormat)
             )
 
-def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
+def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws):
     oldFolderName = getDirectoryBaseName(dirAbsolute)
 
-    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName, arg)):
+    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName)):
         return (False,)
     
     directoryOfFolder = getDirectoryDirName(dirAbsolute)
@@ -605,16 +610,15 @@ def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws, arg):
 def searchAndReplaceFileStart(arg, ws):
     writeDefaultHeaders(arg, ws)
 
-    global PAIRS_OF_REPLACEMENTS
-    PAIRS_OF_REPLACEMENTS = arg
-    numOfPairs = len(arg)
+    global PAIRS_OF_FILE_REPLACEMENTS
+    PAIRS_OF_FILE_REPLACEMENTS = arg
 
 def searchAndReplaceFileHelper(oldItemName:str):
     oldItemNameSansExt, extension = getRootNameAndExtension(oldItemName)
     
     # Order of argument pairs given matters.
     newItemNameSansExt = oldItemNameSansExt
-    for toBeReplaced, replacer in PAIRS_OF_REPLACEMENTS:
+    for toBeReplaced, replacer in PAIRS_OF_FILE_REPLACEMENTS:
         newItemNameSansExt = newItemNameSansExt.replace(toBeReplaced, replacer)
 
     if (oldItemNameSansExt == newItemNameSansExt): return

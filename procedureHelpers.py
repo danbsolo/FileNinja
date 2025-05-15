@@ -34,7 +34,6 @@ def addLongPathPrefix(dirAbsolute):
         return '\\\\?\\' + dirAbsolute
 
 
-
 def writeOwnerHeader(_, ws):
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 

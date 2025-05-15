@@ -24,7 +24,8 @@ ALL_PROCEDURES = {
         duplicateContentConcurrent,
         startFunction=duplicateContentStart,
         postFunction=duplicateContentPost,
-        recommendPostFunction=duplicateContentPostRecommend
+        recommendPostFunction=duplicateContentPostRecommend,
+        isConcurrentOnly=False
     ),
 
     FILE_EXTENSION_SUMMARY: FindProcedure(
@@ -32,7 +33,8 @@ ALL_PROCEDURES = {
         True,
         fileExtensionConcurrent,
         startFunction=fileExtensionStart,
-        postFunction=fileExtensionPost
+        postFunction=fileExtensionPost,
+        isConcurrentOnly=False
     ),
 
     OLD_FILE: FindProcedure(
@@ -131,7 +133,7 @@ ALL_PROCEDURES = {
         False,
         searchAndReplaceFolderLog,
         searchAndReplaceFolderModify,
-        startFunction=writeDefaultHeaders,
+        startFunction=searchAndReplaceFolderStart,
         validatorFunction=multiplePairsOfStringsValidator,
         argBoundary=">",
         postFunction=fixfolderModifyPost

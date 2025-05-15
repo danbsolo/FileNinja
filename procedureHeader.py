@@ -1,9 +1,10 @@
 class Procedure:
-    def __init__(self, name, isFileProcedure, baseFunction, modifyFunction=None, validatorFunction=None, argBoundary=None, defaultArgument=None, startFunction=None, postFunction=None, recommendBaseFunction=None, recommendPostFunction=None):
+    def __init__(self, name, isFileProcedure, baseFunction, modifyFunction=None, isConcurrentOnly=True, validatorFunction=None, argBoundary=None, defaultArgument=None, startFunction=None, postFunction=None, recommendBaseFunction=None, recommendPostFunction=None):
         self.name = name
         self.isFileProcedure = isFileProcedure # If False, isFolderFind
         self.baseFunction = baseFunction
         self.modifyFunction = modifyFunction
+        self.isConcurrentOnly = isConcurrentOnly
         self.startFunction = startFunction
         self.postFunction = postFunction
         self.recommendBaseFunction = recommendBaseFunction
@@ -42,7 +43,7 @@ class Procedure:
         return bool(self.modifyFunction)
 
     def getIsConcurrentOnly(self):
-        return not bool(self.postFunction)
+        return self.isConcurrentOnly
 
     def getStartFunction(self):
         return self.startFunction
