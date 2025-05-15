@@ -86,14 +86,14 @@ ALL_PROCEDURES = {
         BAD_CHARACTER_DIRECTORY,
         False,
         badCharFolderFind,
-        startFunction=writeDefaultHeaders
+        startFunction=badCharStart
     ),
 
     BAD_CHARACTER_FILE: Procedure(
         BAD_CHARACTER_FILE,
         True,
         badCharFileFind,
-        startFunction=writeDefaultHeaders
+        startFunction=badCharStart
     ),
 
     CHARACTER_LIMIT: Procedure(

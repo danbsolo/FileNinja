@@ -5,6 +5,9 @@ from collections import defaultdict
 from ExcelWritePackage import ExcelWritePackage
 from threading import Lock
 from sys import maxsize as MAXSIZE
+from datetime import datetime
+import string
+
 
 
 def setWorkbookManager(newManager: WorkbookManager):
@@ -44,7 +47,8 @@ def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
 def overCharLimitFind(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
 
-    if (absoluteItemLength > CHARACTER_LIMIT):
+    # HARD CODED at 200
+    if (absoluteItemLength > 200):
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
         return (True,
@@ -52,6 +56,11 @@ def overCharLimitFind(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
                 ExcelWritePackage(row, wbm.OUTCOME_COL, absoluteItemLength, ws))
     return (False,)
 
+
+def badCharStart(_, ws):
+    writeDefaultHeaders(_, ws)
+    global PERMISSIBLE_CHARACTERS
+    PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 
 def badCharHelper(s:str) -> set:
     badChars = set()
@@ -96,11 +105,11 @@ def oldFileFindStart(arg, ws):
     writeDefaultAndOwnerHeaders(arg, ws)
     ws.write(0, wbm.OUTCOME_COL, "# Days Last Accessed", wbm.headerFormat)
 
+    global TODAY
+    TODAY = datetime.now()
+
     global DAYS_LOWER_BOUND
     DAYS_LOWER_BOUND = arg[0]
-    # # Double-checking that this value is usable. Dire consequences if not.
-    # if (DAYS_LOWER_BOUND <= 0):
-    #     raise Exception("OldFile's lower bound argument cannot be less than 1.")
 
     global DAYS_UPPER_BOUND
     if len(arg) == 2:
@@ -662,6 +671,9 @@ def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbs
 def deleteEmptyFilesStart(_, ws):
     writeDefaultAndOwnerHeaders(_, ws)
     ws.write(0, wbm.OUTCOME_COL, "Staged for Deletion", wbm.headerFormat)
+    
+    global TODAY
+    TODAY = datetime.now()
 
 def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:

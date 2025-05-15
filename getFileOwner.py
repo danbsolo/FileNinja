@@ -95,28 +95,34 @@ def get_file_owner_info(filename):
 
 def getOwnerCatch(longFileAbsolute):
     """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format. Return error info if applicable. Also manage OWNER_CACHE."""
-    if longFileAbsolute in OWNER_INFO_CACHE:
-        if OWNER_INFO_CACHE[longFileAbsolute] == dummyData:
-            CACHE_EVENTS[longFileAbsolute].wait()
-        return OWNER_INFO_CACHE[longFileAbsolute]
+    ownerInfo = OWNER_INFO_CACHE.get(longFileAbsolute)
+    if ownerInfo is not None and ownerInfo != dummyData:
+        return ownerInfo
 
     with CACHE_LOCK:
-        # Double check that there really is no data here, making race conditions impossible.
-        if longFileAbsolute in OWNER_INFO_CACHE:
-           return OWNER_INFO_CACHE[longFileAbsolute]
+        ownerInfo = OWNER_INFO_CACHE.get(longFileAbsolute)
 
-        CACHE_EVENTS[longFileAbsolute] = threading.Event()
-        OWNER_INFO_CACHE[longFileAbsolute] = dummyData
+        if ownerInfo is None:
+            OWNER_INFO_CACHE[longFileAbsolute] = dummyData    
+            CACHE_EVENTS[longFileAbsolute] = threading.Event()
+            computeOwner = True
+        elif ownerInfo == dummyData:
+            computeOwner = False
+        else:
+            return ownerInfo
 
+    if computeOwner:
         try:
             ownerInfo = get_file_owner_info(longFileAbsolute)
         except Exception as e:
             ownerInfo = f"GET OWNER FAILED: {e}"
-
+        
         OWNER_INFO_CACHE[longFileAbsolute] = ownerInfo
+        CACHE_EVENTS[longFileAbsolute].set()
+        return ownerInfo
     
-    CACHE_EVENTS[longFileAbsolute].set()
-    return ownerInfo
+    CACHE_EVENTS[longFileAbsolute].wait()
+    return OWNER_INFO_CACHE[longFileAbsolute]
 
 # Example usage:
 if __name__ == '__main__':

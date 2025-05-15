@@ -1,17 +1,11 @@
 import os
 from workbookManager import WorkbookManager
-import string
-from datetime import datetime
+
 
 
 # Used by badCharFind
 # Includes ' ' (space) as there is a separate procedure for finding that error
-PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 
-CHARACTER_LIMIT = 200
-
-# Used by oldFileFind and deleteOldFiles
-TODAY = datetime.now()
 
 
 
