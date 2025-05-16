@@ -204,6 +204,7 @@ class WorkbookManager:
             futures[self.folderProcedureThreadPoolExecutor.submit(
                 self.procedureObjectFunctions[procedureObject],
                 dirAbsolute,
+                os.path.basename(dirAbsolute),
                 dirFolders,
                 dirFiles,
                 self.procedureObjectSheets[procedureObject]
@@ -398,7 +399,6 @@ class WorkbookManager:
         # TODO: Clean this up?
         excludedDirsSet = set(excludedDirs)
 
-        #
         initialRows = {}
         for (dirAbsolute, dirFolders, dirFiles) in walkObject:
             # Ignore specifically OneNote_RecycleBin folders. Assumes these NEVER have subfolders.
@@ -418,8 +418,7 @@ class WorkbookManager:
                 ws.write(initialRows[ws], self.DIR_COL, dirAbsolute, self.dirFormat)
  
             self.foldersScannedCount += 1
-            # just a rough estimate of the number of files scanned
-            filesScannedSharedVar.FILES_SCANNED += len(dirFiles)
+            filesScannedSharedVar.FILES_SCANNED += len(dirFiles)  # just a rough estimate of the number of files scanned
 
 
         for procedureObject in self.procedureObjects:

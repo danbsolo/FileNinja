@@ -16,11 +16,11 @@ def setWorkbookManager(newManager: WorkbookManager):
     wbm = newManager
 
 
-def listAll(_1, _2, _3, itemName:str, ws):
+def listAllBase(_1, _2, _3, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
     return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))  # SPECIAL CASE
 
-def listAllOwner(longFileAbsolute:str, _1, _2, itemName:str, ws):
+def listAllOwnerBase(longFileAbsolute:str, _1, _2, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
     row = wbm.sheetRows[ws]
     return (2, 
@@ -28,23 +28,21 @@ def listAllOwner(longFileAbsolute:str, _1, _2, itemName:str, ws):
             ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws))  # SPECIAL CASE
 
 
-def spaceFileFind(_1, _2, _3, itemName:str, ws):
+def spaceFileFindBase(_1, _2, _3, itemName:str, ws):
     if " " in itemName: 
         wbm.incrementRowAndFileCount(ws)
         return (True, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws, wbm.errorFormat))
     return (False,)
 
 
-def spaceFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
-    folderName = getDirectoryBaseName(dirAbsolute)
-
-    if " " in folderName:
+def spaceFolderFindBase(dirAbsolute:str, dirBasename, dirFolders, dirFiles, ws):
+    if " " in dirBasename:
         wbm.incrementRowAndFileCount(ws)
-        return (True, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat))
+        return (True, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, dirBasename, ws, wbm.errorFormat))
     return (False,)
 
 
-def overCharLimitFind(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
+def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + "/" + itemName)
 
     # HARD CODED at 200
@@ -57,12 +55,12 @@ def overCharLimitFind(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
     return (False,)
 
 
-def badCharStart(_, ws):
+def badCharacterStart(_, ws):
     writeDefaultHeaders(_, ws)
     global PERMISSIBLE_CHARACTERS
     PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 
-def badCharHelper(s:str) -> set:
+def badCharacterHelper(s:str) -> set:
     badChars = set()
 
     for i in range(len(s)):
@@ -75,9 +73,9 @@ def badCharHelper(s:str) -> set:
 
     return badChars
 
-def badCharFileFind(_1, _2, _3, itemName:str, ws) -> bool:
+def badCharacterFileFind(_1, _2, _3, itemName:str, ws) -> bool:
     rootName, _ = getRootNameAndExtension(itemName)
-    badChars = badCharHelper(rootName)
+    badChars = badCharacterHelper(rootName)
 
     # if any bad characters were found
     if (badChars):
@@ -88,20 +86,19 @@ def badCharFileFind(_1, _2, _3, itemName:str, ws) -> bool:
                 ExcelWritePackage(row, wbm.OUTCOME_COL, "".join(badChars), ws))
     return (False,)
 
-def badCharFolderFind(dirAbsolute:str, dirFolders, dirFiles, ws):
-    folderName = getDirectoryBaseName(dirAbsolute)
-    badChars = badCharHelper(folderName)
+def badCharacterFolderFind(dirAbsolute:str, dirBasename, dirFolders, dirFiles, ws):
+    badChars = badCharacterHelper(dirBasename)
 
     if (badChars):
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
         return (True,
-                ExcelWritePackage(row, wbm.ITEM_COL, folderName, ws, wbm.errorFormat),
+                ExcelWritePackage(row, wbm.ITEM_COL, dirBasename, ws, wbm.errorFormat),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, "".join(badChars), ws))
     return (False,)
 
 
-def oldFileFindStart(arg, ws):
+def oldFileStart(arg, ws):
     writeDefaultAndOwnerHeaders(arg, ws)
     ws.write(0, wbm.OUTCOME_COL, "# Days Last Accessed", wbm.headerFormat)
 
@@ -117,7 +114,7 @@ def oldFileFindStart(arg, ws):
     else:
         DAYS_UPPER_BOUND = MAXSIZE
 
-def oldFileFindHelper(longFileAbsolute):
+def oldFileHelper(longFileAbsolute):
     # NOTE: A file that is 23 hours and 59 minutes old is still considered 0 days old.
     
     # Get date of file. This *can* error virtue of the library functions, hence try/except.
@@ -129,8 +126,8 @@ def oldFileFindHelper(longFileAbsolute):
     if (fileDaysAgoLastAccessed >= DAYS_LOWER_BOUND): return fileDaysAgoLastAccessed
     else: return 0
 
-def oldFileFind(longFileAbsolute:str, _1, _2, itemName:str, ws):
-    fileDaysAgoLastAccessed = oldFileFindHelper(longFileAbsolute)
+def oldFileBase(longFileAbsolute:str, _1, _2, itemName:str, ws):
+    fileDaysAgoLastAccessed = oldFileHelper(longFileAbsolute)
 
     # Either it's actually 0 days old or the fileDate is not within the cutOffDate range. Either way, don't flag.
     # If it's greater than the upperbound, exit
@@ -154,8 +151,8 @@ def oldFileFind(longFileAbsolute:str, _1, _2, itemName:str, ws):
                 itemEwp,
                 ExcelWritePackage(row, wbm.OUTCOME_COL, f"UNABLE TO READ DATE.", ws, wbm.errorFormat))    
 
-def oldFileFindRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
-    fileDaysAgoLastAccessed = oldFileFindHelper(longFileAbsolute)
+def oldFileRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
+    fileDaysAgoLastAccessed = oldFileHelper(longFileAbsolute)
 
     if (fileDaysAgoLastAccessed == 0): return (False,)
 
@@ -189,21 +186,21 @@ def emptyDirectoryStart(arg, ws):
     global TOO_FEW_AMOUNT
     TOO_FEW_AMOUNT = arg[0]
 
-def emptyDirectory(dirAbsolute:str, dirFolders, dirFiles, ws):
-    folderName = getDirectoryBaseName(dirAbsolute)
+def emptyDirectoryBase(dirAbsolute:str, dirBasename, dirFolders, dirFiles, ws):
+    dirBasename = getDirectoryBaseName(dirAbsolute)
     numFilesContained = len(dirFiles)
 
     if len(dirFolders) == 0 and numFilesContained <= TOO_FEW_AMOUNT:
         wbm.incrementRowAndFileCount(ws)
         return (True,
-                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws, wbm.errorFormat),
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, dirBasename, ws, wbm.errorFormat),
                 ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, numFilesContained, ws, wbm.errorFormat))
     return (False,)
 
-def emptyDirectoryRecommend(dirAbsolute:str, dirFolders, dirFiles, ws):
+def emptyDirectoryRecommend(dirAbsolute:str, dirBasename, dirFolders, dirFiles, ws):
     if len(dirFolders) != 0: return (False,)
 
-    folderName = getDirectoryBaseName(dirAbsolute)
+    dirBasename = getDirectoryBaseName(dirAbsolute)
 
     fileAmount = len(dirFiles)
     if fileAmount <= TOO_FEW_AMOUNT:
@@ -220,12 +217,12 @@ def emptyDirectoryRecommend(dirAbsolute:str, dirFolders, dirFiles, ws):
         # wbm.writeOutcomeAndIncrement(ws, fileAmount, dynamicFormat)
         wbm.incrementRowAndFileCount(ws)
         return (True,
-                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, folderName, ws),
+                ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, dirBasename, ws),
                 ExcelWritePackage(wbm.sheetRows[ws], wbm.OUTCOME_COL, fileAmount, ws, dynamicFormat))
     return (False,)
 
 
-def fileExtensionStart(_, ws):
+def fileExtensionSummaryStart(_1, _2):
     global EXTENSION_COUNT
     global EXTENSION_TOTAL_SIZE
     global TOO_LARGE_SIZE_MB
@@ -236,7 +233,7 @@ def fileExtensionStart(_, ws):
     TOO_LARGE_SIZE_MB = 100
     LOCK_FILE_EXTENSION = Lock()
 
-def fileExtensionConcurrent(longFileAbsolute:str, _1, _2, itemName:str, _3):
+def fileExtensionSummaryBase(longFileAbsolute:str, _1, _2, itemName:str, _3):
     try: fileSize = os.path.getsize(longFileAbsolute) / 1000_000  # Bytes / 1000_000 = MBs
     except: return (False,)
 
@@ -247,7 +244,7 @@ def fileExtensionConcurrent(longFileAbsolute:str, _1, _2, itemName:str, _3):
         EXTENSION_TOTAL_SIZE[extension] += fileSize
     return (False,)
 
-def fileExtensionPost(ws):
+def fileExtensionSummaryPost(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)
     ws.write(0, 1, "Count", wbm.headerFormat)
     ws.write(0, 2, "Avg Size (MB)", wbm.headerFormat)
@@ -274,7 +271,7 @@ def fileExtensionPost(ws):
     ws.freeze_panes(1, 0)
 
 
-def duplicateContentStart(arg, ws):
+def identicalFileStart(arg, ws):
     global HASH_AND_FILES
     global EMPTY_INPUT_HASH_CODE
     global LOCK_DUPLICATE_CONTENT
@@ -292,7 +289,7 @@ def duplicateContentStart(arg, ws):
         ".freelist", ".horizon", ".gdbindexes", ".cpg", ".prj" 
     }
 
-def duplicateContentHelper(longFileAbsolute:str):    
+def identicalFileHelper(longFileAbsolute:str):    
     hashFunc = hashlib.new("sha256")
     
     with open(longFileAbsolute, "rb") as file:
@@ -301,13 +298,13 @@ def duplicateContentHelper(longFileAbsolute:str):
 
     return hashFunc.hexdigest()
 
-def duplicateContentConcurrent(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws):
+def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws):
     _, ext = getRootNameAndExtension(longFileAbsolute)
     if ext in EXTENSIONS_TO_IGNORE:
         return (False,)
 
     try:
-        hashCode = duplicateContentHelper(longFileAbsolute)
+        hashCode = identicalFileHelper(longFileAbsolute)
     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
         # Unlike other procedures, this won't print out the error; it'll just assume it's not a duplicate.
         return (False,)
@@ -325,10 +322,10 @@ def duplicateContentConcurrent(longFileAbsolute:str, _, dirAbsolute:str, itemNam
             HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
             return (False,)
 
-def duplicateContentPost(ws):
+def identicalFilePost(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Files", wbm.headerFormat)
-    ws.write(0, 2, "Directories", wbm.headerFormat)
+    ws.write(0, 1, "File", wbm.headerFormat)
+    ws.write(0, 2, "Directory", wbm.headerFormat)
     ws.write(0, 3, "Owner", wbm.headerFormat)
 
     row = 1
@@ -346,10 +343,10 @@ def duplicateContentPost(ws):
     HASH_AND_FILES.clear()
     ws.freeze_panes(1, 0)
 
-def duplicateContentPostRecommend(ws):
+def identicalFilePostRecommend(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Files", wbm.headerFormat)
-    ws.write(0, 2, "Directories", wbm.headerFormat)
+    ws.write(0, 1, "File", wbm.headerFormat)
+    ws.write(0, 2, "Directory", wbm.headerFormat)
     ws.write(0, 3, "Owner", wbm.headerFormat)
 
     row = 1
@@ -405,7 +402,7 @@ def duplicateContentPostRecommend(ws):
     ws.freeze_panes(1, 0)
 
 
-def emptyFileFind(longFileAbsolute:str, _1, _2, itemName:str, ws):
+def emptyFileFindBase(longFileAbsolute:str, _1, _2, itemName:str, ws):
     try:
         fileSize = os.path.getsize(longFileAbsolute)
     except PermissionError:
@@ -460,9 +457,12 @@ def emptyFileFindRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
 
 
 ## FIX FUNCTIONS (SOON TO BE FOLDER FUNCTIONS (or something)) #########################################################################################################
-# Used by spaceFolderFixModify or searchAndReplaceFolderModify (not logs)
-FOLDER_RENAMES = []
 
+# Used by spaceFolderFixModify or searchAndReplaceFolderModify (not logs)
+# Only run modify function can be run at a time, so this is okay
+def fixFolderModifyStart(_1, _2):
+    global FOLDER_RENAMES
+    FOLDER_RENAMES = []
 
 def fixfolderModifyPost(ws):
     frListLength = len(FOLDER_RENAMES)
@@ -510,33 +510,35 @@ def fixfolderModifyPost(ws):
     FOLDER_RENAMES.clear()
 
 
+def spaceFolderFixStart(_, ws):
+    writeDefaultHeaders(_, ws)
+    fixFolderModifyStart(_, ws)
+
 def spaceFolderFixHelper(oldFolderName) -> str:
     if (" " not in oldFolderName) and ("--" not in oldFolderName):
         return
     return "-".join(oldFolderName.replace("-", " ").split())
 
-def spaceFolderFixLog(dirAbsolute, dirFolders, dirFiles, ws):
-    oldFolderName = getDirectoryBaseName(dirAbsolute)
-    newFolderName = spaceFolderFixHelper(oldFolderName)
+def spaceFolderFixBase(dirAbsolute, oldDirBasename, dirFolders, dirFiles, ws):
+    newDirBasename = spaceFolderFixHelper(oldDirBasename)
 
-    if (not newFolderName): return (False,)
+    if (not newDirBasename): return (False,)
     
     wbm.incrementRowAndFileCount(ws)
     row = wbm.sheetRows[ws]
     
     return (True,
             ExcelWritePackage(row, wbm.DIR_COL, dirAbsolute, ws, wbm.dirFormat),
-            ExcelWritePackage(row, wbm.ITEM_COL, oldFolderName, ws, wbm.errorFormat),
-            ExcelWritePackage(row, wbm.OUTCOME_COL, newFolderName, ws, wbm.logFormat))
+            ExcelWritePackage(row, wbm.ITEM_COL, oldDirBasename, ws, wbm.errorFormat),
+            ExcelWritePackage(row, wbm.OUTCOME_COL, newDirBasename, ws, wbm.logFormat))
 
-def spaceFolderFixModify(dirAbsolute, dirFolders, dirFiles, ws):
-    oldFolderName = getDirectoryBaseName(dirAbsolute)
-    newFolderName = spaceFolderFixHelper(oldFolderName)
+def spaceFolderFixModify(dirAbsolute, oldDirBasename, dirFolders, dirFiles, ws):
+    newDirBasename = spaceFolderFixHelper(oldDirBasename)
 
-    if (not newFolderName): return False
+    if (not newDirBasename): return (False,)
 
     directoryOfFolder = getDirectoryDirName(dirAbsolute)
-    FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
+    FOLDER_RENAMES.append([directoryOfFolder, oldDirBasename, newDirBasename])
     return (3,)
 
 
@@ -549,8 +551,7 @@ def spaceFileFixHelper(oldItemName) -> str:
     newItemNameSansExt = "-".join(rootName.replace("-", " ").split())
     return newItemNameSansExt + extension
 
-
-def spaceFileFixLog(_1:str, _2:str, _3:str, oldItemName:str, ws):
+def spaceFileFixBase(_1:str, _2:str, _3:str, oldItemName:str, ws):
     newItemName = spaceFileFixHelper(oldItemName)
     if (not newItemName): return (False,)
 
@@ -583,7 +584,7 @@ def spaceFileFixModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:st
 
 def searchAndReplaceFolderStart(arg, ws):
     writeDefaultHeaders(arg, ws)
-
+    fixFolderModifyStart(arg, ws)
     global PAIRS_OF_FOLDER_REPLACEMENTS
     PAIRS_OF_FOLDER_REPLACEMENTS = arg
 
@@ -596,10 +597,8 @@ def searchAndReplaceFolderHelper(oldFolderName:str):
     if (oldFolderName == newFolderName): return
     return newFolderName
 
-def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws):
-    oldFolderName = getDirectoryBaseName(dirAbsolute)
-
-    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName)):
+def searchAndReplaceFolderBase(dirAbsolute, oldDirBasename, dirFolders, dirFiles, ws):
+    if not (newFolderName := searchAndReplaceFolderHelper(oldDirBasename)):
         return (False,)
     
     wbm.incrementRowAndFileCount(ws)
@@ -607,18 +606,16 @@ def searchAndReplaceFolderLog(dirAbsolute, dirFolders, dirFiles, ws):
 
     return (True,
             ExcelWritePackage(row, wbm.DIR_COL, dirAbsolute, ws, wbm.dirFormat),
-            ExcelWritePackage(row, wbm.ITEM_COL, oldFolderName, ws, wbm.errorFormat),
+            ExcelWritePackage(row, wbm.ITEM_COL, oldDirBasename, ws, wbm.errorFormat),
             ExcelWritePackage(row, wbm.OUTCOME_COL, newFolderName, ws, wbm.logFormat)
             )
 
-def searchAndReplaceFolderModify(dirAbsolute, dirFolders, dirFiles, ws):
-    oldFolderName = getDirectoryBaseName(dirAbsolute)
-
-    if not (newFolderName := searchAndReplaceFolderHelper(oldFolderName)):
+def searchAndReplaceFolderModify(dirAbsolute, oldDirBasename, dirFolders, dirFiles, ws):
+    if not (newFolderName := searchAndReplaceFolderHelper(oldDirBasename)):
         return (False,)
     
     directoryOfFolder = getDirectoryDirName(dirAbsolute)
-    FOLDER_RENAMES.append([directoryOfFolder, oldFolderName, newFolderName])
+    FOLDER_RENAMES.append([directoryOfFolder, oldDirBasename, newFolderName])
     return (3,)
 
 
@@ -639,7 +636,7 @@ def searchAndReplaceFileHelper(oldItemName:str):
     if (oldItemNameSansExt == newItemNameSansExt): return
     return newItemNameSansExt + extension
 
-def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, oldItemName:str, ws):
+def searchAndReplaceFileBase(longFileAbsolute:str, longDirAbsolute:str, _:str, oldItemName:str, ws):
     if not (newItemName := searchAndReplaceFileHelper(oldItemName)): return (False,)
 
     wbm.incrementRowAndFileCount(ws)
@@ -647,7 +644,6 @@ def searchAndReplaceFileLog(longFileAbsolute:str, longDirAbsolute:str, _:str, ol
     return (True,
             ExcelWritePackage(row, wbm.ITEM_COL, oldItemName, ws, wbm.errorFormat),
             ExcelWritePackage(row, wbm.OUTCOME_COL, newItemName, ws, wbm.logFormat))
-
 
 def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, oldItemName:str, ws):
     if not (newItemName := searchAndReplaceFileHelper(oldItemName)): return (False,)
@@ -668,14 +664,14 @@ def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbs
             outcomeEwp)
 
 
-def deleteEmptyFilesStart(_, ws):
+def deleteEmptyFileStart(_, ws):
     writeDefaultAndOwnerHeaders(_, ws)
     ws.write(0, wbm.OUTCOME_COL, "Staged for Deletion", wbm.headerFormat)
     
     global TODAY
     TODAY = datetime.now()
 
-def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
+def deleteEmptyFileBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
         fileSize = os.path.getsize(longFileAbsolute) # Bytes
     except PermissionError:
@@ -700,9 +696,7 @@ def deleteEmptyFilesLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:s
                 ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.logFormat))
     return (False,)
 
-
-###
-def deleteEmptyFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
+def deleteEmptyFileRecommend(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
         fileSize = os.path.getsize(longFileAbsolute)
     except PermissionError:
@@ -727,10 +721,9 @@ def deleteEmptyFilesRecommendLog(longFileAbsolute:str, longDirAbsolute:str, dirA
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.warningStrongFormat))
     return (False,)
-###
 
 
-def deleteEmptyFilesModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
+def deleteEmptyFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     """Glitch exists in that the current excel file will be considered empty.
     However, despite claiming so, the program does not actually delete it.'"""
 

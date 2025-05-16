@@ -8,51 +8,51 @@ ALL_PROCEDURES = {
     LIST_ALL: Procedure(
         LIST_ALL,
         True,
-        listAll,
+        listAllBase,
         startFunction=writeDefaultHeaders
     ),
 
     LIST_ALL_OWNER: Procedure(
         LIST_ALL_OWNER,
         True,
-        listAllOwner,
+        listAllOwnerBase,
         startFunction=writeDefaultAndOwnerHeaders
     ),
 
     IDENTICAL_FILE: Procedure(
         IDENTICAL_FILE,
         True,
-        duplicateContentConcurrent,
-        startFunction=duplicateContentStart,
-        postFunction=duplicateContentPost,
-        recommendPostFunction=duplicateContentPostRecommend,
+        identicalFileBase,
+        startFunction=identicalFileStart,
+        postFunction=identicalFilePost,
+        recommendPostFunction=identicalFilePostRecommend,
         isConcurrentOnly=False
     ),
 
     FILE_EXTENSION_SUMMARY: Procedure(
         FILE_EXTENSION_SUMMARY,
         True,
-        fileExtensionConcurrent,
-        startFunction=fileExtensionStart,
-        postFunction=fileExtensionPost,
+        fileExtensionSummaryBase,
+        startFunction=fileExtensionSummaryStart,
+        postFunction=fileExtensionSummaryPost,
         isConcurrentOnly=False
     ),
 
     OLD_FILE: Procedure(
         OLD_FILE,
         True,
-        oldFileFind,
+        oldFileBase,
         validatorFunction=minimumIntToInfinityOrMaxValidator,
         argBoundary=1,
         defaultArgument=(1095,),
-        startFunction=oldFileFindStart,
-        recommendBaseFunction=oldFileFindRecommend
+        startFunction=oldFileStart,
+        recommendBaseFunction=oldFileRecommend
     ),
 
     EMPTY_DIRECTORY: Procedure(
         EMPTY_DIRECTORY,
         False,
-        emptyDirectory,
+        emptyDirectoryBase,
         validatorFunction=minimumIntToInfinityValidator,
         argBoundary=0,
         defaultArgument=(0,),
@@ -63,7 +63,7 @@ ALL_PROCEDURES = {
     EMPTY_FILE: Procedure(
         EMPTY_FILE,
         True,
-        emptyFileFind,
+        emptyFileFindBase,
         startFunction=writeDefaultAndOwnerHeaders,
         recommendBaseFunction=emptyFileFindRecommend
     ),
@@ -71,35 +71,35 @@ ALL_PROCEDURES = {
     SPACE_FILE_FIND: Procedure(
         SPACE_FILE_FIND,
         True,
-        spaceFileFind,
+        spaceFileFindBase,
         startFunction=writeDefaultHeaders
     ),
 
     SPACE_DIRECTORY_FIND: Procedure(
         SPACE_DIRECTORY_FIND,
         False,
-        spaceFolderFind,
+        spaceFolderFindBase,
         startFunction=writeDefaultHeaders
     ),
 
     BAD_CHARACTER_DIRECTORY: Procedure(
         BAD_CHARACTER_DIRECTORY,
         False,
-        badCharFolderFind,
-        startFunction=badCharStart
+        badCharacterFolderFind,
+        startFunction=badCharacterStart
     ),
 
     BAD_CHARACTER_FILE: Procedure(
         BAD_CHARACTER_FILE,
         True,
-        badCharFileFind,
-        startFunction=badCharStart
+        badCharacterFileFind,
+        startFunction=badCharacterStart
     ),
 
     CHARACTER_LIMIT: Procedure(
         CHARACTER_LIMIT,
         True,
-        overCharLimitFind,
+        exceedCharacterLimitBase,
         startFunction=writeDefaultHeaders
     ),
 
@@ -107,16 +107,16 @@ ALL_PROCEDURES = {
     DELETE_EMPTY_FILE: Procedure(
         DELETE_EMPTY_FILE,
         True,
-        deleteEmptyFilesLog,
-        deleteEmptyFilesModify,
-        startFunction=deleteEmptyFilesStart,
-        recommendBaseFunction=deleteEmptyFilesRecommendLog
+        deleteEmptyFileBase,
+        deleteEmptyFileModify,
+        startFunction=deleteEmptyFileStart,
+        recommendBaseFunction=deleteEmptyFileRecommend
     ),
 
     SPACE_FILE_FIX: Procedure(
         SPACE_FILE_FIX,
         True,
-        spaceFileFixLog,
+        spaceFileFixBase,
         spaceFileFixModify,
         startFunction=writeDefaultHeaders
     ),
@@ -124,16 +124,16 @@ ALL_PROCEDURES = {
     SPACE_FOLDER_FIX: Procedure(
         SPACE_FOLDER_FIX,
         False,
-        spaceFolderFixLog,
+        spaceFolderFixBase,
         spaceFolderFixModify,
-        startFunction=writeDefaultHeaders,
+        startFunction=spaceFolderFixStart,
         postFunction=fixfolderModifyPost
     ),
 
     REPLACE_CHARACTER_FOLDER: Procedure(
         REPLACE_CHARACTER_FOLDER,
         False,
-        searchAndReplaceFolderLog,
+        searchAndReplaceFolderBase,
         searchAndReplaceFolderModify,
         startFunction=searchAndReplaceFolderStart,
         validatorFunction=multiplePairsOfStringsValidator,
@@ -144,7 +144,7 @@ ALL_PROCEDURES = {
     REPLACE_CHARACTER_FILE: Procedure(
         REPLACE_CHARACTER_FILE,
         True,
-        searchAndReplaceFileLog,
+        searchAndReplaceFileBase,
         searchAndReplaceFileModify,
         startFunction=searchAndReplaceFileStart,
         validatorFunction=multiplePairsOfStringsValidator,

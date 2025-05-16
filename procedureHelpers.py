@@ -2,18 +2,10 @@ import os
 from workbookManager import WorkbookManager
 
 
-
-# Used by badCharFind
-# Includes ' ' (space) as there is a separate procedure for finding that error
-
-
-
-
 def setWorkbookManager(newManager: WorkbookManager):
     # Globally declare the WorkbookManager object
     global wbm
     wbm = newManager
-
 
 
 def addLongPathPrefix(dirAbsolute):
@@ -26,11 +18,13 @@ def addLongPathPrefix(dirAbsolute):
 def writeOwnerHeader(_, ws):
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
 
+
 def writeDefaultHeaders(_, ws):
     ws.freeze_panes(1, 0)
     ws.write(0, wbm.DIR_COL, "Directory", wbm.headerFormat)
     ws.write(0, wbm.ITEM_COL, "Item", wbm.headerFormat)
     ws.write(0, wbm.OUTCOME_COL, "Outcome", wbm.headerFormat)
+
 
 def writeDefaultAndOwnerHeaders(_, ws):
     writeDefaultHeaders(_, ws)
@@ -41,10 +35,8 @@ def joinDirToFileName(dirAbsolute, fileName):
     return dirAbsolute + "\\" + fileName
 
 
-
 def getRootNameAndExtension(itemName):
     return os.path.splitext(itemName)
-
 
 
 def getDirectoryBaseName(dirAbsolute):

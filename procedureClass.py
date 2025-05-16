@@ -74,7 +74,6 @@ def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
 
 def minimumIntToInfinityValidator(arg:str, minimum:int):
     try:
-        arg.strip()
         arg = int(arg)
         if (arg >= minimum): return (arg,)
     except:
