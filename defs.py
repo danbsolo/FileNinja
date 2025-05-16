@@ -1,6 +1,7 @@
 FILE_NINJA = "File-Ninja"
 RESULTS_DIRECTORY = FILE_NINJA + "-Results"
-HCS_ASSETS_PATH = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\Assets\\"
+# HCS_ASSETS_PATH = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\Assets\\"
+HCS_ASSETS_PATH = "\\\\BNO-files\\NP-GROUPS\\PAEC-ECAP\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\Assets\\"
 README_ADMIN = "README-Admin.docx"
 README_LITE = "README-Lite.docx"
 LOGO_PATH = HCS_ASSETS_PATH + "File-Ninja-Logo-Square.png"
