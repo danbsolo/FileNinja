@@ -28,7 +28,7 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Element | Description |
 |---|---|
 | Fix procedures | If *Allow Modify* is off, flags any errant files based on the selection, showing would-be fixes. If *Allow Modify* is on, executes said fixes. |
-| Parameter# | Fix procedures that end in *#* require an argument. Input their arguments here. If running multiple Fix procedures, separate arguments using "/", in order from top to bottom of the list of Fix procedures selected. <br> For example: If running "Replace Character (DIR)#" and "Replace Character (FILE)#", you may input (without the quotes) "&>and / @>at". |
+| Parameter# | Fix procedures that end in *#* require an argument. Input their arguments here. If running multiple Fix procedures, separate arguments using "/", in order from top to bottom of the list of Fix procedures selected. <br> For example: If running "Replace Character (DIR)#" and "Replace Character (FILE)#", you may input (without the quotes) "&>and / @>at". <br> All Find procedures with arguments have usable a default value. To use its default value, either input nothing in the parameter field, or separate by slashes and leave its value blank. <br> For example: If running "Old File Find#~", "Empty Directory#~", and "Replace Character (FILE)#", you may input (without the quotes) "/ / &>and". |
 | Allow Modify | If on, executes all changes irreversibly. Can not run multiple modifier Fix procedures simultaneously. |
 | Include Hidden Files | If on, Find procedures will include hidden files. NOTE: Fix procedures will always ignore hidden files. |
 | Add Recommendations~ | If on, procedures that end in "~" will show helpful recommendations. Red highlight indicates a stronger warning: those files should perhaps be deleted. Yellow highlight indicates a weaker warning: those files should be looked at. |
@@ -54,9 +54,6 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Name | Description |
 |---|---|
 | x | y |
-| Delete Identical File~ | [Getting removed soon.] |
-| Delete Old File#~ | [Getting removed soon.] |
-| Delete Empty Directory#~ | [Getting removed soon.] |
 | Delete Empty File~ | Deletes any file that is 0 bytes in size. Read "Empty File Error" find procedure for more information. (Includes owner column.) |
 | Replace Space w Hyphen (DIR) | Same as the file version, except for directory names. |
 | Replace Space w Hyphen (FILE) | Replaces all instances of spaces within file names with a hyphen and fixes bad hyphen usage.<br> Example 1: "Engagement Tracker.txt" -> "Engagement-Tracker.txt".<br> Example 2: "- Engagement - - Tracker -.txt" -> "Engagement-Tracker.txt".<br> Example 3: "Engagement--Tracker.txt" -> "Engagement-Tracker.txt". |
