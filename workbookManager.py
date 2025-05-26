@@ -440,10 +440,11 @@ class WorkbookManager:
         elif self.doFolderProceduresExist():
             self.folderProcedureThreadPoolExecutor.shutdown(wait=True)
         #
-
+        
+        self.executionTime = time() - start
         self.populateSummarySheet(excludedDirs)
         self.autofitSheets()
-        self.executionTime = time() - start
+        
 
 
     def incrementRow(self, ws):
