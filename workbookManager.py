@@ -93,8 +93,7 @@ class WorkbookManager:
 
         # Set argument
         potentialArg = procedureObject.getValidArgument(arg)
-
-        if potentialArg == None:
+        if potentialArg is None:
             return False
 
         self.procedureObjectArgs[procedureObject] = potentialArg

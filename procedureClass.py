@@ -26,7 +26,6 @@ class Procedure:
         
         if (potentialArg := self.validatorFunction(arg, self.argBoundary)):
             return potentialArg
-        
         else:
             return self.defaultArgument
     
@@ -83,6 +82,10 @@ def minimumIntToInfinityValidator(arg:str, minimum:int):
 def pairOfStringsValidator(arg:str, separator:str):
     try:
         separatorIndex = arg.rfind(separator)
+        
+        if (separatorIndex == -1):
+            return
+
         toBeReplaced = arg[0:separatorIndex].strip()
         replacer = arg[separatorIndex+len(separator):].strip()
         
@@ -99,8 +102,13 @@ def multiplePairsOfStringsValidator(arg:str, separator:str):
         multiplePairs = arg.split("*")
 
         for i in range(len(multiplePairs)):
-            multiplePairs[i] = pairOfStringsValidator(multiplePairs[i], separator)
-        
+            pair = pairOfStringsValidator(multiplePairs[i], separator)
+
+            if pair is None:
+                return
+            
+            multiplePairs[i] = pair
+
         return multiplePairs
     except:
         return
