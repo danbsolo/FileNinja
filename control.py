@@ -8,7 +8,7 @@ from defs import *
 
 
 
-def launchController(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
+def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     if (not dirAbsolute): return -2
 
     # If no procedures are selected, exit
@@ -32,7 +32,7 @@ def launchController(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, 
     dirAbsolute = dirAbsolute.replace("/", "\\")
 
     # Run checks on excludedDirs if relevant
-    if (includeSubfolders and excludedDirs):
+    if (includeSubdirectories and excludedDirs):
         for i in range(len(excludedDirs)):
             excludedDirs[i] = excludedDirs[i].replace("/", "\\")
 
@@ -93,10 +93,42 @@ def launchController(dirAbsolute:str, includeSubfolders:bool, allowModify:bool, 
                 return -3
 
     try:
-        wbm.initiateCrawl(dirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs)
+        wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs)
         wbm.close()
         os.startfile(workbookPathName)
     except Exception as e:
         return (-999, f"TAKE A SCREENSHOT — a fatal error has occurred.\n\n{traceback.format_exc()}")
     
     return 0
+
+
+
+if __name__ == "__main__":
+    import json
+    import sys
+
+    if len(sys.argv) <= 1:
+        print("Usage: python control.py <<jsonFilename.json>>")
+        exit()
+
+    filepath = sys.argv[1]
+    
+    if not os.path.exists(filepath):
+        print(f"{filepath} does not exist.")
+        exit()
+
+    # hard coded text file for now
+    with open(filepath, "r") as f:
+        settings = json.load(f)
+
+    launchController(
+        settings["dirAbsolute"],
+        settings["includeSubdirectories"],
+        settings["allowModify"],
+        settings["includeHiddenFiles"],
+        settings["addRecommendations"],
+        settings["selectedFindProcedures"],
+        settings["selectedFixProcedures"],
+        settings["argUnprocessed"],
+        settings["excludedDirs"]
+    )

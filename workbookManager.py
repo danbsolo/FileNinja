@@ -329,7 +329,7 @@ class WorkbookManager:
             self.sheetLocks[ws] = Lock()
 
 
-    def initiateCrawl(self, baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
+    def initiateCrawl(self, baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
         def addLongPathPrefix(dirAbsolute):
             if dirAbsolute.startswith('\\\\'):
                 return '\\\\?\\UNC' + dirAbsolute[1:]
@@ -343,7 +343,7 @@ class WorkbookManager:
         else:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
         
-        self.styleSummarySheet(baseDirAbsolute, includeSubfolders, allowModify, includeHiddenFiles, addRecommendations)
+        self.styleSummarySheet(baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations)
         
 
         if self.doFileProceduresExist():
@@ -373,7 +373,7 @@ class WorkbookManager:
 
         walkObject = []
 
-        if (includeSubfolders):
+        if (includeSubdirectories):
             walkObject = os.walk(baseDirAbsolute)
         
         else:
@@ -400,7 +400,7 @@ class WorkbookManager:
 
         initialRows = {}
         for (dirAbsolute, dirFolders, dirFiles) in walkObject:
-            # Ignore specifically OneNote_RecycleBin folders. Assumes these NEVER have subfolders.
+            # Ignore specifically OneNote_RecycleBin folders. Assumes these NEVER have subdirectories.
             # Ignore excluded directories.
             # Get "long file path". If folder is hidden, ignore it. Anything within a hidden folder is inadvertently ignored.
             if (dirAbsolute.endswith("OneNote_RecycleBin")) or (dirAbsolute in excludedDirsSet) or self.isHidden(longDirAbsolute := addLongPathPrefix(dirAbsolute)):
@@ -460,7 +460,7 @@ class WorkbookManager:
             self.summaryCounts[ws] += amount
 
 
-    def styleSummarySheet(self, dirAbsolute, includeSubFolders, allowModify, includeHiddenFiles, addRecommendations):
+    def styleSummarySheet(self, dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations):
         self.summarySheet.set_column(0, 0, 34)
         self.summarySheet.set_column(1, 1, 15)
         
@@ -478,7 +478,7 @@ class WorkbookManager:
         self.summarySheet.write(12, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
-        self.summarySheet.write(2, 1, str(includeSubFolders), self.summaryValueFormat)
+        self.summarySheet.write(2, 1, str(includeSubdirectories), self.summaryValueFormat)
         self.summarySheet.write(3, 1, str(allowModify), self.summaryValueFormat)
         self.summarySheet.write(4, 1, str(includeHiddenFiles), self.summaryValueFormat)
         self.summarySheet.write(5, 1, str(addRecommendations), self.summaryValueFormat)
