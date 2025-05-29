@@ -7,6 +7,7 @@ from idlelib.tooltip import Hovertip
 import threading
 import filesScannedSharedVar
 import control
+import json
 
 
 
@@ -14,7 +15,7 @@ def launchView(isAdmin: bool):
     def launchControllerWorker():        
         currentState.set(102)  # 102 == The HTTP response code for "Still processing"
 
-        exitStatus = control.launchController(dirAbsoluteVar.get(), bool(includeSubFoldersState.get()), bool(modifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
+        exitStatus = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
@@ -77,16 +78,19 @@ def launchView(isAdmin: bool):
             dirAbsoluteVar.set(potentialDirectory)
 
 
-    def excludeDirectory():
+    def queryExcludeDirectory():
         potentialExcludedDirectory = filedialog.askdirectory(title="Browse to EXCLUDE",
                                                              initialdir=dirAbsoluteVar.get(),
                                                              mustexist=True)
 
         if (not potentialExcludedDirectory) or (potentialExcludedDirectory in excludedDirs):
             return
+        
+        excludeDirectory(potentialExcludedDirectory)
 
-        excludedDirs.append(potentialExcludedDirectory)
-        excludeListbox.insert(tk.END, potentialExcludedDirectory)
+    def excludeDirectory(directoryToBeExcluded):
+        excludedDirs.append(directoryToBeExcluded)
+        excludeListbox.insert(tk.END, directoryToBeExcluded)
         
         newHeight = len(excludedDirs) + 1
         excludeListbox.config(height = newHeight)
@@ -179,7 +183,68 @@ def launchView(isAdmin: bool):
 
         for child in widget.winfo_children():
             changeChildrenColor(child, bgColor, fgColor, activeBgColor,selectColor)
+
+
+    def saveSettingsIntoJSON():
+        settings = {
+            "dirAbsolute": dirAbsoluteVar.get(),
+            "includeSubdirectories": bool(includeSubdirectoriesState.get()),
+            "allowModify": bool(allowModifyState.get()),
+            "includeHiddenFiles": bool(includeHiddenFilesState.get()),
+            "addRecommendations": bool(addRecommendationsState.get()),
+            "selectedFindProcedures": [findListbox.get(fm) for fm in findListbox.curselection()],
+            "selectedFixProcedures": [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
+            "argUnprocessed": parameterVar.get(),
+            "excludedDirs": excludedDirs
+        }
+
+        filePath = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")],
+            title="Save File-Ninja settings as..."
+        )
+
+        if not filePath: return
+
+        with open(filePath, "w") as f:
+            json.dump(settings, f, indent=4)
+
+
+    def loadSettingsFromJSON():
+        filePath = filedialog.askopenfilename(title="Load File-Ninja settings",
+                            filetypes=[("JSON files", "*.json")])
         
+        if not filePath: return
+
+        with open(filePath, "r") as f:
+            settings = json.load(f)
+        
+         
+        dirAbsoluteVar.set(settings["dirAbsolute"])
+        includeSubdirectoriesState.set(settings["includeSubdirectories"])
+        allowModifyState.set(settings["allowModify"])
+        includeHiddenFilesState.set(settings["includeHiddenFiles"]) 
+        addRecommendationsState.set(settings["addRecommendations"])
+
+        findListbox.selection_clear(0, tk.END)
+        for i in range(findListbox.size()):
+            item = findListbox.get(i)
+            if item in settings["selectedFindProcedures"]:
+                findListbox.selection_set(i)
+
+        fixListbox.selection_clear(0, tk.END)
+        for i in range(fixListbox.size()):
+            item = fixListbox.get(i)
+            if item in settings["selectedFixProcedures"]:
+                fixListbox.selection_set(i)
+
+        parameterVar.set(settings["argUnprocessed"])
+        
+        excludeListbox.delete(0, tk.END)
+        for item in settings["excludedDirs"]:
+            excludeDirectory(item)
+        
+
 
     listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
     listboxHeightMultiplier = 17
@@ -189,14 +254,14 @@ def launchView(isAdmin: bool):
     root.title(FILE_NINJA)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 345
-    rootHeight = (listboxHeight * listboxHeightMultiplier) + (385 if isAdmin else 310) # 345, 310
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (425 if isAdmin else 310)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
     # The following line of code breaks Hovertips. It just does.
     # if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
         
     frames = []
-    for i in range(10):
+    for i in range(11):
         frames.append(tk.Frame(root, bd=0, relief=tk.SOLID))
         frames[i].pack(fill="x", padx=10, pady=3)
 
@@ -207,13 +272,14 @@ def launchView(isAdmin: bool):
     fontSmall = (fontType, int(fontSize/3*2))
     listboxWidth = int(rootWidth/15) if isAdmin else int(rootWidth/10)  # listboxHeight defined above
     finalButtonsWidth = 20 if isAdmin else 12  # HARD CODED WIDTH
+    qolButtonsWidth = 12 # ALSO HARD CODED
     tooltipHoverDelay = 0
 
     # data variables
     dirAbsoluteVar = tk.StringVar()
     parameterVar = tk.StringVar()
-    includeSubFoldersState = tk.IntVar(value=1)
-    modifyState = tk.IntVar(value=0)
+    includeSubdirectoriesState = tk.IntVar(value=1)
+    allowModifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=isAdmin)
     addRecommendationsState = tk.IntVar(value=0)
     currentState = tk.StringVar(value=0)
@@ -229,7 +295,7 @@ def launchView(isAdmin: bool):
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.LEFT)
     
-    excludeButton = tk.Button(frames[2], text="Browse to Exclude", command=excludeDirectory, font=fontGeneral, width=rootWidth)
+    excludeButton = tk.Button(frames[2], text="Browse to Exclude", command=queryExcludeDirectory, font=fontGeneral, width=rootWidth)
     excludeScrollbar = tk.Scrollbar(frames[2], orient=tk.HORIZONTAL)
     excludeListbox = tk.Listbox(frames[2], exportselection=0, width=rootWidth, height=0, xscrollcommand=excludeScrollbar.set)
     excludeScrollbar.config(command=excludeListbox.xview)
@@ -269,13 +335,14 @@ def launchView(isAdmin: bool):
         parameterLabel.pack(side=tk.LEFT)
         argumentEntry.pack(side=tk.LEFT)
 
-    includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubFoldersState, font=fontGeneral)
+    includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
     includeSubfoldersCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
-        modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=modifyState, font=fontGeneral)
+        modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=allowModifyState, font=fontGeneral)
         modifyCheckbutton.pack(side=tk.LEFT)  # , padx=(0, 50)
-    readMeButton = tk.Button(frames[6], text="README", command=openReadMe, width=rootWidth, font=fontGeneral)
-    readMeButton.pack(side=tk.LEFT)
+    else:
+        readMeButton = tk.Button(frames[6], text="README", command=openReadMe, font=fontGeneral)
+        readMeButton.pack(side=tk.LEFT)
 
     if isAdmin:
         includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
@@ -283,15 +350,23 @@ def launchView(isAdmin: bool):
         addRecommendationsButton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
         addRecommendationsButton.pack(side=tk.LEFT)
 
-    executeButton = tk.Button(frames[8], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
-    executeButton.pack()
-    frames[8].configure(width=rootWidth/2)
-    frames[8].pack(side=tk.LEFT, expand=True)
+    if isAdmin:
+        readMeButton = tk.Button(frames[8], text="README", command=openReadMe, width=qolButtonsWidth, font=fontGeneral)
+        saveSettingsButton = tk.Button(frames[8], text="Save Settings", command=saveSettingsIntoJSON, width=qolButtonsWidth, font=fontGeneral)
+        loadSettingsButton = tk.Button(frames[8], text="Load Settings", command=loadSettingsFromJSON, width=qolButtonsWidth, font=fontGeneral)
+        readMeButton.pack(padx=(17, 0), side=tk.LEFT)
+        saveSettingsButton.pack(padx=(10, 0), side=tk.LEFT)
+        loadSettingsButton.pack(padx=(10, 0), side=tk.LEFT)
 
-    resultsButton = tk.Button(frames[9], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
-    resultsButton.pack()
+    executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
+    executeButton.pack()
     frames[9].configure(width=rootWidth/2)
     frames[9].pack(side=tk.LEFT, expand=True)
+
+    resultsButton = tk.Button(frames[10], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
+    resultsButton.pack()
+    frames[10].configure(width=rootWidth/2)
+    frames[10].pack(side=tk.LEFT, expand=True)
 
 
     # tool tips
@@ -299,17 +374,19 @@ def launchView(isAdmin: bool):
     dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
     excludeTip = Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay)
     findTip = Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay)
-    includeSubfoldersTip = Hovertip(includeSubfoldersCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
+    includeSubdirectoriesTip = Hovertip(includeSubfoldersCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
     readMeTip = Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay)
     resultsTip = Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay)
     if isAdmin: 
         fixTip = Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay)
         parameterTip = Hovertip(parameterLabel, "\"#\" = requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay)
-        modifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
+        allowModifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
         includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures ignore hidden files by default.", hover_delay=tooltipHoverDelay)
         addRecommendationsTip = Hovertip(addRecommendationsButton, "\"~\" = has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay)
-    
+        saveSettingsTip = Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay)
+        loadSettingsTip = Hovertip(loadSettingsButton, "Load settings from a JSON file.", hover_delay=tooltipHoverDelay)
+
 
     # color mode stuff
     global onDefaultColorMode

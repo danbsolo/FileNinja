@@ -111,14 +111,13 @@ if __name__ == "__main__":
         print("Usage: python control.py <<jsonFilename.json>>")
         exit()
 
-    filepath = sys.argv[1]
+    filePath = sys.argv[1]
     
-    if not os.path.exists(filepath):
-        print(f"{filepath} does not exist.")
+    if not os.path.exists(filePath):
+        print(f"{filePath} does not exist.")
         exit()
 
-    # hard coded text file for now
-    with open(filepath, "r") as f:
+    with open(filePath, "r") as f:
         settings = json.load(f)
 
     launchController(
