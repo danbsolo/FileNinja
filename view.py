@@ -198,16 +198,30 @@ def launchView(isAdmin: bool):
             "excludedDirs": excludedDirs
         }
 
-        filePath = filedialog.asksaveasfilename(
+        jsonFilepath = filedialog.asksaveasfilename(
             defaultextension=".json",
             filetypes=[("JSON files", "*.json")],
             title="Save File-Ninja settings as..."
         )
 
-        if not filePath: return
+        if not jsonFilepath: return
 
-        with open(filePath, "w") as f:
+        with open(jsonFilepath, "w") as f:
             json.dump(settings, f, indent=4)
+
+        if not tk.messagebox.askyesno("Create BAT file?", "Create corresponding BAT file?"):
+            return
+        
+        pathSansFile = os.path.dirname(jsonFilepath)
+        jsonFilename = os.path.basename(jsonFilepath)
+        filename, _ = os.path.splitext(jsonFilename)
+
+        with open(f"{pathSansFile}\\{filename}.bat", "w") as f:
+            f.write(rf'@echo off\
+                cd /d "{os.path.dirname(os.path.abspath(__file__))}"\
+                python "{os.path.dirname(os.path.abspath(__file__))}\control.py" "{jsonFilepath}"\
+                ')
+
 
 
     def loadSettingsFromJSON():
