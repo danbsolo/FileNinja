@@ -116,6 +116,7 @@ if __name__ == "__main__":
         print(f"{filePath} does not exist.")
         sys.exit()
 
+    print(f"Running File-Ninja-Control.exe using {filePath}...")
     with open(filePath, "r") as f:
         settings = json.load(f)
 
@@ -135,6 +136,7 @@ if __name__ == "__main__":
     errorMessage = ""
     if exitStatus in EXIT_STATUS_CODES:
         if exitStatus == 0:
+            print("Complete.")
             sys.exit()
         errorMessage = EXIT_STATUS_CODES[exitStatus]
     else:
