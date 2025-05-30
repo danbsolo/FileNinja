@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     def runUntilDone(t):
         while t.is_alive():
-            print(f"{filesScannedSharedVar.FILES_SCANNED}")
+            print(filesScannedSharedVar.FILES_SCANNED)
             time.sleep(0.5)
 
     executionThread = threading.Thread(target=launchControllerWorker)
