@@ -154,7 +154,7 @@ if __name__ == "__main__":
     errorMessage = ""
     if exitStatus in EXIT_STATUS_CODES:
         if exitStatus == 0:
-            print("Complete.")
+            print(EXIT_STATUS_CODES[exitStatus])
             sys.exit()
         errorMessage = EXIT_STATUS_CODES[exitStatus]
     else:

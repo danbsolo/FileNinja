@@ -34,8 +34,8 @@ REPLACE_CHARACTER_FOLDER = "Replace Character (DIR)#"
 
 
 EXIT_STATUS_CODES = {
-    0: "Successful.",
-    102: "Still processing.",
+    0: "Complete.",
+    102: "*Should* still be processing.",
     -1: "Could not open file. Close file and try again.",
     -2: "Invalid directory.",
     -3: "Invalid argument.",
