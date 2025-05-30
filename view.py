@@ -216,11 +216,12 @@ def launchView(isAdmin: bool):
         jsonFilename = os.path.basename(jsonFilepath)
         filename, _ = os.path.splitext(jsonFilename)
 
+        # TODO: FOR SOME REASON, THIS DOESN'T ACTUALLY WORK :sob:
         with open(f"{pathSansFile}\\{filename}.bat", "w") as f:
-            f.write(rf'@echo off\
-                cd /d "{os.path.dirname(os.path.abspath(__file__))}"\
-                python "{os.path.dirname(os.path.abspath(__file__))}\control.py" "{jsonFilepath}"\
-                ')
+            f.write(
+            f'@echo off\n\
+        cd /d "{os.path.dirname(os.path.abspath(__file__))}"\n\
+        python "{os.path.dirname(os.path.abspath(__file__))}\\control.py" "{jsonFilepath}"')
 
 
 
