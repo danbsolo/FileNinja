@@ -237,7 +237,8 @@ def launchView(isAdmin: bool):
             f.write(
             f'@echo off\n\
 set "batchFilename=%~n0"\n\
-{command}"{appPath}" "%batchFilename%.json"')
+{command}"{appPath}" "%batchFilename%.json"\n\
+pause')
 
 
 
