@@ -118,12 +118,12 @@ if __name__ == "__main__":
         print(f"{filePath} does not exist.")
         sys.exit()
 
-    print(f"Running File-Ninja-Control.exe using {filePath}...")
+    print(f"Running File-Ninja-Control using {filePath}...")
     with open(filePath, "r") as f:
         settings = json.load(f)
         
 
-    # THREADING STUFF #####################################################
+    # THREADING STUFF
     exitStatus = 102
     def launchControllerWorker():
         global exitStatus
@@ -139,21 +139,16 @@ if __name__ == "__main__":
             settings["excludedDirs"]
         )
 
-    def checkIfDone(t):
-        if t.is_alive():
+    def runUntilDone(t):
+        while t.is_alive():
             print(f"{filesScannedSharedVar.FILES_SCANNED}")
-            scheduleCheckIfDone(t)
-    
-    def scheduleCheckIfDone(t):
-        time.sleep(0.5)
-        checkIfDone(t)
-
+            time.sleep(0.5)
 
     executionThread = threading.Thread(target=launchControllerWorker)
     executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
     executionThread.start()
-    scheduleCheckIfDone(executionThread)
-
+    runUntilDone(executionThread)
+    #####
 
     # handle displaying of exit status
     errorMessage = ""
