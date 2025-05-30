@@ -7,7 +7,9 @@ import tkinter as tk
 from defs import *
 import json
 import sys
-
+import threading
+import time
+import filesScannedSharedVar
 
 
 def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
@@ -119,18 +121,39 @@ if __name__ == "__main__":
     print(f"Running File-Ninja-Control.exe using {filePath}...")
     with open(filePath, "r") as f:
         settings = json.load(f)
+        
 
-    exitStatus = launchController(
-        settings["dirAbsolute"],
-        settings["includeSubdirectories"],
-        settings["allowModify"],
-        settings["includeHiddenFiles"],
-        settings["addRecommendations"],
-        settings["selectedFindProcedures"],
-        settings["selectedFixProcedures"],
-        settings["argUnprocessed"],
-        settings["excludedDirs"]
-    )
+    # THREADING STUFF #####################################################
+    exitStatus = 102
+    def launchControllerWorker():
+        global exitStatus
+        exitStatus = launchController(
+            settings["dirAbsolute"],
+            settings["includeSubdirectories"],
+            settings["allowModify"],
+            settings["includeHiddenFiles"],
+            settings["addRecommendations"],
+            settings["selectedFindProcedures"],
+            settings["selectedFixProcedures"],
+            settings["argUnprocessed"],
+            settings["excludedDirs"]
+        )
+
+    def checkIfDone(t):
+        if t.is_alive():
+            print(f"{filesScannedSharedVar.FILES_SCANNED}")
+            scheduleCheckIfDone(t)
+    
+    def scheduleCheckIfDone(t):
+        time.sleep(0.5)
+        checkIfDone(t)
+
+
+    executionThread = threading.Thread(target=launchControllerWorker)
+    executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
+    executionThread.start()
+    scheduleCheckIfDone(executionThread)
+
 
     # handle displaying of exit status
     errorMessage = ""
