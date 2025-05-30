@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 from defs import *
-from sys import exit
+import sys
 from idlelib.tooltip import Hovertip
 import threading
 import filesScannedSharedVar
@@ -121,7 +121,7 @@ def launchView(isAdmin: bool):
 
     def closeWindow():
         if currentState.get() == 102:
-            exit()  # Force close
+            sys.exit()  # Force close
         else:
             root.destroy()
             
@@ -198,10 +198,19 @@ def launchView(isAdmin: bool):
             "excludedDirs": excludedDirs
         }
 
+        # differentiate between running an exe or python
+        if getattr(sys, 'frozen', False):
+            isExe = True
+            appDir = os.path.dirname(sys.executable)
+        else:
+            isExe = False
+            appDir = os.path.dirname(os.path.abspath(__file__))
+
         jsonFilepath = filedialog.asksaveasfilename(
             defaultextension=".json",
             filetypes=[("JSON files", "*.json")],
-            title="Save File-Ninja settings as..."
+            title="Save File-Ninja settings as...",
+            initialdir=appDir
         )
 
         if not jsonFilepath: return
@@ -209,19 +218,26 @@ def launchView(isAdmin: bool):
         with open(jsonFilepath, "w") as f:
             json.dump(settings, f, indent=4)
 
-        if not tk.messagebox.askyesno("Create BAT file?", "Create corresponding BAT file?"):
+        if not tk.messagebox.askyesno("Create .bat?", "Create corresponding .bat file?"):
             return
         
         pathSansFile = os.path.dirname(jsonFilepath)
         jsonFilename = os.path.basename(jsonFilepath)
         filename, _ = os.path.splitext(jsonFilename)
 
-        # TODO: FOR SOME REASON, THIS DOESN'T ACTUALLY WORK :sob:
+        # TODO: Probably get name of the current file executing rather than hard-coding
+        if isExe:
+            command = ""
+            appPath = f"{appDir}\\File-Ninja-Control.exe"
+        else:
+            command = "python "
+            appPath = f"{appDir}\\control.py"
+
         with open(f"{pathSansFile}\\{filename}.bat", "w") as f:
             f.write(
             f'@echo off\n\
-        cd /d "{os.path.dirname(os.path.abspath(__file__))}"\n\
-        python "{os.path.dirname(os.path.abspath(__file__))}\\control.py" "{jsonFilepath}"')
+set "batchFilename=%~n0"\n\
+{command}"{appPath}" "%batchFilename%.json"')
 
 
 

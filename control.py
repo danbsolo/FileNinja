@@ -5,6 +5,8 @@ import procedureFunctions
 import traceback
 import tkinter as tk
 from defs import *
+import json
+import sys
 
 
 
@@ -104,23 +106,20 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
 
 
 if __name__ == "__main__":
-    import json
-    import sys
-
     if len(sys.argv) <= 1:
         print("Usage: python control.py <<jsonFilename.json>>")
-        exit()
+        sys.exit()
 
     filePath = sys.argv[1]
     
     if not os.path.exists(filePath):
         print(f"{filePath} does not exist.")
-        exit()
+        sys.exit()
 
     with open(filePath, "r") as f:
         settings = json.load(f)
 
-    launchController(
+    exitStatus = launchController(
         settings["dirAbsolute"],
         settings["includeSubdirectories"],
         settings["allowModify"],
@@ -131,3 +130,16 @@ if __name__ == "__main__":
         settings["argUnprocessed"],
         settings["excludedDirs"]
     )
+
+    # handle displaying of exit status
+    errorMessage = ""
+    if exitStatus in EXIT_STATUS_CODES:
+        if exitStatus == 0:
+            sys.exit()
+        errorMessage = EXIT_STATUS_CODES[exitStatus]
+    else:
+        # In this case, "exitStatus" is a tuple, where the first element is -999 and the second element is the output from "traceback.format_exc()"
+        errorMessage = exitStatus[1]
+        exitStatus = exitStatus[0]
+
+    print(f"Error {str(exitStatus)}: {errorMessage}")
