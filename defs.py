@@ -1,7 +1,7 @@
 from procedureFunctions import *
 from procedureClass import *
 
-
+# TODO: Partition this file into multiple defs.
 
 FILE_NINJA = "File-Ninja"
 RESULTS_DIRECTORY = FILE_NINJA + "-Results"
@@ -32,19 +32,49 @@ SPACE_FOLDER_FIX = "Replace Space w Hyphen (DIR)"
 REPLACE_CHARACTER_FILE = "Replace Character (FILE)#"
 REPLACE_CHARACTER_FOLDER = "Replace Character (DIR)#"
 
+DIR_ABSOLUTE_KEY = "dirAbsolute"
+EXCLUDED_DIRS_KEY = "excludedDirs"
+SELECTED_FIND_PROCEDURES_KEY = "selectedFindProcedures"
+SELECTED_FIX_PROCEDURES_KEY = "selectedFixProcedures"
+ARG_UNPROCESSED_KEY = "argUnprocessed"
+INCLUDE_SUBDIRECTORIES_KEY = "includeSubdirectories"
+ALLOW_MODIFY_KEY = "allowModify"
+INCLUDE_HIDDEN_FILES_KEY = "includeHiddenFiles"
+ADD_RECOMMENDATIONS_KEY = "addRecommendations"
+JSON_KEYS = [
+    DIR_ABSOLUTE_KEY,
+    EXCLUDED_DIRS_KEY,
+    SELECTED_FIND_PROCEDURES_KEY,
+    SELECTED_FIX_PROCEDURES_KEY,
+    ARG_UNPROCESSED_KEY,
+    INCLUDE_SUBDIRECTORIES_KEY,
+    ALLOW_MODIFY_KEY,
+    INCLUDE_HIDDEN_FILES_KEY,
+    ADD_RECOMMENDATIONS_KEY,
+]
+
+STATUS_SUCCESSFUL = 0
+STATUS_IDLE = 1
+STATUS_RUNNING = 102  # 102 == The HTTP response code for "Still processing"
+STATUS_UNEXPECTED = -999
 
 EXIT_STATUS_CODES = {
-    0: "Complete.",
-    102: "*Should* still be processing.",
-    -1: "Could not open file. Close file and try again.",
-    -2: "Invalid directory.",
-    -3: "Invalid argument.",
-    -4: "Invalid excluded directory.",
-    -5: "Invalid settings. Cannot run multiple Fix Procedures when modify is checked.",
-    -6: "Invalid arguments. Separate with \"/\"",
-    -7: "Invalid settings. Cannot run modifications simultaneously with recommendations and/or hidden files.",
-    -8: "No procedures selected.",
-    -9: "Directory does not exist."
+    STATUS_SUCCESSFUL: "Successful.",
+    STATUS_IDLE: "Idle.",
+    STATUS_RUNNING: "*Should* still be processing.",
+    -1: "ERROR: Could not open file. Close file and try again.",
+    -2: "ERROR: Invalid directory.",
+    -3: "ERROR: Invalid argument.",
+    -4: "ERROR: Invalid excluded directory.",
+    -5: "ERROR: Invalid settings. Cannot run multiple Fix Procedures when modify is checked.",
+    -6: "ERROR: Invalid arguments. Separate with \"/\"",
+    -7: "ERROR: Invalid settings. Cannot run modifications simultaneously with recommendations and/or hidden files.",
+    -8: "ERROR: No procedures selected.",
+    -9: "ERROR: Directory does not exist.",
+    -10: "ERROR: JSON Decode error.",
+    -11: "ERROR: Missing keys in JSON.",
+    -12: "ERROR: File path does not exist.",
+    STATUS_UNEXPECTED: "ERROR: Unexpected condition occurred."
 }
 
 

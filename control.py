@@ -5,57 +5,64 @@ import procedureFunctions
 import traceback
 import tkinter as tk
 from defs import *
-import json
 import sys
-import threading
+from concurrent.futures import ThreadPoolExecutor
 import time
 import filesScannedSharedVar
+import common
 
 
 def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     # If dirAbsolute value was not selected (empty string)
-    if (not dirAbsolute): return -2
+    if (not dirAbsolute): return (-2, None)
 
     # If dirAbsolute path is non-existent
-    if (not os.path.exists(dirAbsolute)): return -9
+    if (not os.path.exists(dirAbsolute)): return (-9, None)
 
     # If no procedures are selected, exit
     if len(selectedFindProcedures + selectedFixProcedures) == 0:
-        return -8
+        return (-8, None)
 
     # If multiple fix procedures are selected and allowModify is checked, exit
     if allowModify and len(selectedFixProcedures) > 1:
-        return -5
+        return (-5, None)
     
     # If allowModify and addRecommendations are both turned on, even if it would be of no consequence, exit
     # If allowModify and includeHiddenFiles are both turned on, exit
     if allowModify and (addRecommendations or includeHiddenFiles):
-        return -7
+        return (-7, None)
     
     # Double check that the user wants to allow modifications
     if allowModify and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
-        return 0
+        return (STATUS_SUCCESSFUL, None)
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
 
-    # If excludedDirs are specified, run checks accordingly
-    if (includeSubdirectories and excludedDirs):
-        for i in range(len(excludedDirs)):
-            if (not os.path.exists(excludedDirs[i])):
-                return -4
-            
-            excludedDirs[i] = excludedDirs[i].replace("/", "\\")
+    # 
+    if includeSubdirectories:
+        # If excludedDirs are specified, run checks accordingly
+        if excludedDirs:
+            for i in range(len(excludedDirs)):
+                if (not os.path.exists(excludedDirs[i])):
+                    return (-4, None)
+                
+                excludedDirs[i] = excludedDirs[i].replace("/", "\\")
 
-        for exDir in excludedDirs:
-            # Check dirAbsolute is not an exDir. Check that exDir is a child to dirAbsolute
-            if (exDir == dirAbsolute) or not (exDir.startswith(dirAbsolute)):
-                return -4
+            for exDir in excludedDirs:
+                # Check dirAbsolute is not an exDir. Check that exDir is a child to dirAbsolute
+                if (exDir == dirAbsolute) or not (exDir.startswith(dirAbsolute)):
+                    return (-4, None)
 
-            # Check that no exDir is a subfolder to another exDir
-            for exDir2 in excludedDirs:
-                if (exDir != exDir2) and (exDir.startswith(exDir2)):
-                    return -4
+                # Check that no exDir is a subfolder to another exDir
+                for exDir2 in excludedDirs:
+                    if (exDir != exDir2) and (exDir.startswith(exDir2)):
+                        return (-4, None)
+    else:
+        # If subdirectories are not included but excluded dirs are specified, clear it
+        if excludedDirs:
+            pass
+            # excludedDirs.clear()
 
     # Create RESULTS directory if it does not exist
     try: os.mkdir(RESULTS_DIRECTORY)
@@ -88,88 +95,82 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
 
             if ALL_PROCEDURES[procedureName].validatorFunction:
                 if currentArg >= argsListLength:
-                    return -6
+                    return (-6, None)
 
                 arg = argsList[currentArg]
                 currentArg += 1
             
             if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], allowModify, addRecommendations, arg)):
-                return -3
+                return (-3, None)
     else:
         for procedureName in selectedFindProcedures + selectedFixProcedures:
 
             # This procs if a procedure doesn't *have* a default value
             # For find procedures, since they're all available in Lite, this really shouldn't ever proc
             if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], allowModify, addRecommendations, None)):
-                return -3
+                return (-3, None)
 
     try:
         wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs)
         wbm.close()
         os.startfile(workbookPathName)
     except Exception as e:
-        return (-999, f"TAKE A SCREENSHOT — a fatal error has occurred.\n\n{traceback.format_exc()}")
+        return (STATUS_UNEXPECTED, f"{traceback.format_exc()}")
     
-    return 0
+    return (STATUS_SUCCESSFUL, None)
 
 
+def launchControllerFromSettings(settings):
+    return launchController(
+        settings[DIR_ABSOLUTE_KEY],
+        settings[INCLUDE_SUBDIRECTORIES_KEY],
+        settings[ALLOW_MODIFY_KEY],
+        settings[INCLUDE_HIDDEN_FILES_KEY],
+        settings[ADD_RECOMMENDATIONS_KEY],
+        settings[SELECTED_FIND_PROCEDURES_KEY],
+        settings[SELECTED_FIX_PROCEDURES_KEY],
+        settings[ARG_UNPROCESSED_KEY],
+        settings[EXCLUDED_DIRS_KEY]
+    )
 
-if __name__ == "__main__":
+
+def launchControllerFromJSON(jsonFilePath):
+    settingsPair = common.loadSettingsFromJSON(jsonFilePath)
+    status = settingsPair[0]
+    result = settingsPair[1]
+
+    if status == STATUS_SUCCESSFUL:
+        return launchControllerFromSettings(result)
+    else:
+        return settingsPair
+
+
+def main():
+    print("Running File-Ninja-Control...")
+
     if len(sys.argv) <= 1:
-        print("Usage: python control.py <<jsonFilename.json>>")
-        sys.exit()
+        print("Usage: <<command>> <<\"json file path\">>")
+        return
 
     filePath = sys.argv[1]
-    
-    if not os.path.exists(filePath):
-        print(f"{filePath} does not exist.")
-        sys.exit()
 
-    print(f"Running File-Ninja-Control using {filePath}...")
-    with open(filePath, "r") as f:
-        settings = json.load(f)
-        
+    print(f"Using {filePath}...")
 
-    # THREADING STUFF
-    exitStatus = 102
-    def launchControllerWorker():
-        global exitStatus
-        exitStatus = launchController(
-            settings["dirAbsolute"],
-            settings["includeSubdirectories"],
-            settings["allowModify"],
-            settings["includeHiddenFiles"],
-            settings["addRecommendations"],
-            settings["selectedFindProcedures"],
-            settings["selectedFixProcedures"],
-            settings["argUnprocessed"],
-            settings["excludedDirs"]
-        )
+    with ThreadPoolExecutor(max_workers=1) as tpe:
+        future = tpe.submit(launchControllerFromJSON, filePath)
 
-    def runUntilDone(t):
+        # run until done
+        time.sleep(0.1)  # in the case it errors immediately, this wait allows that error to be caught immediately
         lastFilesScanned = -1
-        while t.is_alive():
+        while not future.done():
             time.sleep(0.5)
             if lastFilesScanned != filesScannedSharedVar.FILES_SCANNED:
                 lastFilesScanned = filesScannedSharedVar.FILES_SCANNED
                 print(lastFilesScanned)
 
-    executionThread = threading.Thread(target=launchControllerWorker)
-    executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
-    executionThread.start()
-    runUntilDone(executionThread)
-    #####
+        exitPair = future.result()
 
-    # handle displaying of exit status
-    errorMessage = ""
-    if exitStatus in EXIT_STATUS_CODES:
-        if exitStatus == 0:
-            print(EXIT_STATUS_CODES[exitStatus])
-            sys.exit()
-        errorMessage = EXIT_STATUS_CODES[exitStatus]
-    else:
-        # In this case, "exitStatus" is a tuple, where the first element is -999 and the second element is the output from "traceback.format_exc()"
-        errorMessage = exitStatus[1]
-        exitStatus = exitStatus[0]
+    print(common.interpretError(exitPair))
 
-    print(f"Error {str(exitStatus)}: {errorMessage}")
+if __name__ == "__main__":
+    main()

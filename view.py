@@ -8,20 +8,19 @@ import threading
 import filesScannedSharedVar
 import control
 import json
+import common
 
 
 
 def launchView(isAdmin: bool):
-    def launchControllerWorker():        
-        currentState.set(102)  # 102 == The HTTP response code for "Still processing"
-
-        exitStatus = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
+    def launchControllerWorker():
+        nonlocal currentStatusPair
+        currentStatusPair = (STATUS_RUNNING, None)
+        currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
                     excludedDirs)
-
-        currentState.set(exitStatus)
 
     def scheduleCheckIfDone(t):
         root.after(500, checkIfDone, t)
@@ -32,24 +31,15 @@ def launchView(isAdmin: bool):
             root.title(FILE_NINJA)
             executeButton.config(text="Execute", state="normal")
             filesScannedSharedVar.FILES_SCANNED = 0
-            filesScannedSharedVar.TOTAL_FILES = 0
 
-            try:
-                exitStatus = int(currentState.get())
-            except:
-                exitStatus = currentState.get()
+            nonlocal currentStatusPair
+            exitCode, _ = currentStatusPair
+            if exitCode == STATUS_SUCCESSFUL:
+                return          
+            tk.messagebox.showerror(f"Error: {exitCode}", common.interpretError(currentStatusPair))
 
-            errorMessage = ""
-            if exitStatus in EXIT_STATUS_CODES:
-                if exitStatus == 0:
-                    return
-                errorMessage = EXIT_STATUS_CODES[exitStatus]
-            else:
-                # In this case, "exitStatus" is a tuple, where the first element is -999 and the second element is the output from "traceback.format_exc()"
-                errorMessage = exitStatus[1]
-                exitStatus = exitStatus[0]
-
-            tk.messagebox.showerror(f"Error: {str(exitStatus)}", errorMessage)
+            currentStatusPair = (STATUS_IDLE, None)
+        
         else:
             # Otherwise check again after the specified number of milliseconds.
             filesScanned = filesScannedSharedVar.FILES_SCANNED
@@ -120,7 +110,7 @@ def launchView(isAdmin: bool):
 
 
     def closeWindow():
-        if currentState.get() == 102:
+        if currentStatusPair[0] == STATUS_RUNNING:
             sys.exit()  # Force close
         else:
             root.destroy()
@@ -156,7 +146,7 @@ def launchView(isAdmin: bool):
         tk.messagebox.showinfo("README DNE", "README file does not exist.")
 
     def changeColorMode():
-        global onDefaultColorMode
+        nonlocal onDefaultColorMode
         if onDefaultColorMode:
             onDefaultColorMode = False
             changeChildrenColor(root, "#202124", "white", "gray20", "gray20")
@@ -187,15 +177,15 @@ def launchView(isAdmin: bool):
 
     def saveSettingsIntoJSON():
         settings = {
-            "dirAbsolute": dirAbsoluteVar.get(),
-            "excludedDirs": excludedDirs,
-            "selectedFindProcedures": [findListbox.get(fm) for fm in findListbox.curselection()],
-            "selectedFixProcedures": [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
-            "argUnprocessed": parameterVar.get(),
-            "includeSubdirectories": bool(includeSubdirectoriesState.get()),
-            "allowModify": bool(allowModifyState.get()),
-            "includeHiddenFiles": bool(includeHiddenFilesState.get()),
-            "addRecommendations": bool(addRecommendationsState.get()),
+            DIR_ABSOLUTE_KEY: dirAbsoluteVar.get(),
+            EXCLUDED_DIRS_KEY: excludedDirs,
+            SELECTED_FIND_PROCEDURES_KEY: [findListbox.get(fm) for fm in findListbox.curselection()],
+            SELECTED_FIX_PROCEDURES_KEY: [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
+            ARG_UNPROCESSED_KEY: parameterVar.get(),
+            INCLUDE_SUBDIRECTORIES_KEY: bool(includeSubdirectoriesState.get()),
+            ALLOW_MODIFY_KEY: bool(allowModifyState.get()),
+            INCLUDE_HIDDEN_FILES_KEY: bool(includeHiddenFilesState.get()),
+            ADD_RECOMMENDATIONS_KEY: bool(addRecommendationsState.get()),
         }
 
         # differentiate between running an exe or python
@@ -225,7 +215,7 @@ def launchView(isAdmin: bool):
         jsonFilename = os.path.basename(jsonFilepath)
         filename, _ = os.path.splitext(jsonFilename)
 
-        # TODO: Probably get name of the current file executing rather than hard-coding
+        # TODO: Perhaps get name of the current file executing rather than hard-coding?
         if isExe:
             command = ""
             appPath = f"{appDir}\\File-Ninja-Control.exe"
@@ -248,32 +238,34 @@ pause')
         
         if not filePath: return
 
-        with open(filePath, "r") as f:
-            settings = json.load(f)
-        
+        settingsPair = common.loadSettingsFromJSON(filePath)
+        if settingsPair[0] != STATUS_SUCCESSFUL:
+            tk.messagebox.showerror("Invalid JSON file", common.interpretError(settingsPair))
+            return
+        settings = settingsPair[1]
          
-        dirAbsoluteVar.set(settings["dirAbsolute"])
-        includeSubdirectoriesState.set(settings["includeSubdirectories"])
-        allowModifyState.set(settings["allowModify"])
-        includeHiddenFilesState.set(settings["includeHiddenFiles"]) 
-        addRecommendationsState.set(settings["addRecommendations"])
+        dirAbsoluteVar.set(settings[DIR_ABSOLUTE_KEY])
+        includeSubdirectoriesState.set(settings[INCLUDE_SUBDIRECTORIES_KEY])
+        allowModifyState.set(settings[ALLOW_MODIFY_KEY])
+        includeHiddenFilesState.set(settings[INCLUDE_HIDDEN_FILES_KEY]) 
+        addRecommendationsState.set(settings[ADD_RECOMMENDATIONS_KEY])
 
         findListbox.selection_clear(0, tk.END)
         for i in range(findListbox.size()):
             item = findListbox.get(i)
-            if item in settings["selectedFindProcedures"]:
+            if item in settings[SELECTED_FIND_PROCEDURES_KEY]:
                 findListbox.selection_set(i)
 
         fixListbox.selection_clear(0, tk.END)
         for i in range(fixListbox.size()):
             item = fixListbox.get(i)
-            if item in settings["selectedFixProcedures"]:
+            if item in settings[SELECTED_FIX_PROCEDURES_KEY]:
                 fixListbox.selection_set(i)
 
-        parameterVar.set(settings["argUnprocessed"])
+        parameterVar.set(settings[ARG_UNPROCESSED_KEY])
         
         excludeListbox.delete(0, tk.END)
-        for item in settings["excludedDirs"]:
+        for item in settings[EXCLUDED_DIRS_KEY]:
             excludeDirectory(item)
         
 
@@ -314,8 +306,8 @@ pause')
     allowModifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=isAdmin)
     addRecommendationsState = tk.IntVar(value=0)
-    currentState = tk.StringVar(value=0)
     excludedDirs = []
+    currentStatusPair = (STATUS_IDLE, None)
 
 
     # widget layout
@@ -370,8 +362,8 @@ pause')
     includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
     includeSubfoldersCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
-        modifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=allowModifyState, font=fontGeneral)
-        modifyCheckbutton.pack(side=tk.LEFT)  # , padx=(0, 50)
+        allowModifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=allowModifyState, font=fontGeneral)
+        allowModifyCheckbutton.pack(padx=(0, 0), side=tk.LEFT)  # , padx=(0, 50)
     else:
         readMeButton = tk.Button(frames[6], text="README", command=openReadMe, font=fontGeneral)
         readMeButton.pack(side=tk.LEFT)
@@ -380,15 +372,15 @@ pause')
         includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
         includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
         addRecommendationsButton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
-        addRecommendationsButton.pack(side=tk.LEFT)
+        addRecommendationsButton.pack(padx=(19, 0),side=tk.LEFT)
 
     if isAdmin:
-        readMeButton = tk.Button(frames[8], text="README", command=openReadMe, width=qolButtonsWidth, font=fontGeneral)
         saveSettingsButton = tk.Button(frames[8], text="Save Settings", command=saveSettingsIntoJSON, width=qolButtonsWidth, font=fontGeneral)
         loadSettingsButton = tk.Button(frames[8], text="Load Settings", command=loadSettingsFromJSON, width=qolButtonsWidth, font=fontGeneral)
-        readMeButton.pack(padx=(17, 0), side=tk.LEFT)
-        saveSettingsButton.pack(padx=(10, 0), side=tk.LEFT)
+        readMeButton = tk.Button(frames[8], text="README", command=openReadMe, width=qolButtonsWidth, font=fontGeneral)
+        saveSettingsButton.pack(padx=(17, 0), side=tk.LEFT)
         loadSettingsButton.pack(padx=(10, 0), side=tk.LEFT)
+        readMeButton.pack(padx=(10, 0), side=tk.LEFT)
 
     executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()
@@ -413,7 +405,7 @@ pause')
     if isAdmin: 
         fixTip = Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay)
         parameterTip = Hovertip(parameterLabel, "\"#\" = requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay)
-        allowModifyTip = Hovertip(modifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
+        allowModifyTip = Hovertip(allowModifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
         includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures ignore hidden files by default.", hover_delay=tooltipHoverDelay)
         addRecommendationsTip = Hovertip(addRecommendationsButton, "\"~\" = has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay)
         saveSettingsTip = Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay)
@@ -421,7 +413,6 @@ pause')
 
 
     # color mode stuff
-    global onDefaultColorMode
     onDefaultColorMode = True
     originalBg = browseButton.cget("bg")
     originalFg = browseButton.cget("fg")
