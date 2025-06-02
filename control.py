@@ -61,8 +61,7 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
     else:
         # If subdirectories are not included but excluded dirs are specified, clear it
         if excludedDirs:
-            pass
-            # excludedDirs.clear()
+            excludedDirs.clear()
 
     # Create RESULTS directory if it does not exist
     try: os.mkdir(RESULTS_DIRECTORY)
