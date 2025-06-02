@@ -359,20 +359,23 @@ pause')
         parameterLabel.pack(side=tk.LEFT)
         argumentEntry.pack(side=tk.LEFT)
 
-    includeSubfoldersCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
-    includeSubfoldersCheckbutton.pack(side=tk.LEFT)
+    includeSubdirectoriesCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
+    includeSubdirectoriesCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
         allowModifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=allowModifyState, font=fontGeneral)
         allowModifyCheckbutton.pack(padx=(0, 0), side=tk.LEFT)  # , padx=(0, 50)
     else:
         readMeButton = tk.Button(frames[6], text="README", command=openReadMe, font=fontGeneral)
         readMeButton.pack(side=tk.LEFT)
+    frames[6].pack(pady=(3, 0))
 
     if isAdmin:
         includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
         includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
         addRecommendationsButton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
         addRecommendationsButton.pack(padx=(19, 0),side=tk.LEFT)
+    else:
+        frames[7].pack(pady=0)
 
     if isAdmin:
         saveSettingsButton = tk.Button(frames[8], text="Save Settings", command=saveSettingsIntoJSON, width=qolButtonsWidth, font=fontGeneral)
@@ -381,6 +384,8 @@ pause')
         saveSettingsButton.pack(padx=(17, 0), side=tk.LEFT)
         loadSettingsButton.pack(padx=(10, 0), side=tk.LEFT)
         readMeButton.pack(padx=(10, 0), side=tk.LEFT)
+    else:
+        frames[8].pack(pady=0)
 
     executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
     executeButton.pack()
@@ -398,7 +403,7 @@ pause')
     dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
     excludeTip = Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay)
     findTip = Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay)
-    includeSubdirectoriesTip = Hovertip(includeSubfoldersCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
+    includeSubdirectoriesTip = Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
     readMeTip = Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay)
     resultsTip = Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay)
@@ -417,7 +422,7 @@ pause')
     originalBg = browseButton.cget("bg")
     originalFg = browseButton.cget("fg")
     originalActiveBg = browseButton.cget("activebackground")
-    originalSelectColor = includeSubfoldersCheckbutton.cget("selectcolor")
+    originalSelectColor = includeSubdirectoriesCheckbutton.cget("selectcolor")
 
 
     # bindings
