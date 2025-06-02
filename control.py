@@ -147,9 +147,12 @@ if __name__ == "__main__":
         )
 
     def runUntilDone(t):
+        lastFilesScanned = -1
         while t.is_alive():
             time.sleep(0.5)
-            print(filesScannedSharedVar.FILES_SCANNED)
+            if lastFilesScanned != filesScannedSharedVar.FILES_SCANNED:
+                lastFilesScanned = filesScannedSharedVar.FILES_SCANNED
+                print(lastFilesScanned)
 
     executionThread = threading.Thread(target=launchControllerWorker)
     executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
