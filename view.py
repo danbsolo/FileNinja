@@ -188,14 +188,14 @@ def launchView(isAdmin: bool):
     def saveSettingsIntoJSON():
         settings = {
             "dirAbsolute": dirAbsoluteVar.get(),
+            "excludedDirs": excludedDirs,
+            "selectedFindProcedures": [findListbox.get(fm) for fm in findListbox.curselection()],
+            "selectedFixProcedures": [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
+            "argUnprocessed": parameterVar.get(),
             "includeSubdirectories": bool(includeSubdirectoriesState.get()),
             "allowModify": bool(allowModifyState.get()),
             "includeHiddenFiles": bool(includeHiddenFilesState.get()),
             "addRecommendations": bool(addRecommendationsState.get()),
-            "selectedFindProcedures": [findListbox.get(fm) for fm in findListbox.curselection()],
-            "selectedFixProcedures": [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
-            "argUnprocessed": parameterVar.get(),
-            "excludedDirs": excludedDirs
         }
 
         # differentiate between running an exe or python

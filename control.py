@@ -13,7 +13,11 @@ import filesScannedSharedVar
 
 
 def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
+    # If dirAbsolute value was not selected (empty string)
     if (not dirAbsolute): return -2
+
+    # If dirAbsolute path is non-existent
+    if (not os.path.exists(dirAbsolute)): return -9
 
     # If no procedures are selected, exit
     if len(selectedFindProcedures + selectedFixProcedures) == 0:
@@ -35,9 +39,12 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
 
-    # Run checks on excludedDirs if relevant
+    # If excludedDirs are specified, run checks accordingly
     if (includeSubdirectories and excludedDirs):
         for i in range(len(excludedDirs)):
+            if (not os.path.exists(excludedDirs[i])):
+                return -4
+            
             excludedDirs[i] = excludedDirs[i].replace("/", "\\")
 
         for exDir in excludedDirs:
@@ -141,8 +148,8 @@ if __name__ == "__main__":
 
     def runUntilDone(t):
         while t.is_alive():
-            print(filesScannedSharedVar.FILES_SCANNED)
             time.sleep(0.5)
+            print(filesScannedSharedVar.FILES_SCANNED)
 
     executionThread = threading.Thread(target=launchControllerWorker)
     executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it

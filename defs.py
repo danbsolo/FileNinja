@@ -39,11 +39,12 @@ EXIT_STATUS_CODES = {
     -1: "Could not open file. Close file and try again.",
     -2: "Invalid directory.",
     -3: "Invalid argument.",
-    -4: "Invalid excluded directories.",
+    -4: "Invalid excluded directory.",
     -5: "Invalid settings. Cannot run multiple Fix Procedures when modify is checked.",
     -6: "Invalid arguments. Separate with \"/\"",
     -7: "Invalid settings. Cannot run modifications simultaneously with recommendations and/or hidden files.",
-    -8: "No procedures selected."
+    -8: "No procedures selected.",
+    -9: "Directory does not exist."
 }
 
 
