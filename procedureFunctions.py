@@ -284,7 +284,7 @@ def identicalFileStart(arg, ws):
     LOCK_DUPLICATE_CONTENT = Lock()
 
     EXTENSIONS_TO_IGNORE = {
-        ".shx", ".shp", ".gbd", ".sbd", ".sbx", 
+        ".shx", ".shp", ".gbd", ".sbd", ".spx", ".sbx", ".spx", ".sbn",
         ".dbf", ".qpj", ".atx", ".gdbtablx", ".gdbtable",
         ".freelist", ".horizon", ".gdbindexes", ".cpg", ".prj" 
     }
@@ -300,7 +300,7 @@ def identicalFileHelper(longFileAbsolute:str):
 
 def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws):
     _, ext = getRootNameAndExtension(longFileAbsolute)
-    if ext in EXTENSIONS_TO_IGNORE:
+    if ext.lower() in EXTENSIONS_TO_IGNORE:
         return (False,)
 
     try:
