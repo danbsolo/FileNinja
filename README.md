@@ -21,7 +21,7 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Find procedures | Flags any errant files based on the selection. |
 | Include Subdirectories | If on, File Ninja will peruse through all subdirectories as well. Otherwise, will only traverse the currently selected directory. Related: "Browse to Exclude". |
 | Execute | Commence execution. |
-| Results | Open results directory, containing Excel files of previous executions. File names follow the convention "<<SelectedDirectoryName>>-YY-mm-DD-HH-MM-SS.xlsx". |
+| Results | Open results directory, containing Excel files of previous executions. File names follow the convention "<SelectedDirectoryName>-YY-mm-DD-HH-MM-SS.xlsx". |
 | Summary | A metric detailing various metrics regarding the execution. |
 
 ## Admin
