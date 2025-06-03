@@ -55,7 +55,6 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 # Fix Procedures
 | Name | Description |
 |---|---|
-| x | y |
 | Delete Empty File~ | Deletes any file that is 0 bytes in size. Read "Empty File Error" find procedure for more information. (Includes owner column.) |
 | Replace Space w Hyphen (DIR) | Same as the file version, except for directory names. |
 | Replace Space w Hyphen (FILE) | Replaces all instances of spaces within file names with a hyphen and fixes bad hyphen usage.<br> Example 1: "Engagement Tracker.txt" -> "Engagement-Tracker.txt".<br> Example 2: "- Engagement - - Tracker -.txt" -> "Engagement-Tracker.txt".<br> Example 3: "Engagement--Tracker.txt" -> "Engagement-Tracker.txt". |
