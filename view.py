@@ -199,8 +199,7 @@ def launchView(isAdmin: bool):
         jsonFilepath = filedialog.asksaveasfilename(
             defaultextension=".json",
             filetypes=[("JSON files", "*.json")],
-            title="Save File-Ninja settings as...",
-            initialdir=appDir
+            title="Save settings as...",
         )
 
         if not jsonFilepath: return
@@ -214,20 +213,13 @@ def launchView(isAdmin: bool):
         pathSansFile = os.path.dirname(jsonFilepath)
         jsonFilename = os.path.basename(jsonFilepath)
         filename, _ = os.path.splitext(jsonFilename)
-
-        # TODO: Perhaps get name of the current file executing rather than hard-coding?
-        if isExe:
-            command = ""
-            appPath = f"{appDir}\\File-Ninja-Control.exe"
-        else:
-            command = "python "
-            appPath = f"{appDir}\\control.py"
-
+        
+        appPath = f"{appDir}\\{os.path.basename(sys.argv[0])}"  # File-Ninja-Control.exe/.py
         with open(f"{pathSansFile}\\{filename}.bat", "w") as f:
             f.write(
             f'@echo off\n\
 set "batchFilename=%~n0"\n\
-{command}"{appPath}" "%batchFilename%.json"\n\
+{"" if isExe else "python " }"{appPath}" "%batchFilename%.json"\n\
 pause')
 
 
