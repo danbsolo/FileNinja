@@ -5,8 +5,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 import time
 import filesScannedSharedVar
-
 import ctypes
+
 
 
 def hideConsole():
@@ -48,6 +48,7 @@ def main():
         exitPair = future.result()
 
     print(common.interpretError(exitPair))
+
 
 
 if __name__ == "__main__":
