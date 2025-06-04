@@ -71,6 +71,7 @@ NOTE: Ensure the exe file exists, not just the p7m file.
     - `Start in` = The directory in which `File-Ninja-Admin.exe` resides. (ex: C:\\Users\\FirstName LastName\\). Must **NOT** be in quotes.
 - Press finish.
 - Right-click the newly created task, then press `Run` to ensure you set your program details correctly.
+
 ## Miscellaneous
 - Middle-click anywhere in the window to alternate between light and dark mode.
 - `ctrl+w` to close the window.
