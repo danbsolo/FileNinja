@@ -278,7 +278,7 @@ pause')
     root.title(FILE_NINJA)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 345
-    rootHeight = (listboxHeight * listboxHeightMultiplier) + (425 if isAdmin else 310)
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (425 if isAdmin else 345)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
 
     # The following line of code breaks Hovertips. It just does.
@@ -372,9 +372,11 @@ pause')
     if isAdmin:
         includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
         includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
-        addRecommendationsButton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
-        addRecommendationsButton.pack(padx=(19, 0),side=tk.LEFT)
+        addRecommendationsCheckbutton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
+        addRecommendationsCheckbutton.pack(padx=(19, 0),side=tk.LEFT)
     else:
+        addRecommendationsCheckbutton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
+        addRecommendationsCheckbutton.pack(side=tk.LEFT)
         frames[7].pack(pady=0)
 
     if isAdmin:
@@ -405,14 +407,14 @@ pause')
     findTip = Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay)
     includeSubdirectoriesTip = Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
     readMeTip = Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay)
+    addRecommendationsTip = Hovertip(addRecommendationsCheckbutton, "~ -> has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay)
     resultsTip = Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay)
     if isAdmin: 
         fixTip = Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay)
-        parameterTip = Hovertip(parameterLabel, "\"#\" = requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay)
+        parameterTip = Hovertip(parameterLabel, "# -> requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay)
         allowModifyTip = Hovertip(allowModifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
         includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures ignore hidden files by default.", hover_delay=tooltipHoverDelay)
-        addRecommendationsTip = Hovertip(addRecommendationsButton, "\"~\" = has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay)
         saveSettingsTip = Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay)
         loadSettingsTip = Hovertip(loadSettingsButton, "Load settings from a JSON file.", hover_delay=tooltipHoverDelay)
 

@@ -20,8 +20,9 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Browse to Exclude | Select subdirectories of the main directory to exclude from operation. Hidden directories — and their subdirectories — are automatically excluded. To remove a previously added excluded directory, either double-click or right click it. (If *Include Subdirectories* is off, this feature does nothing.)
 | Find procedures | Flags any errant files based on the selection. |
 | Include Subdirectories | If on, File Ninja will peruse through all subdirectories as well. Otherwise, will only traverse the currently selected directory. Related: "Browse to Exclude". |
+| Add Recommendations~ | If on, procedures that end in "~" will show helpful recommendations. Red highlight indicates a stronger warning: those files should perhaps be deleted. Yellow highlight indicates a weaker warning: those files should be looked at. |
 | Execute | Commence execution. |
-| Results | Open results directory, containing Excel files of previous executions. File names follow the convention "<SelectedDirectoryName>-YY-mm-DD-HH-MM-SS.xlsx". |
+| Results | Open results directory, containing Excel files of previous executions. File names follow the convention "SelectedDirectoryName-YY-mm-DD-HH-MM-SS.xlsx". |
 | Summary | A metric detailing various metrics regarding the execution. |
 
 ## Admin
@@ -31,7 +32,6 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Parameter# | Fix procedures that end in *#* require an argument. Input their arguments here. If running multiple Fix procedures, separate arguments using "/", in order from top to bottom of the list of Fix procedures selected. <br> For example: If running "Replace Character (DIR)#" and "Replace Character (FILE)#", you may input (without the quotes) "&>and / @>at". <br> All Find procedures with arguments have usable a default value. To use its default value, either input nothing in the parameter field, or separate by slashes and leave its value blank. <br> For example: If running "Old File Find#~", "Empty Directory#~", and "Replace Character (FILE)#", you may input (without the quotes) "/ / &>and". |
 | Allow Modify | If on, executes all changes irreversibly. Can not run multiple modifier Fix procedures simultaneously. |
 | Include Hidden Files | If on, Find procedures will include hidden files. NOTE: Fix procedures will always ignore hidden files. |
-| Add Recommendations~ | If on, procedures that end in "~" will show helpful recommendations. Red highlight indicates a stronger warning: those files should perhaps be deleted. Yellow highlight indicates a weaker warning: those files should be looked at. |
 | Save Settings | Save current settings to a JSON file. After saving settings, the user is asked if they would like to create a corresponding batch file. Execute these batch files to automatically run File-Ninja-Control.exe using the JSON's settings. NOTE: The JSON and corresponding batch file must have the same name, and be in the same directory. NOTE: File-Ninja-Control.exe must not be renamed and must be in the same location as File-Ninja-Admin.exe's original location. If the batch file suddenly stops working, load the JSON's settings and re-save it, creating a new batch file. |
 | Load Settings | Load settings from a JSON file. |
 
@@ -59,8 +59,9 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Replace Space w Hyphen (DIR) | Same as the file version, except for directory names. |
 | Replace Space w Hyphen (FILE) | Replaces all instances of spaces within file names with a hyphen and fixes bad hyphen usage.<br> Example 1: "Engagement Tracker.txt" -> "Engagement-Tracker.txt".<br> Example 2: "- Engagement - - Tracker -.txt" -> "Engagement-Tracker.txt".<br> Example 3: "Engagement--Tracker.txt" -> "Engagement-Tracker.txt". |
 | Replace Character (DIR)# | Same as the file version, except for directory names. |
-| Replace Character (FILE)# | For file names, replaces substring with another substring, using a ">" as separator between the replacer and replace pair, and "*" as a separator between pairs. Requires argument. WARNING: If running multiple pairs of arguments, one pair's replacer can undo the work of an earlier pair's replace; order can matter if not careful. Always double-check your output if unsure. <br>Example 1: With the argument set to "& > -and-", all instances of "&" will be replaced with "-and-".<br> Example 2: With the argument set to "@>-at- * &-and-", all instances of "@" will become "-at-", and all instances of "&" will become "-and-". |
+| Replace Character (FILE)# | For file names, replaces substring with another substring, using a ">" as separator between the replacer and replace pair, and "\*" as a separator between pairs. Requires argument. WARNING: If running multiple pairs of arguments, one pair's replacer can undo the work of an earlier pair's replacee; order can matter if not careful. Always double-check your output if unsure. <br>Example 1: With the argument set to "& > -and-", all instances of "&" will be replaced with "-and-".<br> Example 2: With the argument set to "@>-at- \* &-and-", all instances of "@" will become "-at-", and all instances of "&" will become "-and-". |
 
 # Hints
 - Middle-click anywhere in the window to alternate between light and dark mode.
 - `ctrl+w` to close the window.
+- To schedule an execution, use Windows' Task Scheduler application. Set the *program* attribute to your batch file, and the *start* attribute to the directory of your batch file.
