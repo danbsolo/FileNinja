@@ -5,10 +5,6 @@ import procedureFunctions
 import traceback
 import tkinter as tk
 from defs import *
-import sys
-from concurrent.futures import ThreadPoolExecutor
-import time
-import filesScannedSharedVar
 import common
 
 
@@ -142,34 +138,3 @@ def launchControllerFromJSON(jsonFilePath):
         return launchControllerFromSettings(result)
     else:
         return settingsPair
-
-
-def main():
-    print("Running File-Ninja-Control...")
-
-    if len(sys.argv) <= 1:
-        print("Usage: <<command>> <<\"json file path\">>")
-        return
-
-    filePath = sys.argv[1]
-
-    print(f"Using {filePath}...")
-
-    with ThreadPoolExecutor(max_workers=1) as tpe:
-        future = tpe.submit(launchControllerFromJSON, filePath)
-
-        # run until done
-        time.sleep(0.1)  # in the case it errors immediately, this wait allows that error to be caught immediately
-        lastFilesScanned = -1
-        while not future.done():
-            time.sleep(0.5)
-            if lastFilesScanned != filesScannedSharedVar.FILES_SCANNED:
-                lastFilesScanned = filesScannedSharedVar.FILES_SCANNED
-                print(lastFilesScanned)
-
-        exitPair = future.result()
-
-    print(common.interpretError(exitPair))
-
-if __name__ == "__main__":
-    main()
