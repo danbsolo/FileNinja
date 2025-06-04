@@ -1,10 +1,5 @@
 # File Ninja
-File Ninja helps you manage your files and automate tasks that are too repetitive to do manually. The Admin version includes everything from the Lite version and adds the following features:
-- Fix procedures
-- Parameter# field
-- Toggle for *Allow Modify*
-- Toggle for *Add Recommendations~*
-- Toggle for *Include Hidden Files*
+File Ninja helps you manage your files and automate tasks that are too repetitive to do manually. The Admin version includes everything from the Lite version, plus more features.
 
 
 # Opening File Ninja
@@ -62,6 +57,21 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Replace Character (FILE)# | For file names, replaces substring with another substring, using a ">" as separator between the replacer and replace pair, and "\*" as a separator between pairs. Requires argument. WARNING: If running multiple pairs of arguments, one pair's replacer can undo the work of an earlier pair's replacee; order can matter if not careful. Always double-check your output if unsure. <br>Example 1: With the argument set to "& > -and-", all instances of "&" will be replaced with "-and-".<br> Example 2: With the argument set to "@>-at- \* &-and-", all instances of "@" will become "-at-", and all instances of "&" will become "-and-". |
 
 # Hints
+## Scheduling Executions with Task Scheduler
+NOTE: Ensure the exe file exists, not just the p7m file.
+- Open `Task Scheduler`.
+- Select `Create Basic Task...`.
+- Create a name.
+- Specify a trigger.
+    - Specify trigger details further if applicable. These can always be changed later.
+- Select `Start a program`.
+- Specify program details.
+    - `Program/script` = `File-Ninja-Admin.exe`
+    - `Add arguments` = The location of the JSON settings you want to run. (ex: "C:\\Users\\FirstName LastName\\routineRunSettings.json"). **MUST** be in quotes.
+    - `Start in` = The directory in which `File-Ninja-Admin.exe` resides. (ex: C:\\Users\\FirstName LastName\\). Must **NOT** be in quotes.
+- Press finish.
+- Right-click the newly created task, then press `Run` to ensure you set your program details correctly.
+## Miscellaneous
 - Middle-click anywhere in the window to alternate between light and dark mode.
 - `ctrl+w` to close the window.
 - To schedule an execution, use Windows' Task Scheduler application. Set the *program* attribute to your batch file, and the *start* attribute to the directory of your batch file.
