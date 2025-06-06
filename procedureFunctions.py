@@ -42,8 +42,13 @@ def spaceFolderFindBase(dirAbsolute:str, dirBasename, dirFolders, dirFiles, ws):
     return (False,)
 
 
+def exceedCharacterLimitStart(_, ws):
+    writeDefaultHeaders(_, ws)
+    ws.write(0, wbm.OUTCOME_COL, "File path length", wbm.headerFormat)
+
 def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
-    absoluteItemLength = len(dirAbsolute + "/" + itemName)
+    # The slash separating dirAbsolute and itemName in the path name needs to be accounted for, hence +1
+    absoluteItemLength = len(dirAbsolute + itemName) +1
 
     # HARD CODED at 200
     if (absoluteItemLength > 200):
@@ -57,6 +62,7 @@ def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
 
 def badCharacterStart(_, ws):
     writeDefaultHeaders(_, ws)
+    ws.write(0, wbm.OUTCOME_COL, "Characters", wbm.headerFormat)
     global PERMISSIBLE_CHARACTERS
     PERMISSIBLE_CHARACTERS = set(string.ascii_letters + string.digits + "- ")
 
@@ -254,6 +260,27 @@ def fileExtensionSummaryPost(ws):
     for extension in sorted(EXTENSION_COUNT.keys()):
         averageSize = round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1)
 
+        ws.write_string(row, 0, extension)
+
+        ws.write_number(row, 1, EXTENSION_COUNT[extension])
+        ws.write_number(row, 2, averageSize)
+        ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
+        row += 1
+
+    EXTENSION_COUNT.clear()
+    EXTENSION_TOTAL_SIZE.clear()
+    ws.freeze_panes(1, 0)
+
+def fileExtensionSummaryPostRecommend(ws):
+    ws.write(0, 0, "Extensions", wbm.headerFormat)
+    ws.write(0, 1, "Count", wbm.headerFormat)
+    ws.write(0, 2, "Avg Size (MB)", wbm.headerFormat)
+    ws.write(0, 3, "Total Size (MB)", wbm.headerFormat)
+
+    row = 1
+    for extension in sorted(EXTENSION_COUNT.keys()):
+        averageSize = round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1)
+
         # only count as an error if the average size is above a threshold
         if (averageSize >= TOO_LARGE_SIZE_MB):
             ws.write_string(row, 0, extension, wbm.warningWeakFormat)
@@ -275,7 +302,7 @@ def identicalFileStart(arg, ws):
     global HASH_AND_FILES
     global EMPTY_INPUT_HASH_CODE
     global LOCK_DUPLICATE_CONTENT
-    global EXTENSIONS_TO_IGNORE
+    global EXTENSIONS_TO_OMIT
 
     HASH_AND_FILES = {}
     hashFunc = hashlib.new("sha256")
@@ -283,10 +310,11 @@ def identicalFileStart(arg, ws):
     EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
     LOCK_DUPLICATE_CONTENT = Lock()
 
-    EXTENSIONS_TO_IGNORE = {
-        # ".shx", ".shp", ".gbd", ".sbd", ".spx", ".sbx", ".spx", ".sbn",
-        # ".dbf", ".qpj", ".atx", ".gdbtablx", ".gdbtable",
-        # ".freelist", ".horizon", ".gdbindexes", ".cpg", ".prj" 
+    # Potentially problem extensions: .shp and .dbf. Just omitting them for now
+    EXTENSIONS_TO_OMIT = {
+        ".shp", ".shx", ".gbd", ".sbd", ".spx", ".sbx", ".spx", ".sbn",
+        ".dbf", ".qpj", ".atx", ".gdbtablx", ".gdbtable",
+        ".freelist", ".horizon", ".gdbindexes", ".cpg", ".prj" 
     }
 
 def identicalFileHelper(longFileAbsolute:str):    
@@ -300,7 +328,7 @@ def identicalFileHelper(longFileAbsolute:str):
 
 def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws):
     _, ext = getRootNameAndExtension(longFileAbsolute)
-    if ext.lower() in EXTENSIONS_TO_IGNORE:
+    if ext.lower() in EXTENSIONS_TO_OMIT:
         return (False,)
 
     try:

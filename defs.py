@@ -111,6 +111,7 @@ ALL_PROCEDURES = {
         fileExtensionSummaryBase,
         startFunction=fileExtensionSummaryStart,
         postFunction=fileExtensionSummaryPost,
+        recommendPostFunction=fileExtensionSummaryPostRecommend,
         isConcurrentOnly=False
     ),
 
@@ -176,7 +177,7 @@ ALL_PROCEDURES = {
         CHARACTER_LIMIT,
         True,
         exceedCharacterLimitBase,
-        startFunction=writeDefaultHeaders
+        startFunction=exceedCharacterLimitStart
     ),
 
 ### FIX PROCEDURES ################################################################################

@@ -36,7 +36,8 @@ def joinDirToFileName(dirAbsolute, fileName):
 
 
 def getRootNameAndExtension(itemName):
-    return os.path.splitext(itemName)
+    rootName, extension = os.path.splitext(itemName)
+    return (rootName, extension.lower())
 
 
 def getDirectoryBaseName(dirAbsolute):
