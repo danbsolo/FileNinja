@@ -44,19 +44,38 @@ def spaceFolderFindBase(dirAbsolute:str, dirBasename, dirFolders, dirFiles, ws):
 
 def exceedCharacterLimitStart(_, ws):
     writeDefaultHeaders(_, ws)
-    ws.write(0, wbm.OUTCOME_COL, "File path length", wbm.headerFormat)
+    ws.write(0, wbm.OUTCOME_COL, "Filepath length", wbm.headerFormat)
+
+    global  FILE_NAME_LENGTH_COL
+    global  NEW_FILENAME_COL
+    global  NEW_FILENAME_LENGTH_COL
+    global  NEW_FILEPATH_LENGTH_COL
+    FILE_NAME_LENGTH_COL = wbm.OUTCOME_COL+1
+    NEW_FILENAME_COL = wbm.OUTCOME_COL+2
+    NEW_FILENAME_LENGTH_COL = wbm.OUTCOME_COL+3
+    NEW_FILEPATH_LENGTH_COL = wbm.OUTCOME_COL+4
+    ws.write(0, FILE_NAME_LENGTH_COL, "Filename length", wbm.headerFormat)
+    ws.write(0, NEW_FILENAME_COL, "New filename", wbm.headerFormat)
+    ws.write(0, NEW_FILENAME_LENGTH_COL, "New filename length", wbm.headerFormat)
+    ws.write(0, NEW_FILEPATH_LENGTH_COL, "New filepath length", wbm.headerFormat)
 
 def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
     # The slash separating dirAbsolute and itemName in the path name needs to be accounted for, hence +1
     absoluteItemLength = len(dirAbsolute + itemName) +1
 
     # HARD CODED at 200
-    if (absoluteItemLength > 200):
+    if (absoluteItemLength > 10):
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
+        oneIndexedRow = row+1
+        # HARD CODED LETTER COLUMNS. Could use Openpyxl's utils if want it chosen programmatically, but to be quite honest, this shouldn't ever change.
         return (True,
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
-                ExcelWritePackage(row, wbm.OUTCOME_COL, absoluteItemLength, ws))
+                ExcelWritePackage(row, wbm.OUTCOME_COL, absoluteItemLength, ws),
+                ExcelWritePackage(row, FILE_NAME_LENGTH_COL, f"=SUM(LEN(B{oneIndexedRow}))" , ws),
+                ExcelWritePackage(row, NEW_FILENAME_LENGTH_COL, f"=SUM(LEN(E{oneIndexedRow}))" , ws),
+                ExcelWritePackage(row, NEW_FILEPATH_LENGTH_COL, f"=(C{oneIndexedRow}-D{oneIndexedRow})+F{oneIndexedRow}" , ws),
+                )
     return (False,)
 
 
