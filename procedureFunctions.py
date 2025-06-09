@@ -44,37 +44,56 @@ def spaceFolderFindBase(dirAbsolute:str, dirBasename, dirFolders, dirFiles, ws):
 
 def exceedCharacterLimitStart(_, ws):
     writeDefaultHeaders(_, ws)
-    ws.write(0, wbm.OUTCOME_COL, "Filepath length", wbm.headerFormat)
 
-    global  FILE_NAME_LENGTH_COL
-    global  NEW_FILENAME_COL
-    global  NEW_FILENAME_LENGTH_COL
-    global  NEW_FILEPATH_LENGTH_COL
-    FILE_NAME_LENGTH_COL = wbm.OUTCOME_COL+1
-    NEW_FILENAME_COL = wbm.OUTCOME_COL+2
+    global LAST_DIR
+    LAST_DIR = None
+    global LAST_DIR_INDEX
+    LAST_DIR_INDEX = None
+
+    global FILENAME_LENGTH_COL
+    FILENAME_LENGTH_COL = wbm.OUTCOME_COL
+    ws.write(0, FILENAME_LENGTH_COL, "Filename length", wbm.headerFormat)
+
+    global FILEPATH_LENGTH_COL
+    FILEPATH_LENGTH_COL = wbm.OUTCOME_COL+1
+    ws.write(0, FILEPATH_LENGTH_COL, "Filepath length", wbm.headerFormat)
+
+    #global NEW_FILENAME_COL
+    #NEW_FILENAME_COL = wbm.OUTCOME_COL+2
+    #ws.write(0, NEW_FILENAME_COL, "New filename", wbm.headerFormat)
+    ws.write(0, wbm.OUTCOME_COL+2, "New filename", wbm.headerFormat)
+
+    global NEW_FILENAME_LENGTH_COL
     NEW_FILENAME_LENGTH_COL = wbm.OUTCOME_COL+3
-    NEW_FILEPATH_LENGTH_COL = wbm.OUTCOME_COL+4
-    ws.write(0, FILE_NAME_LENGTH_COL, "Filename length", wbm.headerFormat)
-    ws.write(0, NEW_FILENAME_COL, "New filename", wbm.headerFormat)
     ws.write(0, NEW_FILENAME_LENGTH_COL, "New filename length", wbm.headerFormat)
+
+    global NEW_FILEPATH_LENGTH_COL
+    NEW_FILEPATH_LENGTH_COL = wbm.OUTCOME_COL+4
     ws.write(0, NEW_FILEPATH_LENGTH_COL, "New filepath length", wbm.headerFormat)
 
-def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
-    # The slash separating dirAbsolute and itemName in the path name needs to be accounted for, hence +1
-    absoluteItemLength = len(dirAbsolute + itemName) +1
 
+def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
+    global LAST_DIR
+    global LAST_DIR_INDEX
+
+    # The slash separating dirAbsolute and itemName in the path name needs to be accounted for, hence +1
     # HARD CODED at 200
-    if (absoluteItemLength > 200):
+    if (len(dirAbsolute + itemName) +1) > 200:
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
-        oneIndexedRow = row+1
+        oneIndexedRow = row +1
+
+        if dirAbsolute != LAST_DIR:
+            LAST_DIR = dirAbsolute
+            LAST_DIR_INDEX = oneIndexedRow
+
         # HARD CODED LETTER COLUMNS. Could use Openpyxl's utils if want it chosen programmatically, but to be quite honest, this shouldn't ever change.
         return (True,
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat),
-                ExcelWritePackage(row, wbm.OUTCOME_COL, absoluteItemLength, ws),
-                ExcelWritePackage(row, FILE_NAME_LENGTH_COL, f"=SUM(LEN(B{oneIndexedRow}))" , ws),
+                ExcelWritePackage(row, FILENAME_LENGTH_COL, f"=SUM(LEN(B{oneIndexedRow}))", ws),
+                ExcelWritePackage(row, FILEPATH_LENGTH_COL, f"=SUM(LEN(A{LAST_DIR_INDEX}),LEN(B{oneIndexedRow}),1)", ws),
                 ExcelWritePackage(row, NEW_FILENAME_LENGTH_COL, f"=SUM(LEN(E{oneIndexedRow}))" , ws),
-                ExcelWritePackage(row, NEW_FILEPATH_LENGTH_COL, f"=(C{oneIndexedRow}-D{oneIndexedRow})+F{oneIndexedRow}" , ws),
+                ExcelWritePackage(row, NEW_FILEPATH_LENGTH_COL, f"=SUM(LEN(A{LAST_DIR_INDEX}),LEN(E{oneIndexedRow}),1)", ws),
                 )
     return (False,)
 
@@ -714,9 +733,6 @@ def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbs
 def deleteEmptyFileStart(_, ws):
     writeDefaultAndOwnerHeaders(_, ws)
     ws.write(0, wbm.OUTCOME_COL, "Staged for Deletion", wbm.headerFormat)
-    
-    global TODAY
-    TODAY = datetime.now()
 
 def deleteEmptyFileBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     try:
