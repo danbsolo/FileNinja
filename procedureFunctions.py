@@ -369,7 +369,7 @@ def identicalFileHelper(longFileAbsolute:str):
 
     return hashFunc.hexdigest()
 
-def identicalFileBase(longFileAbsolute:str, dirBasename:str, dirAbsolute:str, itemName:str, ws):
+def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws):
     _, ext = getRootNameAndExtension(itemName)
     if ext in EXTENSIONS_TO_OMIT:
         return (False,)
@@ -383,6 +383,9 @@ def identicalFileBase(longFileAbsolute:str, dirBasename:str, dirAbsolute:str, it
     if (not hashCode or hashCode == EMPTY_INPUT_HASH_CODE):
         return (False,)
     
+    # 0 -> itemName list
+    # 1 -> dirAbsolute list
+    # 2 -> longFileAbsolute list
     with LOCK_DUPLICATE_CONTENT:
         if hashCode in HASH_AND_FILES:
             HASH_AND_FILES[hashCode][0].append(itemName)
@@ -438,7 +441,9 @@ def identicalFilePostRecommend(ws):
 
             # Sort this group of identical files with dirAbsolute as the key, and itemName as the values
             for i in range(numOfFiles):
-                folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(HASH_AND_FILES[hashCode][0][i])
+                folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(
+                    (HASH_AND_FILES[hashCode][0][i], HASH_AND_FILES[hashCode][2][i])
+                    )
 
             for dirAbsoluteKey in folderAndItem.keys():
                 # If 2 or more files are identical AND reside in the same folder
@@ -448,26 +453,24 @@ def identicalFilePostRecommend(ws):
                     folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
 
                     # Write the first one normally
-                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
+                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(
-                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
+                    ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
                     row += 1
 
                     # Write the rest in strong warning format
                     for i in range(1, dirAbsoluteNumOfFiles):
-                        ws.write(row, 1, folderAndItem[dirAbsoluteKey][i], wbm.warningStrongFormat)
+                        ws.write(row, 1, folderAndItem[dirAbsoluteKey][i][0], wbm.warningStrongFormat)
                         ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                        ws.write(row, 3, getOwnerCatch(
-                            joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][i])))
+                        ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][i][1]))
                         row += 1
                 
                 # If this file is only duplicated once in this directory, just write it normally
                 else:
-                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0], defaultItemFormat)
+                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
                     ws.write(row, 3, getOwnerCatch(
-                        joinDirToFileName(dirAbsoluteKey, folderAndItem[dirAbsoluteKey][0])))
+                        folderAndItem[dirAbsoluteKey][0][1]))
                     row += 1
 
             folderAndItem.clear()

@@ -113,6 +113,7 @@ def getOwnerCatch(longFileAbsolute):
             return ownerInfo
 
     if computeOwner:
+        print("COMPUTING LFA: ", longFileAbsolute)
         try:
             ownerInfo = get_file_owner_info(longFileAbsolute)
         except Exception as e:
