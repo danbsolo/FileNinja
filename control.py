@@ -111,10 +111,11 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
 
 
 def launchControllerFromSettings(settings):
+    # settings[ALLOW_MODIFY_KEY]
     return launchController(
         settings[DIR_ABSOLUTE_KEY],
         settings[INCLUDE_SUBDIRECTORIES_KEY],
-        settings[ALLOW_MODIFY_KEY],
+        False,
         settings[INCLUDE_HIDDEN_FILES_KEY],
         settings[ADD_RECOMMENDATIONS_KEY],
         settings[SELECTED_FIND_PROCEDURES_KEY],
