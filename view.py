@@ -15,9 +15,11 @@ import common
 def launchView(isAdmin: bool):
     def launchControllerWorker():
         # Double check that the user wants to allow modifications
-        if allowModifyState.get() and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
-            return (STATUS_SUCCESSFUL, None)
-    
+        if allowModifyState.get() and not tk.messagebox.askyesnocancel(
+            "Confirmation", 
+            "Modifications are irreversible. By proceeding with the Fix procedure(s), you are confirming the action has been requested by the data owner and that there are no identified Litigation Holds (LIT-HOLD) or Access to Information and Privacy (ATIP) requests for in scope data. Proceed?"):
+            return
+        
         nonlocal currentStatusPair
         currentStatusPair = (STATUS_RUNNING, None)
         currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),

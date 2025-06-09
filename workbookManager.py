@@ -483,6 +483,12 @@ class WorkbookManager:
         self.summarySheet.write(4, 1, str(includeHiddenFiles), self.summaryValueFormat)
         self.summarySheet.write(5, 1, str(addRecommendations), self.summaryValueFormat)
 
+        # HARD CODED atip stuff
+        # which is okay because the code can't get here without this being agreed upon. Therefore, don't need a separate variable.
+        if allowModify:
+            self.summarySheet.write(7, 0, "NO LIT-HOLD / ATIP", self.headerFormat)
+            self.summarySheet.write(7, 1, str(True))
+
 
     def populateSummarySheet(self, excludedDirs):
         col = 1
