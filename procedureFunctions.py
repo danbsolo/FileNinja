@@ -329,10 +329,10 @@ def identicalFileStart(arg, ws):
     EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
     LOCK_DUPLICATE_CONTENT = Lock()
 
-    # Potentially problem extensions: .shp and .dbf. Just omitting them for now
+    # Leaving in .shp and .dbf files.
     EXTENSIONS_TO_OMIT = {
-        ".shp", ".shx", ".gbd", ".sbd", ".spx", ".sbx", ".spx", ".sbn",
-        ".dbf", ".qpj", ".atx", ".gdbtablx", ".gdbtable",
+        ".shx", ".gbd", ".sbd", ".spx", ".sbx", ".spx", ".sbn",
+        ".qpj", ".atx", ".gdbtablx", ".gdbtable",
         ".freelist", ".horizon", ".gdbindexes", ".cpg", ".prj" 
     }
 
