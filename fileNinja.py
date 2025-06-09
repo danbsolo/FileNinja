@@ -28,7 +28,6 @@ def main():
         view.launchView(isAdmin)
         return
     
-    
     print("Running File-Ninja-Control...")
     filePath = sys.argv[1]
     print(f"Using {filePath}...")

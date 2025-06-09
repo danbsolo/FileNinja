@@ -34,12 +34,12 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 | Name | Description |
 |---|---|
 | List All Files | Lists all files within their respective directories. |
-| List All Files (Owner) | Lists all files within their respective directories. Includes an owner column, displaying the owner of each file in the format "DOMAIN\NAME (SID_TYPE)". |
-| Identical File | Flags duplicate files. Error count is incremented for each duplicate found. Most GIS extensions are omitted from output, except for .shp and .dbf. (Includes owner column.)<br>Example 1: if a group of 5 identical files are found, the error count is incremented by 4. |
+| List All Files (Owner) | Lists all files within their respective directories. Includes an owner column and a last modified column. Owner is displayed in the format "DOMAIN\NAME (SID_TYPE)". |
+| Identical File | Flags duplicate files. Error count is incremented for each duplicate found. Most GIS extensions are omitted from output, except for .shp and .dbf. (Includes owner and last modified columns.)<br>Example 1: if a group of 5 identical files are found, the error count is incremented by 4. |
 | Large File Size | Details a summary of each file extension found. Flags any extension found to have an average size over 100MB. |
-| Old File | Flags any file that has not been accessed in over 1095 days (3 years). NOTE: Windows has a glitch regarding the "last accessed" attribute for a file, in that a file may be considered accessed even if it was not explicitly opened. Therefore, run this Find procedure first and foremost before perusing through your files. (Includes owner column.) |
+| Old File | Flags any file that has not been accessed in over 1095 days (3 years). NOTE: Windows has a glitch regarding the "last accessed" attribute for a file, in that a file may be considered accessed even if it was not explicitly opened. Therefore, run this Find procedure first and foremost before perusing through your files. (Includes owner and last modified columns.) |
 | Empty Directory | Flags any directory that holds 0 folders and 0 files within. |
-| Empty File | Flags any file that is 0 bytes. NOTE: Some file types may be empty but are not 0 bytes, such as most Microsoft files. For instance, an empty excel file is still roughly 6kb in size. (Includes owner column.) |
+| Empty File | Flags any file that is 0 bytes. NOTE: Some file types may be empty but are not 0 bytes, such as most Microsoft files. For instance, an empty excel file is still roughly 6kb in size. (Includes owner and last modified columns.) |
 | Space Error (DIR) | Flags directory names with spaces. |
 | Space Error (FILE) | Flags file names with spaces. |
 | Bad Character (DIR) | Flags directory names with bad characters. A bad character is any character that is either not alphanumeric, not a hyphen (-), or is a double hyphen (--). |
@@ -50,7 +50,7 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 # Fix Procedures
 | Name | Description |
 |---|---|
-| Delete Empty File~ | Deletes any file that is 0 bytes in size. Read "Empty File Error" find procedure for more information. (Includes owner column.) |
+| Delete Empty File~ | Deletes any file that is 0 bytes in size. Read "Empty File Error" find procedure for more information. (Includes owner and last modified columns.) |
 | Replace Space w Hyphen (DIR) | Same as the file version, except for directory names. |
 | Replace Space w Hyphen (FILE) | Replaces all instances of spaces within file names with a hyphen and fixes bad hyphen usage.<br>Example 1: "Engagement Tracker.txt" -> "Engagement-Tracker.txt".<br>Example 2: "- Engagement - - Tracker -.txt" -> "Engagement-Tracker.txt".<br>Example 3: "Engagement--Tracker.txt" -> "Engagement-Tracker.txt". |
 | Replace Character (DIR)# | Same as the file version, except for directory names. |
