@@ -23,9 +23,12 @@ def listAllBase(_1, _2, _3, itemName:str, ws):
 def listAllOwnerBase(longFileAbsolute:str, _1, _2, itemName:str, ws):
     wbm.incrementRowAndFileCount(ws)
     row = wbm.sheetRows[ws]
+
     return (2, 
             ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws), 
-            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws))  # SPECIAL CASE
+            ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+            ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws)
+            )  # SPECIAL CASE
 
 
 def spaceFileFindBase(_1, _2, _3, itemName:str, ws):
@@ -143,7 +146,7 @@ def badCharacterFolderFind(dirAbsolute:str, dirBasename, dirFolders, dirFiles, w
 
 
 def oldFileStart(arg, ws):
-    writeDefaultAndOwnerHeaders(arg, ws)
+    writeDefaultAndOwnerAndLastModifiedHeaders(arg, ws)
     ws.write(0, wbm.OUTCOME_COL, "# Days Last Accessed", wbm.headerFormat)
 
     global TODAY
@@ -187,6 +190,7 @@ def oldFileBase(longFileAbsolute:str, _1, _2, itemName:str, ws):
         return (True,
                 itemEwp,
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws, wbm.errorFormat))
     
     # This executes if fromtimestamp() threw an exception
@@ -216,6 +220,7 @@ def oldFileRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
         return (True,
                 itemEwp,
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, fileDaysAgoLastAccessed, ws, dynamicFormat))
     else:
         return (2,
@@ -224,7 +229,7 @@ def oldFileRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
 
 
 def emptyDirectoryStart(arg, ws):
-    writeDefaultAndOwnerHeaders(arg, ws)
+    writeDefaultAndOwnerAndLastModifiedHeaders(arg, ws)
     ws.write(0, wbm.OUTCOME_COL, "# Files Contained", wbm.headerFormat)
 
     global TOO_FEW_AMOUNT
@@ -364,9 +369,9 @@ def identicalFileHelper(longFileAbsolute:str):
 
     return hashFunc.hexdigest()
 
-def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws):
-    _, ext = getRootNameAndExtension(longFileAbsolute)
-    if ext.lower() in EXTENSIONS_TO_OMIT:
+def identicalFileBase(longFileAbsolute:str, dirBasename:str, dirAbsolute:str, itemName:str, ws):
+    _, ext = getRootNameAndExtension(itemName)
+    if ext in EXTENSIONS_TO_OMIT:
         return (False,)
 
     try:
@@ -382,10 +387,11 @@ def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws
         if hashCode in HASH_AND_FILES:
             HASH_AND_FILES[hashCode][0].append(itemName)
             HASH_AND_FILES[hashCode][1].append(dirAbsolute)
+            HASH_AND_FILES[hashCode][2].append(longFileAbsolute)
             wbm.incrementFileCount(ws)
             return (3,)
         else:
-            HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute])
+            HASH_AND_FILES[hashCode] = ([itemName], [dirAbsolute], [longFileAbsolute])
             return (False,)
 
 def identicalFilePost(ws):
@@ -393,6 +399,7 @@ def identicalFilePost(ws):
     ws.write(0, 1, "File", wbm.headerFormat)
     ws.write(0, 2, "Directory", wbm.headerFormat)
     ws.write(0, 3, "Owner", wbm.headerFormat)
+    ws.write(0, 4, "Last Modified", wbm.headerFormat)
 
     row = 1
     for hashCode in HASH_AND_FILES.keys():
@@ -400,10 +407,11 @@ def identicalFilePost(ws):
             ws.write(row, 0, "------------", wbm.logFormat)
 
             for i in range(numOfFiles):
+                longFileAbsolute = HASH_AND_FILES[hashCode][2][i]
                 ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
                 ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
-                ws.write(row, 3, getOwnerCatch(
-                    joinDirToFileName(HASH_AND_FILES[hashCode][1][i], HASH_AND_FILES[hashCode][0][i])))
+                ws.write(row, 3, getOwnerCatch(longFileAbsolute))
+                ws.write(row, 4, getLastModifiedDate(longFileAbsolute))
                 row += 1
                 
     HASH_AND_FILES.clear()
@@ -489,6 +497,7 @@ def emptyFileFindBase(longFileAbsolute:str, _1, _2, itemName:str, ws):
         row = wbm.sheetRows[ws]
         return (True,
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.errorFormat))
     
     return (False,)
@@ -514,6 +523,7 @@ def emptyFileFindRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
         row = wbm.sheetRows[ws]
         return (True,
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.warningStrongFormat),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.warningStrongFormat))
     
@@ -731,7 +741,7 @@ def searchAndReplaceFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbs
 
 
 def deleteEmptyFileStart(_, ws):
-    writeDefaultAndOwnerHeaders(_, ws)
+    writeDefaultAndOwnerAndLastModifiedHeaders(_, ws)
     ws.write(0, wbm.OUTCOME_COL, "Staged for Deletion", wbm.headerFormat)
 
 def deleteEmptyFileBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):

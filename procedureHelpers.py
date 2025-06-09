@@ -1,5 +1,6 @@
 import os
 from workbookManager import WorkbookManager
+from datetime import date
 
 
 def setWorkbookManager(newManager: WorkbookManager):
@@ -15,9 +16,9 @@ def addLongPathPrefix(dirAbsolute):
         return '\\\\?\\' + dirAbsolute
 
 
-def writeOwnerHeader(_, ws):
+def writeOwnerAndLastModifiedHeaders(_, ws):
     ws.write(0, wbm.AUXILIARY_COL, "Owner", wbm.headerFormat)
-
+    ws.write(0, wbm.AUXILIARY_COL+1, "Last Modified", wbm.headerFormat)
 
 def writeDefaultHeaders(_, ws):
     ws.freeze_panes(1, 0)
@@ -26,9 +27,9 @@ def writeDefaultHeaders(_, ws):
     ws.write(0, wbm.OUTCOME_COL, "Outcome", wbm.headerFormat)
 
 
-def writeDefaultAndOwnerHeaders(_, ws):
+def writeDefaultAndOwnerAndLastModifiedHeaders(_, ws):
     writeDefaultHeaders(_, ws)
-    writeOwnerHeader(_, ws)
+    writeOwnerAndLastModifiedHeaders(_, ws)
 
 
 def joinDirToFileName(dirAbsolute, fileName):
@@ -46,3 +47,7 @@ def getDirectoryBaseName(dirAbsolute):
 
 def getDirectoryDirName(dirAbsolute):
     return os.path.dirname(dirAbsolute)
+
+
+def getLastModifiedDate(dirAbsolute):
+    return date.fromtimestamp(os.path.getmtime(dirAbsolute)).isoformat()

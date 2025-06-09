@@ -92,7 +92,7 @@ ALL_PROCEDURES = {
         LIST_ALL_OWNER,
         True,
         listAllOwnerBase,
-        startFunction=writeDefaultAndOwnerHeaders
+        startFunction=writeDefaultAndOwnerAndLastModifiedHeaders
     ),
 
     IDENTICAL_FILE: Procedure(
@@ -141,7 +141,7 @@ ALL_PROCEDURES = {
         EMPTY_FILE,
         True,
         emptyFileFindBase,
-        startFunction=writeDefaultAndOwnerHeaders,
+        startFunction=writeDefaultAndOwnerAndLastModifiedHeaders,
         recommendBaseFunction=emptyFileFindRecommend
     ),
 

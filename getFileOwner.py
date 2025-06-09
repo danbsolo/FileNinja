@@ -96,6 +96,7 @@ def get_file_owner_info(filename):
 def getOwnerCatch(longFileAbsolute):
     """Return the owner info in 'DOMAIN\\Owner (SID_Type)' format. Return error info if applicable. Also manage OWNER_CACHE."""
     ownerInfo = OWNER_INFO_CACHE.get(longFileAbsolute)
+
     if ownerInfo is not None and ownerInfo != dummyData:
         return ownerInfo
 
