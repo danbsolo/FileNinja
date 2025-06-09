@@ -64,7 +64,7 @@ def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
     absoluteItemLength = len(dirAbsolute + itemName) +1
 
     # HARD CODED at 200
-    if (absoluteItemLength > 10):
+    if (absoluteItemLength > 200):
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
         oneIndexedRow = row+1
