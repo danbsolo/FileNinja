@@ -425,6 +425,7 @@ def identicalFilePostRecommend(ws):
     ws.write(0, 1, "File", wbm.headerFormat)
     ws.write(0, 2, "Directory", wbm.headerFormat)
     ws.write(0, 3, "Owner", wbm.headerFormat)
+    ws.write(0, 4, "Last Modified", wbm.headerFormat)
 
     row = 1
     folderAndItem = defaultdict(list)
@@ -456,6 +457,7 @@ def identicalFilePostRecommend(ws):
                     ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
                     ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
+                    ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
                     row += 1
 
                     # Write the rest in strong warning format
@@ -463,14 +465,15 @@ def identicalFilePostRecommend(ws):
                         ws.write(row, 1, folderAndItem[dirAbsoluteKey][i][0], wbm.warningStrongFormat)
                         ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
                         ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][i][1]))
+                        ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][i][1]))
                         row += 1
                 
                 # If this file is only duplicated once in this directory, just write it normally
                 else:
                     ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
                     ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(
-                        folderAndItem[dirAbsoluteKey][0][1]))
+                    ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
+                    ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
                     row += 1
 
             folderAndItem.clear()
@@ -535,7 +538,7 @@ def emptyFileFindRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
 
 
 
-## FIX FUNCTIONS (SOON TO BE FOLDER FUNCTIONS (or something)) #########################################################################################################
+## FIX FUNCTIONS#########################################################################################################
 
 # Used by spaceFolderFixModify or searchAndReplaceFolderModify (not logs)
 # Only run modify function can be run at a time, so this is okay
@@ -769,6 +772,7 @@ def deleteEmptyFileBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:s
         return (True,
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws),
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.logFormat))
     return (False,)
 
@@ -795,6 +799,7 @@ def deleteEmptyFileRecommend(longFileAbsolute:str, longDirAbsolute:str, dirAbsol
         return (True,
                 ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws, wbm.warningStrongFormat),
                 ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws),
+                ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws),
                 ExcelWritePackage(row, wbm.OUTCOME_COL, "", ws, wbm.warningStrongFormat))
     return (False,)
 
@@ -825,7 +830,8 @@ def deleteEmptyFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
         itemEwp = ExcelWritePackage(row, wbm.ITEM_COL, itemName, ws)
-        auxiliaryEwp = ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws)
+        ownerEwp = ExcelWritePackage(row, wbm.AUXILIARY_COL, getOwnerCatch(longFileAbsolute), ws)
+        lastModifiedEwp = ExcelWritePackage(row, wbm.AUXILIARY_COL+1, getLastModifiedDate(longFileAbsolute), ws)
 
         try:
             os.remove(longFileAbsolute)
@@ -836,6 +842,7 @@ def deleteEmptyFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute
             outcomeEwp = ExcelWritePackage(row, wbm.OUTCOME_COL, f"FAILED TO DELETE. {e}", ws, wbm.errorFormat)
         return (True,
                 itemEwp,
-                auxiliaryEwp,
-                outcomeEwp)    
+                ownerEwp,
+                lastModifiedEwp,
+                outcomeEwp)   
     return (False,)
