@@ -3,7 +3,6 @@ from datetime import datetime
 import procedureHelpers
 import procedureFunctions
 import traceback
-import tkinter as tk
 from defs import *
 import common
 
@@ -27,10 +26,6 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
     # If allowModify and includeHiddenFiles are both turned on, exit
     if allowModify and (addRecommendations or includeHiddenFiles):
         return (-7, None)
-    
-    # Double check that the user wants to allow modifications
-    if allowModify and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
-        return (STATUS_SUCCESSFUL, None)
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")

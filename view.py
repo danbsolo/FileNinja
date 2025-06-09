@@ -14,6 +14,10 @@ import common
 
 def launchView(isAdmin: bool):
     def launchControllerWorker():
+        # Double check that the user wants to allow modifications
+        if allowModifyState.get() and not tk.messagebox.askyesnocancel("Allow Modify?", "You have chosen to modify items. This is an IRREVERSIBLE action. Are you sure?"):
+            return (STATUS_SUCCESSFUL, None)
+    
         nonlocal currentStatusPair
         currentStatusPair = (STATUS_RUNNING, None)
         currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
