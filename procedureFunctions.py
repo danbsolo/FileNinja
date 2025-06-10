@@ -79,16 +79,18 @@ def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
     global LAST_DIR
     global LAST_DIR_INDEX
 
+    # This operation is kind of slow to do every time, but I can't think of anything else that would work
+    # that doesn't involve importing openpyxl to read the cell of the same row in the A column
+    if dirAbsolute != LAST_DIR:
+        LAST_DIR = dirAbsolute
+        LAST_DIR_INDEX = wbm.sheetRows[ws] +2
+
     # The slash separating dirAbsolute and itemName in the path name needs to be accounted for, hence +1
     # HARD CODED at 200
     if (len(dirAbsolute + itemName) +1) > 200:
         wbm.incrementRowAndFileCount(ws)
         row = wbm.sheetRows[ws]
         oneIndexedRow = row +1
-
-        if dirAbsolute != LAST_DIR:
-            LAST_DIR = dirAbsolute
-            LAST_DIR_INDEX = oneIndexedRow
 
         # HARD CODED LETTER COLUMNS. Could use Openpyxl's utils if want it chosen programmatically, but to be quite honest, this shouldn't ever change.
         return (True,
