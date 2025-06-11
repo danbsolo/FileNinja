@@ -320,6 +320,7 @@ def fileExtensionSummaryPost(ws):
         ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
         row += 1
 
+    # NOTE: Don't do this stuff if not recommending.
     row += 1
     ws.write(row, 0, "Extension / Directory", wbm.headerFormat)
     ws.write(row, 1, "Item", wbm.headerFormat)
@@ -333,7 +334,6 @@ def fileExtensionSummaryPost(ws):
             ws.write(row, 0, pathPair[0], wbm.dirFormat)
             ws.write(row, 1, pathPair[1])
             ws.write(row, 2, pathPair[2])
-
         row += 1
 
     EXTENSION_COUNT.clear()
@@ -348,12 +348,14 @@ def fileExtensionSummaryPostRecommend(ws):
     ws.set_column('A:D', 20)
 
     errorExtensions = set()
+    nonErrorExtensionsWithAtLeastOneErrorFile = set()
 
     row = 1
     for extension in sorted(EXTENSION_COUNT):
         averageSize = round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1)
 
         # only count as an error if the average size is above a threshold
+        # NOTE: Writes all extensions indiscriminately in the summary
         if (averageSize >= TOO_LARGE_SIZE_MB):
             errorExtensions.add(extension)
             ws.write_string(row, 0, extension, wbm.warningWeakFormat)
@@ -361,6 +363,13 @@ def fileExtensionSummaryPostRecommend(ws):
         else:
             ws.write_string(row, 0, extension)
             ws.write_number(row, 2, averageSize)
+
+            # Check if this extension has at least one error file.
+            # TODO: Do this another way because this is pretty rudimentary/naive. Could use a data structure instead.
+            for pathPair in FILES_BY_EXTENSION[extension]:
+                if pathPair[2] >= TOO_LARGE_SIZE_MB:
+                    nonErrorExtensionsWithAtLeastOneErrorFile.add(extension)
+                    break
 
         ws.write_number(row, 1, EXTENSION_COUNT[extension])
         ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
@@ -384,23 +393,18 @@ def fileExtensionSummaryPostRecommend(ws):
             else:
                 ws.write(row, 2, fileSize)
         row += 1
-
-    for extension in sorted(FILES_BY_EXTENSION):
-        if extension in errorExtensions: continue
-        
-        row += 1
+    
+    row += 1
+    for extension in sorted(nonErrorExtensionsWithAtLeastOneErrorFile): 
         ws.write(row, 0, extension)
+        row += 1
 
         for pathPair in FILES_BY_EXTENSION[extension]:
-            row += 1
-            ws.write(row, 0, pathPair[0], wbm.dirFormat)
-            ws.write(row, 1, pathPair[1])
             if (fileSize := pathPair[2]) >= TOO_LARGE_SIZE_MB:
-                ws.write(row, 2, fileSize, wbm.warningWeakFormat)
-            else:
-                ws.write(row, 2, fileSize)
-        row += 1
-
+                ws.write(row, 0, pathPair[0], wbm.dirFormat)
+                ws.write(row, 1, pathPair[1])
+                ws.write(row, 2, fileSize, wbm.warningWeakFormat) 
+        row += 2
 
     EXTENSION_COUNT.clear()
     EXTENSION_TOTAL_SIZE.clear()
