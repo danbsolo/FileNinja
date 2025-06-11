@@ -14,13 +14,15 @@ import common
 
 def launchView(isAdmin: bool):
     def launchControllerWorker():
+        nonlocal currentStatusPair
+
         # Double check that the user wants to allow modifications
         if allowModifyState.get() and not tk.messagebox.askyesnocancel(
             "Confirmation", 
             "Modifications are irreversible. By proceeding with the Fix procedure(s), you are confirming the action has been requested by the data owner and that there are no identified Litigation Holds (LIT-HOLD) or Access to Information and Privacy (ATIP) requests for in scope data. Proceed?"):
+            currentStatusPair = (STATUS_SUCCESSFUL, None)
             return
         
-        nonlocal currentStatusPair
         currentStatusPair = (STATUS_RUNNING, None)
         currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
