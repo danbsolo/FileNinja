@@ -80,7 +80,6 @@ def exceedCharacterLimitBase(_1, _2, dirAbsolute:str, itemName:str, ws) -> bool:
     global LAST_DIR_INDEX
 
     # This operation is kind of slow to do every time, but I can't think of anything else that would work
-    # that doesn't involve importing openpyxl to read the cell of the same row in the A column
     if dirAbsolute != LAST_DIR:
         LAST_DIR = dirAbsolute
         LAST_DIR_INDEX = wbm.sheetRows[ws] +2
@@ -276,6 +275,7 @@ def emptyDirectoryRecommend(dirAbsolute:str, dirBasename, dirFolders, dirFiles, 
 def fileExtensionSummaryStart(_1, _2):
     global EXTENSION_COUNT
     global EXTENSION_TOTAL_SIZE
+    global FILES_BY_EXTENSION
     global TOO_LARGE_SIZE_MB
     global LOCK_FILE_EXTENSION
     
@@ -337,6 +337,8 @@ def fileExtensionSummaryPostRecommend(ws):
         ws.write_number(row, 2, averageSize)
         ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
         row += 1
+
+    
 
     EXTENSION_COUNT.clear()
     EXTENSION_TOTAL_SIZE.clear()

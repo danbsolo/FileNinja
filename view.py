@@ -302,7 +302,7 @@ pause')
     parameterVar = tk.StringVar()
     includeSubdirectoriesState = tk.IntVar(value=1)
     allowModifyState = tk.IntVar(value=0)
-    includeHiddenFilesState = tk.IntVar(value=isAdmin)
+    includeHiddenFilesState = tk.IntVar(value=0)
     addRecommendationsState = tk.IntVar(value=0)
     excludedDirs = []
     currentStatusPair = (STATUS_IDLE, None)
