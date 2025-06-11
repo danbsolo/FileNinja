@@ -35,11 +35,11 @@ File Ninja helps you manage your files and automate tasks that are too repetitiv
 |---|---|
 | List All Files | Lists all files within their respective directories. |
 | List All Files (Owner) | Lists all files within their respective directories. Includes an owner column and a last modified column. Owner is displayed in the format "DOMAIN\NAME (SID_TYPE)". |
-| Identical File | Flags duplicate files. Error count is incremented for each duplicate found. Most GIS extensions are omitted from output, except for .shp and .dbf. (Includes owner and last modified columns.)<br>Example 1: if a group of 5 identical files are found, the error count is incremented by 4. |
-| Large File Size | Details a summary of each file extension found. Flags any extension found to have an average size over 100MB. |
-| Old File | Flags any file that has not been accessed in over 1095 days (3 years). NOTE: Windows has a glitch regarding the "last accessed" attribute for a file, in that a file may be considered accessed even if it was not explicitly opened. Therefore, run this Find procedure first and foremost before perusing through your files. (Includes owner and last modified columns.) |
-| Empty Directory | Flags any directory that holds 0 folders and 0 files within. |
-| Empty File | Flags any file that is 0 bytes. NOTE: Some file types may be empty but are not 0 bytes, such as most Microsoft files. For instance, an empty excel file is still roughly 6kb in size. (Includes owner and last modified columns.) |
+| Identical File~ | Flags duplicate files. Error count is incremented for each duplicate found. Most GIS extensions are omitted from output, except for .shp and .dbf. (Includes owner and last modified columns.)<br>Example 1: if a group of 5 identical files are found, the error count is incremented by 4. |
+| Large File Size# | Details a summary of each file extension found, as well as listing all items and their respective sizes, grouped by extension. Any file over 100MB count as an error. |
+| Old File#~ | Flags any file that has not been accessed in over 1095 days (3 years). NOTE: Windows has a glitch regarding the "last accessed" attribute for a file, in that a file may be considered accessed even if it was not explicitly opened. Therefore, run this Find procedure first and foremost before perusing through your files. (Includes owner and last modified columns.) |
+| Empty Directory#~ | Flags any directory that holds 0 folders and 0 files within. |
+| Empty File~ | Flags any file that is 0 bytes. NOTE: Some file types may be empty but are not 0 bytes, such as most Microsoft files. For instance, an empty excel file is still roughly 6kb in size. (Includes owner and last modified columns.) |
 | Space Error (DIR) | Flags directory names with spaces. |
 | Space Error (FILE) | Flags file names with spaces. |
 | Bad Character (DIR) | Flags directory names with bad characters. A bad character is any character that is either not alphanumeric, not a hyphen (-), or is a double hyphen (--). |
