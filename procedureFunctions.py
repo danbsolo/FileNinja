@@ -272,7 +272,7 @@ def emptyDirectoryRecommend(dirAbsolute:str, dirBasename, dirFolders, dirFiles, 
     return (False,)
 
 
-def fileExtensionSummaryStart(_1, _2):
+def fileExtensionSummaryStart(arg, _):
     global EXTENSION_COUNT
     global EXTENSION_TOTAL_SIZE
     global FILES_BY_EXTENSION
@@ -281,68 +281,130 @@ def fileExtensionSummaryStart(_1, _2):
     
     EXTENSION_COUNT = defaultdict(int)
     EXTENSION_TOTAL_SIZE = defaultdict(int)
-    TOO_LARGE_SIZE_MB = 100
+    FILES_BY_EXTENSION = defaultdict(list)
+    TOO_LARGE_SIZE_MB = arg[0]
     LOCK_FILE_EXTENSION = Lock()
 
-def fileExtensionSummaryBase(longFileAbsolute:str, _1, _2, itemName:str, _3):
-    try: fileSize = os.path.getsize(longFileAbsolute) / 1000_000  # Bytes / 1000_000 = MBs
+def fileExtensionSummaryBase(longFileAbsolute:str, _, dirAbsolute, itemName:str, ws):
+    try: fileSize = round(os.path.getsize(longFileAbsolute) / 1000_000, 1)  # Bytes / 1000_000 = MBs
     except: return (False,)
 
     _, extension = getRootNameAndExtension(itemName)
+    if not extension: extension = "."
 
     with LOCK_FILE_EXTENSION:
         EXTENSION_COUNT[extension] += 1
         EXTENSION_TOTAL_SIZE[extension] += fileSize
-    return (False,)
+        FILES_BY_EXTENSION[extension].append((dirAbsolute, itemName, fileSize))
+    
+    if fileSize >= TOO_LARGE_SIZE_MB:
+        wbm.incrementFileCount(ws)
+        return (3,)
+    else:
+        return (False,)
 
 def fileExtensionSummaryPost(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)
     ws.write(0, 1, "Count", wbm.headerFormat)
     ws.write(0, 2, "Avg Size (MB)", wbm.headerFormat)
     ws.write(0, 3, "Total Size (MB)", wbm.headerFormat)
+    ws.set_column('A:D', 20)
 
     row = 1
-    for extension in sorted(EXTENSION_COUNT.keys()):
+    for extension in sorted(EXTENSION_COUNT):
         averageSize = round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1)
 
         ws.write_string(row, 0, extension)
-
         ws.write_number(row, 1, EXTENSION_COUNT[extension])
         ws.write_number(row, 2, averageSize)
         ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
         row += 1
 
+    row += 1
+    ws.write(row, 0, "Extension / Directory", wbm.headerFormat)
+    ws.write(row, 1, "Item", wbm.headerFormat)
+    ws.write(row, 2, "Size (MB)", wbm.headerFormat)
+    for extension in sorted(FILES_BY_EXTENSION):
+        row += 1
+        ws.write(row, 0, extension, wbm.boldFormat)
+
+        for pathPair in FILES_BY_EXTENSION[extension]:
+            row += 1
+            ws.write(row, 0, pathPair[0], wbm.dirFormat)
+            ws.write(row, 1, pathPair[1])
+            ws.write(row, 2, pathPair[2])
+
+        row += 1
+
     EXTENSION_COUNT.clear()
     EXTENSION_TOTAL_SIZE.clear()
-    ws.freeze_panes(1, 0)
+    FILES_BY_EXTENSION.clear()
 
 def fileExtensionSummaryPostRecommend(ws):
     ws.write(0, 0, "Extensions", wbm.headerFormat)
     ws.write(0, 1, "Count", wbm.headerFormat)
     ws.write(0, 2, "Avg Size (MB)", wbm.headerFormat)
     ws.write(0, 3, "Total Size (MB)", wbm.headerFormat)
+    ws.set_column('A:D', 20)
+
+    errorExtensions = set()
 
     row = 1
-    for extension in sorted(EXTENSION_COUNT.keys()):
+    for extension in sorted(EXTENSION_COUNT):
         averageSize = round(EXTENSION_TOTAL_SIZE[extension] / EXTENSION_COUNT[extension], 1)
 
         # only count as an error if the average size is above a threshold
         if (averageSize >= TOO_LARGE_SIZE_MB):
+            errorExtensions.add(extension)
             ws.write_string(row, 0, extension, wbm.warningWeakFormat)
-            wbm.incrementFileCount(ws, EXTENSION_COUNT[extension])
+            ws.write_number(row, 2, averageSize, wbm.warningWeakFormat)
         else:
             ws.write_string(row, 0, extension)
+            ws.write_number(row, 2, averageSize)
 
         ws.write_number(row, 1, EXTENSION_COUNT[extension])
-        ws.write_number(row, 2, averageSize)
         ws.write_number(row, 3, round(EXTENSION_TOTAL_SIZE[extension], 1))
         row += 1
 
-    
+    row += 1
+    ws.write(row, 0, "Extension / Directory", wbm.headerFormat)
+    ws.write(row, 1, "Item", wbm.headerFormat)
+    ws.write(row, 2, "Size (MB)", wbm.headerFormat)
+    # Do the errorExtensions first
+    for extension in sorted(errorExtensions): ## TODO: Not just error extensions, but they should indeed be at the top
+        row += 1
+        ws.write(row, 0, extension, wbm.warningWeakFormat)
+
+        for pathPair in FILES_BY_EXTENSION[extension]:
+            row += 1
+            ws.write(row, 0, pathPair[0], wbm.dirFormat)
+            ws.write(row, 1, pathPair[1])
+            if (fileSize := pathPair[2]) >= TOO_LARGE_SIZE_MB:
+                ws.write(row, 2, fileSize, wbm.warningWeakFormat)
+            else:
+                ws.write(row, 2, fileSize)
+        row += 1
+
+    for extension in sorted(FILES_BY_EXTENSION):
+        if extension in errorExtensions: continue
+        
+        row += 1
+        ws.write(row, 0, extension)
+
+        for pathPair in FILES_BY_EXTENSION[extension]:
+            row += 1
+            ws.write(row, 0, pathPair[0], wbm.dirFormat)
+            ws.write(row, 1, pathPair[1])
+            if (fileSize := pathPair[2]) >= TOO_LARGE_SIZE_MB:
+                ws.write(row, 2, fileSize, wbm.warningWeakFormat)
+            else:
+                ws.write(row, 2, fileSize)
+        row += 1
+
 
     EXTENSION_COUNT.clear()
     EXTENSION_TOTAL_SIZE.clear()
-    ws.freeze_panes(1, 0)
+    FILES_BY_EXTENSION.clear()
 
 
 def identicalFileStart(arg, ws):
@@ -423,6 +485,7 @@ def identicalFilePost(ws):
                 
     HASH_AND_FILES.clear()
     ws.freeze_panes(1, 0)
+    ws.autofit()
 
 def identicalFilePostRecommend(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
@@ -484,6 +547,7 @@ def identicalFilePostRecommend(ws):
                 
     HASH_AND_FILES.clear()
     ws.freeze_panes(1, 0)
+    ws.autofit()
 
 
 def emptyFileFindBase(longFileAbsolute:str, _1, _2, itemName:str, ws):

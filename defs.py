@@ -24,7 +24,7 @@ EMPTY_DIRECTORY = "Empty Directory#~"
 EMPTY_FILE = "Empty File~"
 CHARACTER_LIMIT = "Exceed Character Limit"
 IDENTICAL_FILE = "Identical File~"
-FILE_EXTENSION_SUMMARY = "Large File Size"
+FILE_EXTENSION_SUMMARY = "Large File Size#"
 
 DELETE_EMPTY_FILE = "Delete Empty File~"
 SPACE_FILE_FIX = "Replace Space w Hyphen (FILE)"
@@ -99,20 +99,25 @@ ALL_PROCEDURES = {
         IDENTICAL_FILE,
         True,
         identicalFileBase,
+        isConcurrentOnly=False,
         startFunction=identicalFileStart,
         postFunction=identicalFilePost,
         recommendPostFunction=identicalFilePostRecommend,
-        isConcurrentOnly=False
+
     ),
 
     FILE_EXTENSION_SUMMARY: Procedure(
         FILE_EXTENSION_SUMMARY,
         True,
         fileExtensionSummaryBase,
+        isConcurrentOnly=False,
+        validatorFunction=minimumIntToInfinityValidator,
+        argBoundary=0,
+        defaultArgument=(100,),
         startFunction=fileExtensionSummaryStart,
         postFunction=fileExtensionSummaryPost,
         recommendPostFunction=fileExtensionSummaryPostRecommend,
-        isConcurrentOnly=False
+
     ),
 
     OLD_FILE: Procedure(

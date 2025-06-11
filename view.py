@@ -360,7 +360,7 @@ pause')
     includeSubdirectoriesCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
     includeSubdirectoriesCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
-        allowModifyCheckbutton = tk.Checkbutton(frames[6], text="Allow Modify", variable=allowModifyState, font=fontGeneral)
+        allowModifyCheckbutton = tk.Checkbutton(frames[6], text="Enable Modifications", variable=allowModifyState, font=fontGeneral)
         allowModifyCheckbutton.pack(padx=(0, 0), side=tk.LEFT)  # , padx=(0, 50)
     else:
         readMeButton = tk.Button(frames[6], text="README", command=openReadMe, font=fontGeneral)

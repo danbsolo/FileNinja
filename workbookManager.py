@@ -53,6 +53,7 @@ class WorkbookManager:
         # Default cell styles
         self.dirFormat = self.wb.add_format({"bg_color": "#99CCFF", "bold": True})  # blueish
         self.errorFormat = self.wb.add_format({"bold": True})  # "bg_color": "#FF4444", # reddish
+        self.boldFormat = self.wb.add_format({"bold": True})
         self.modifyFormat = self.wb.add_format({"bg_color": "#00FF80", "bold": True})  # greenish
         self.logFormat = self.wb.add_format({"bg_color": "#9999FF", "bold": True})  # purplish
         self.headerFormat = self.wb.add_format({"bg_color": "#C0C0C0", "bold": True})  # grayish
@@ -442,7 +443,11 @@ class WorkbookManager:
         
         self.executionTime = time() - start
         self.populateSummarySheet(excludedDirs)
-        self.autofitSheets()
+        
+        # autofit all concurrent only sheets
+        for procedureObject in self.procedureObjects:
+            if procedureObject.getIsConcurrentOnly():
+                self.procedureObjectSheets[procedureObject].autofit()
         
 
 
@@ -524,11 +529,6 @@ class WorkbookManager:
         for ws in self.getAllProcedureSheets():
             self.summarySheet.write(self.sheetRows[self.summarySheet] + i, 1, self.summaryCounts[ws], self.summaryValueFormat)
             i += 1
-
-
-    def autofitSheets(self):
-        for ws in self.procedureSheets:
-            ws.autofit()
 
 
     def close(self):
