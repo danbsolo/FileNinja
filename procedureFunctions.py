@@ -991,7 +991,7 @@ def likeTermsPost(ws):
     ###
     row = 1
     cliques = find_cliques(VG)
-    cliques = sorted(list(cliques), key=lambda clique: clique[0][1])
+    cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
     
     for clique in cliques:
         # skip single node cliques
