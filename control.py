@@ -67,6 +67,8 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
     procedureHelpers.setWorkbookManager(wbm)
     procedureFunctions.setWorkbookManager(wbm)
 
+    # preCrawlInitiation
+    wbm.createMetaSheets(addRecommendations)
 
     # If argUnprocessed is just an empty string or *just* whitespace
     if not argUnprocessed.strip():
