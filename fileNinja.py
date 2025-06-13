@@ -18,7 +18,7 @@ def hideConsole():
 
 def main():
     # NOTE: This line is manually changed between True and False for now, hence the seemingly redundant code ahead.
-    isAdmin = True
+    isAdmin = False
 
     # If Lite, always launch view.
     # If Admin and no arguments are specified, launch the view.
