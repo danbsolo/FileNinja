@@ -121,7 +121,7 @@ def launchView(isAdmin: bool):
         if currentStatusPair[0] == STATUS_RUNNING:
             sys.exit()  # Force close
         else:
-            root.destroy()
+            root.destroy()  # End gracefully
             
 
     def onSelectFixlistbox(e):
