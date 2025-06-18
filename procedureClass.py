@@ -54,6 +54,12 @@ class Procedure:
         return self.isFileProcedure
 
 
+def numberRangeValidator(arg:str, range:tuple):
+    try:
+        arg = float(arg)
+        if (range[0] <= arg and arg <= range[1]): return (arg,)
+    except:
+        return
 
 def minimumIntToInfinityOrMaxValidator(arg:str, minimum:int):
     try:

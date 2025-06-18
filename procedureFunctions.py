@@ -925,32 +925,34 @@ def deleteEmptyFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute
     return (False,)
 
 
-def likeTermsStart(arg, ws):
+def likeTermsStart(arg, _):
     global VG
     global NODE_TUPLES
-    global NUM_NODES
     global FILTERED_NAMES
+    global NUM_NODES
+    global SIMILARITY_THRESHOLD
     VG = nx.Graph()
     NODE_TUPLES = []
     FILTERED_NAMES = []
     NUM_NODES = 0
+    SIMILARITY_THRESHOLD = arg[0] / 100
     
 def likeTermsSimilarityMeasureHelper(s, t):  # similarity measurer
     return SequenceMatcher(None, s, t).ratio()
 
 def likeTermsFilterHelper(s):
-    # only filter right now is removing the extension
-    root, _ = getRootNameAndExtension(s)
-    root = root.lower()
-    return root
+    # Filters:
+    # remove extension
+    # enable case-insensitivty via lower casing ubiquitously
+    return getRootNameAndExtension(s)[0].lower()
 
 def likeTermsBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     global NUM_NODES
-    newNodeTuple = (dirAbsolute, itemName)
+    newNodeTuple = (itemName, dirAbsolute, longFileAbsolute)
     filteredItemName = likeTermsFilterHelper(itemName)
 
     for i in range(NUM_NODES):
-        if likeTermsSimilarityMeasureHelper(FILTERED_NAMES[i], filteredItemName) >= 0.9:  # our threshold
+        if likeTermsSimilarityMeasureHelper(FILTERED_NAMES[i], filteredItemName) >= SIMILARITY_THRESHOLD:  # our threshold
             VG.add_edge(NODE_TUPLES[i], newNodeTuple)
     
     FILTERED_NAMES.append(filteredItemName)
@@ -964,10 +966,10 @@ def likeTermsPost(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
     ws.write(0, 1, "Item", wbm.headerFormat)
     ws.write(0, 2, "Directory", wbm.headerFormat)
-    # ws.write(0, 3, "Owner", wbm.headerFormat)
-    # ws.write(0, 4, "Last Modified", wbm.headerFormat)
+    ws.write(0, 3, "Owner", wbm.headerFormat)
+    ws.write(0, 4, "Last Modified", wbm.headerFormat)
     
-    ###    
+    ###
     # row = 1
     # # sort the list, now that indexes no longer matter
     # NODE_TUPLES = sorted(NODE_TUPLES, key=lambda x: x[1])
@@ -978,14 +980,14 @@ def likeTermsPost(ws):
 
     #     # Write the main node first
     #     ws.write(row, 0, "------------", wbm.logFormat)
-    #     ws.write(row, 1, nodeTuple[1], wbm.logFormat)
-    #     ws.write(row, 2, nodeTuple[0], wbm.dirFormat)
+    #     ws.write(row, 1, nodeTuple[0], wbm.logFormat)
+    #     ws.write(row, 2, nodeTuple[1], wbm.dirFormat)
 
     #     # Write its neighbours
     #     for neighbourNodeTuple in VG.neighbors(nodeTuple):
     #         row += 1
-    #         ws.write(row, 1, neighbourNodeTuple[1])
-    #         ws.write(row, 2, neighbourNodeTuple[0], wbm.dirFormat)
+    #         ws.write(row, 1, neighbourNodeTuple[0])
+    #         ws.write(row, 2, neighbourNodeTuple[1], wbm.dirFormat)
     #     row += 1
 
     ###
@@ -997,14 +999,19 @@ def likeTermsPost(ws):
         # skip single node cliques
         if len(clique) <= 1: continue
 
+        wbm.incrementFileCount(ws)
         ws.write(row, 0, "------------", wbm.logFormat)
-        ws.write(row, 1, clique[0][1], wbm.logFormat)
-        ws.write(row, 2, clique[0][0], wbm.dirFormat)
+        ws.write(row, 1, clique[0][0], wbm.logFormat)
+        ws.write(row, 2, clique[0][1], wbm.dirFormat)
+        ws.write(row, 3, getOwnerCatch(clique[0][2]))
+        ws.write(row, 4, getLastModifiedDate(clique[0][2]))
 
         for nodeTuple in clique[1:]:
             row += 1
-            ws.write(row, 1, nodeTuple[1])
-            ws.write(row, 2, nodeTuple[0], wbm.dirFormat)
+            ws.write(row, 1, nodeTuple[0])
+            ws.write(row, 2, nodeTuple[1], wbm.dirFormat)
+            ws.write(row, 3, getOwnerCatch(nodeTuple[2]))
+            ws.write(row, 4, getLastModifiedDate(nodeTuple[2]))
         row += 1
 
     NODE_TUPLES.clear()

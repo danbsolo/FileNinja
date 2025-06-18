@@ -25,7 +25,7 @@ EMPTY_FILE = "Empty File~"
 CHARACTER_LIMIT = "Exceed Character Limit"
 IDENTICAL_FILE = "Identical File~"
 FILE_EXTENSION_SUMMARY = "Large File Size#"
-LIKE_TERMS = "Multiple Versions Error"
+LIKE_TERMS = "Multiple Versions Error#"
 
 DELETE_EMPTY_FILE = "Delete Empty File~"
 SPACE_FILE_FIX = "Replace Space w Hyphen (FILE)"
@@ -190,10 +190,14 @@ ALL_PROCEDURES = {
         LIKE_TERMS,
         True,
         likeTermsBase,
+        validatorFunction=numberRangeValidator,
+        argBoundary=(1, 100),
+        defaultArgument=(90,),
         isConcurrentOnly=False,
         startFunction=likeTermsStart,
         postFunction=likeTermsPost
     ),
+
 
 ### FIX PROCEDURES ################################################################################
     DELETE_EMPTY_FILE: Procedure(
