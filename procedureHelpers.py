@@ -1,6 +1,7 @@
 import os
 from workbookManager import WorkbookManager
 from datetime import date
+import threading
 
 
 def setWorkbookManager(newManager: WorkbookManager):
@@ -49,5 +50,43 @@ def getDirectoryDirName(dirAbsolute):
     return os.path.dirname(dirAbsolute)
 
 
-def getLastModifiedDate(dirAbsolute):
-    return date.fromtimestamp(os.path.getmtime(dirAbsolute)).isoformat()
+LAST_MODIFIED_INFO_CACHE = {}
+LM_CACHE_EVENTS = {}
+LM_CACHE_LOCK = threading.Lock()
+dummyData = "DUMMY"
+
+def getLastModifiedDate(longFileAbsolute):
+    lastModifiedInfo = LAST_MODIFIED_INFO_CACHE.get(longFileAbsolute)
+    
+    # fast track
+    if lastModifiedInfo is not None and lastModifiedInfo != dummyData:
+        return lastModifiedInfo
+    
+    # middle track
+    with LM_CACHE_LOCK:
+        lastModifiedInfo = LAST_MODIFIED_INFO_CACHE.get(longFileAbsolute)
+
+        if lastModifiedInfo is None:
+            LAST_MODIFIED_INFO_CACHE[longFileAbsolute] = dummyData
+            LM_CACHE_EVENTS[longFileAbsolute] = threading.Event()
+            computeLastModified = True
+        elif lastModifiedInfo == dummyData:
+            computeLastModified = False
+        else:
+            return lastModifiedInfo
+
+    # slow track
+    if computeLastModified:
+        print(f"\nComputing {longFileAbsolute}...\n")
+        try:
+            lastModifiedInfo = date.fromtimestamp(os.path.getmtime(longFileAbsolute)).isoformat()
+        except Exception as e:
+            lastModifiedInfo = f"GET LAST MODIFIED FAILED: {e}"
+        
+        LAST_MODIFIED_INFO_CACHE[longFileAbsolute] = lastModifiedInfo
+        LM_CACHE_EVENTS[longFileAbsolute].set()
+        return lastModifiedInfo
+    
+    LM_CACHE_EVENTS[longFileAbsolute].wait()
+    return LAST_MODIFIED_INFO_CACHE[longFileAbsolute]
+

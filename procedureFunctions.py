@@ -516,7 +516,7 @@ def identicalFilePostRecommend(ws):
             else:
                 defaultItemFormat = wbm.errorFormat
 
-            # Sort this group of identical files with dirAbsolute as the key, and itemName as the values
+            # Sort this group of identical files with longFileAbsolute as the key, and itemName as the values
             for i in range(numOfFiles):
                 folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(
                     (HASH_AND_FILES[hashCode][0][i], HASH_AND_FILES[hashCode][2][i])
