@@ -503,6 +503,16 @@ def identicalFilePostRecommend(ws):
     ws.write(0, 3, "Owner", wbm.headerFormat)
     ws.write(0, 4, "Last Modified", wbm.headerFormat)
 
+
+
+    ### NOTE: TACKLING PURPLE HIGHLIGHTING
+    
+
+
+    ###
+
+
+
     row = 1
     folderAndItem = defaultdict(list)
 
