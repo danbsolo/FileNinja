@@ -10,6 +10,7 @@ import string
 import networkx as nx
 from difflib import SequenceMatcher
 from networkx.algorithms.clique import find_cliques
+from itertools import combinations
 
 
 def setWorkbookManager(newManager: WorkbookManager):
@@ -503,66 +504,100 @@ def identicalFilePostRecommend(ws):
     ws.write(0, 3, "Owner", wbm.headerFormat)
     ws.write(0, 4, "Last Modified", wbm.headerFormat)
 
-
-
     ### NOTE: TACKLING PURPLE HIGHLIGHTING
-    
+    dirToHashGraph = nx.Graph() # bipartite graph
+    flaggedHashes = set()
+    duplicatedHashes = set()
+    # dirAbsoluteNodeList = []
+    for hashCode in HASH_AND_FILES:
+        if (len(HASH_AND_FILES[hashCode][0])) <= 1:
+            continue
 
-#test
+        duplicatedHashes.add(hashCode)
+        
+        for dirAbsolute in HASH_AND_FILES[hashCode][1]:
+            dirToHashGraph.add_edge(hashCode, dirAbsolute)
+            # dirAbsoluteNodeList.append(dirAbsolute)
+
+    for hashCodeNode in duplicatedHashes:
+        hashCodeNodeNeighborDirs = list(dirToHashGraph.neighbors(hashCodeNode))
+
+        # If this hashCode is only found within 2 directories, skip it
+        if len(hashCodeNodeNeighborDirs) < 3: continue
+
+        # Loop through the nC3 combinations
+        hashOccurrences = defaultdict(int)
+        for setOfDirs in combinations(hashCodeNodeNeighborDirs, 3):
+            hashOccurrences.clear()
+
+            # Count how many times each hash appears across the set of 3 directories
+            for dir in setOfDirs:
+                for dirNodeNeighbourHashCode in dirToHashGraph.neighbors(dir):
+                    hashOccurrences[dirNodeNeighbourHashCode] += 1
+            
+            # Record which hashes appear 3 times
+            for ho in hashOccurrences:
+                if (hashOccurrences[ho]) >= 3: # should be ==, probably
+                    flaggedHashes.add(ho)
+            
+        #for dirAbsoluteNode in list(dirToHashGraph.neighbors(hashCodeNode)):
+            # Loop through the files of the 3 or more neighbors
+    # for hashCodeNode in HASH_AND_FILES:
+    #     print(hashCodeNode, len(list(dirToHashGraph.neighbors(hashCodeNode))))
+    #     print()
     ###
-
-
 
     row = 1
     folderAndItem = defaultdict(list)
 
-    for hashCode in HASH_AND_FILES.keys():
-        if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "------------", wbm.logFormat)
+    for hashCode in duplicatedHashes:
+        numOfFiles = len(HASH_AND_FILES[hashCode][0])
+        ws.write(row, 0, "------------", wbm.logFormat)
 
-            # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
-            if (numOfFiles >= 3):
-                defaultItemFormat = wbm.warningWeakFormat
+        defaultItemFormat = None
+        # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
+        if (numOfFiles >= 3):
+            defaultItemFormat = wbm.warningWeakFormat
+        else:
+            defaultItemFormat = wbm.errorFormat
+
+        # Sort this group of identical files with longFileAbsolute as the key, and itemName as the values
+        for i in range(numOfFiles):
+            folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(
+                (HASH_AND_FILES[hashCode][0][i], HASH_AND_FILES[hashCode][2][i])
+                )
+
+        for dirAbsoluteKey in folderAndItem.keys():
+            # If 2 or more files are identical AND reside in the same folder
+            if (dirAbsoluteNumOfFiles := len(folderAndItem[dirAbsoluteKey])) > 1:
+
+                # Sort the list of items in descending order, ordered by number of characters
+                folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
+
+                # Write the first one normally
+                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat if defaultItemFormat else wbm.warningMiddlingFormat)
+                ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+                ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
+                ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
+                row += 1
+
+                # Write the rest in strong warning format
+                for i in range(1, dirAbsoluteNumOfFiles):
+                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][i][0], wbm.warningStrongFormat)
+                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+                    ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][i][1]))
+                    ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][i][1]))
+                    row += 1
+            
+            # If this file is only duplicated once in this directory, just write it normally
             else:
-                defaultItemFormat = wbm.errorFormat
+                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat if defaultItemFormat else wbm.warningMiddlingFormat)
+                ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
+                ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
+                ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
+                row += 1
 
-            # Sort this group of identical files with longFileAbsolute as the key, and itemName as the values
-            for i in range(numOfFiles):
-                folderAndItem[HASH_AND_FILES[hashCode][1][i]].append(
-                    (HASH_AND_FILES[hashCode][0][i], HASH_AND_FILES[hashCode][2][i])
-                    )
-
-            for dirAbsoluteKey in folderAndItem.keys():
-                # If 2 or more files are identical AND reside in the same folder
-                if (dirAbsoluteNumOfFiles := len(folderAndItem[dirAbsoluteKey])) > 1:
-
-                    # Sort the list of items in descending order, ordered by number of characters
-                    folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
-
-                    # Write the first one normally
-                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
-                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
-                    ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
-                    row += 1
-
-                    # Write the rest in strong warning format
-                    for i in range(1, dirAbsoluteNumOfFiles):
-                        ws.write(row, 1, folderAndItem[dirAbsoluteKey][i][0], wbm.warningStrongFormat)
-                        ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                        ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][i][1]))
-                        ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][i][1]))
-                        row += 1
-                
-                # If this file is only duplicated once in this directory, just write it normally
-                else:
-                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
-                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
-                    ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
-                    row += 1
-
-            folderAndItem.clear()
+        folderAndItem.clear()
                 
     HASH_AND_FILES.clear()
     ws.freeze_panes(1, 0)

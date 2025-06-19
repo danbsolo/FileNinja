@@ -77,7 +77,6 @@ def getLastModifiedDate(longFileAbsolute):
 
     # slow track
     if computeLastModified:
-        print(f"\nComputing {longFileAbsolute}...\n")
         try:
             lastModifiedInfo = date.fromtimestamp(os.path.getmtime(longFileAbsolute)).isoformat()
         except Exception as e:

@@ -51,10 +51,11 @@ class WorkbookManager:
         self.errorFormat = self.wb.add_format({"bold": True})  # "bg_color": "#FF4444", # reddish
         self.boldFormat = self.wb.add_format({"bold": True})
         self.modifyFormat = self.wb.add_format({"bg_color": "#00FF80", "bold": True})  # greenish
-        self.logFormat = self.wb.add_format({"bg_color": "#9999FF", "bold": True})  # purplish
+        self.logFormat = self.wb.add_format({"bg_color": "#E2725B", "bold": True})  # terracotta
         self.headerFormat = self.wb.add_format({"bg_color": "#C0C0C0", "bold": True})  # grayish
         self.summaryValueFormat = self.wb.add_format({})
 
+        self.warningMiddlingFormat = self.wb.add_format({"bg_color": "#CCC0DA", "bold": True})
         self.warningWeakFormat = self.wb.add_format({"bg_color": "#FFEB9C", "bold": True})  # yellowish
         self.warningStrongFormat = self.wb.add_format({"bg_color": "#FFC7CE", "bold": True})  # reddish
 
