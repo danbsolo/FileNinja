@@ -195,7 +195,8 @@ ALL_PROCEDURES = {
         defaultArgument=(90,),
         isConcurrentOnly=False,
         startFunction=multipleVersionStart,
-        postFunction=multipleVersionPost
+        postFunction=multipleVersionPost,
+        recommendPostFunction=multipleVersionPostRecommend
     ),
 
 

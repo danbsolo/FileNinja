@@ -508,6 +508,7 @@ def identicalFilePostRecommend(ws):
     dirToHashGraph = nx.Graph() # bipartite graph
     flaggedHashes = set()
     duplicatedHashes = set()
+    hashOccurrences = defaultdict(int)
     # dirAbsoluteNodeList = []
     for hashCode in HASH_AND_FILES:
         if (len(HASH_AND_FILES[hashCode][0])) <= 1:
@@ -520,13 +521,15 @@ def identicalFilePostRecommend(ws):
             # dirAbsoluteNodeList.append(dirAbsolute)
 
     for hashCodeNode in duplicatedHashes:
+        # If this hashCode has already been flagged, don't look into it again
+        if hashCodeNode in flaggedHashes: continue
+
         hashCodeNodeNeighborDirs = list(dirToHashGraph.neighbors(hashCodeNode))
 
         # If this hashCode is only found within 2 directories, skip it
         if len(hashCodeNodeNeighborDirs) < 3: continue
 
         # Loop through the nC3 combinations
-        hashOccurrences = defaultdict(int)
         for setOfDirs in combinations(hashCodeNodeNeighborDirs, 3):
             hashOccurrences.clear()
 
@@ -556,7 +559,9 @@ def identicalFilePostRecommend(ws):
 
         defaultItemFormat = None
         # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
-        if (numOfFiles >= 3):
+        if (hashCode in flaggedHashes):
+            defaultItemFormat = wbm.warningMiddlingFormat
+        elif (numOfFiles >= 3):
             defaultItemFormat = wbm.warningWeakFormat
         else:
             defaultItemFormat = wbm.errorFormat
@@ -575,7 +580,7 @@ def identicalFilePostRecommend(ws):
                 folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
 
                 # Write the first one normally
-                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat if defaultItemFormat else wbm.warningMiddlingFormat)
+                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
                 ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
                 ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
                 ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
@@ -591,7 +596,7 @@ def identicalFilePostRecommend(ws):
             
             # If this file is only duplicated once in this directory, just write it normally
             else:
-                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat if defaultItemFormat else wbm.warningMiddlingFormat)
+                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
                 ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
                 ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
                 ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
@@ -1020,6 +1025,41 @@ def multipleVersionPost(ws):
     
     for clique in cliques:
         # skip single node cliques
+        if len(clique) <= 1: continue
+
+        wbm.incrementFileCount(ws)
+        ws.write(row, 0, "------------", wbm.separatorFormat)
+        ws.write(row, 1, clique[0][0])
+        ws.write(row, 2, clique[0][1], wbm.dirFormat)
+        ws.write(row, 3, getOwnerCatch(clique[0][2]))
+        ws.write(row, 4, getLastModifiedDate(clique[0][2]))
+
+        for nodeTuple in clique[1:]:
+            row += 1
+            ws.write(row, 1, nodeTuple[0])
+            ws.write(row, 2, nodeTuple[1], wbm.dirFormat)
+            ws.write(row, 3, getOwnerCatch(nodeTuple[2]))
+            ws.write(row, 4, getLastModifiedDate(nodeTuple[2]))
+        row += 1
+
+    NODE_TUPLES.clear()
+    FILTERED_NAMES.clear()
+    ws.freeze_panes(1, 0)
+    ws.autofit()
+
+def multipleVersionPostRecommend(ws):
+    global NODE_TUPLES
+    ws.write(0, 0, "Separator", wbm.headerFormat)
+    ws.write(0, 1, "Item", wbm.headerFormat)
+    ws.write(0, 2, "Directory", wbm.headerFormat)
+    ws.write(0, 3, "Owner", wbm.headerFormat)
+    ws.write(0, 4, "Last Modified", wbm.headerFormat)
+    
+    row = 1
+    cliques = find_cliques(VG)
+    cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
+    
+    for clique in cliques:
         if len(clique) <= 1: continue
 
         wbm.incrementFileCount(ws)
