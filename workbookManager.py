@@ -54,6 +54,7 @@ class WorkbookManager:
         self.logFormat = self.wb.add_format({"bg_color": "#8A7768", "bold": True})  # brownish
         self.headerFormat = self.wb.add_format({"bg_color": "#C0C0C0", "bold": True})  # grayish
         self.summaryValueFormat = self.wb.add_format({})
+        self.separatorFormat = self.wb.add_format({"bg_color": "#202124", "font_color": "#FFFFFF"})
 
         self.warningMiddlingFormat = self.wb.add_format({"bg_color": "#CCC0DA", "bold": True})
         self.warningWeakFormat = self.wb.add_format({"bg_color": "#FFEB9C", "bold": True})  # yellowish

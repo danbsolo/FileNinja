@@ -25,7 +25,7 @@ EMPTY_FILE = "Empty File~"
 CHARACTER_LIMIT = "Exceed Character Limit"
 IDENTICAL_FILE = "Identical File~"
 FILE_EXTENSION_SUMMARY = "Large File Size#"
-LIKE_TERMS = "Multiple Versions Error#"
+MULTIPLE_VERSION = "Multiple Version Error#"
 
 DELETE_EMPTY_FILE = "Delete Empty File~"
 SPACE_FILE_FIX = "Replace Space w Hyphen (FILE)"
@@ -186,16 +186,16 @@ ALL_PROCEDURES = {
         startFunction=exceedCharacterLimitStart
     ),
 
-    LIKE_TERMS: Procedure(
-        LIKE_TERMS,
+    MULTIPLE_VERSION: Procedure(
+        MULTIPLE_VERSION,
         True,
-        likeTermsBase,
+        multipleVersionBase,
         validatorFunction=numberRangeValidator,
         argBoundary=(1, 100),
         defaultArgument=(90,),
         isConcurrentOnly=False,
-        startFunction=likeTermsStart,
-        postFunction=likeTermsPost
+        startFunction=multipleVersionStart,
+        postFunction=multipleVersionPost
     ),
 
 
@@ -255,7 +255,7 @@ FIND_PROCEDURES_DISPLAY = [
     LIST_ALL,
     LIST_ALL_OWNER,
     IDENTICAL_FILE,
-    LIKE_TERMS,
+    MULTIPLE_VERSION,
     FILE_EXTENSION_SUMMARY,
     OLD_FILE,
     EMPTY_DIRECTORY,

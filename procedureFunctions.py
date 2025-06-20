@@ -483,7 +483,7 @@ def identicalFilePost(ws):
     row = 1
     for hashCode in HASH_AND_FILES.keys():
         if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "------------", wbm.logFormat)
+            ws.write(row, 0, "------------", wbm.separatorFormat)
 
             for i in range(numOfFiles):
                 longFileAbsolute = HASH_AND_FILES[hashCode][2][i]
@@ -552,7 +552,7 @@ def identicalFilePostRecommend(ws):
 
     for hashCode in duplicatedHashes:
         numOfFiles = len(HASH_AND_FILES[hashCode][0])
-        ws.write(row, 0, "------------", wbm.logFormat)
+        ws.write(row, 0, "------------", wbm.separatorFormat)
 
         defaultItemFormat = None
         # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
@@ -970,7 +970,7 @@ def deleteEmptyFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute
     return (False,)
 
 
-def likeTermsStart(arg, _):
+def multipleVersionStart(arg, _):
     global VG
     global NODE_TUPLES
     global FILTERED_NAMES
@@ -982,22 +982,22 @@ def likeTermsStart(arg, _):
     NUM_NODES = 0
     SIMILARITY_THRESHOLD = arg[0] / 100
     
-def likeTermsSimilarityMeasureHelper(s, t):  # similarity measurer
+def multipleVersionSimilarityMeasureHelper(s, t):  # similarity measurer
     return SequenceMatcher(None, s, t).ratio()
 
-def likeTermsFilterHelper(s):
+def multipleVersionFilterHelper(s):
     # Filters:
     # remove extension
     # enable case-insensitivty via lower casing ubiquitously
     return getRootNameAndExtension(s)[0].lower()
 
-def likeTermsBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
+def multipleVersionBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
     global NUM_NODES
     newNodeTuple = (itemName, dirAbsolute, longFileAbsolute)
-    filteredItemName = likeTermsFilterHelper(itemName)
+    filteredItemName = multipleVersionFilterHelper(itemName)
 
     for i in range(NUM_NODES):
-        if likeTermsSimilarityMeasureHelper(FILTERED_NAMES[i], filteredItemName) >= SIMILARITY_THRESHOLD:  # our threshold
+        if multipleVersionSimilarityMeasureHelper(FILTERED_NAMES[i], filteredItemName) >= SIMILARITY_THRESHOLD:  # our threshold
             VG.add_edge(NODE_TUPLES[i], newNodeTuple)
     
     FILTERED_NAMES.append(filteredItemName)
@@ -1006,7 +1006,7 @@ def likeTermsBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, it
     NUM_NODES += 1
     return (False,)
     
-def likeTermsPost(ws):
+def multipleVersionPost(ws):
     global NODE_TUPLES
     ws.write(0, 0, "Separator", wbm.headerFormat)
     ws.write(0, 1, "Item", wbm.headerFormat)
@@ -1014,28 +1014,6 @@ def likeTermsPost(ws):
     ws.write(0, 3, "Owner", wbm.headerFormat)
     ws.write(0, 4, "Last Modified", wbm.headerFormat)
     
-    ###
-    # row = 1
-    # # sort the list, now that indexes no longer matter
-    # NODE_TUPLES = sorted(NODE_TUPLES, key=lambda x: x[1])
-
-    # for nodeTuple in NODE_TUPLES:
-    #     # If no neighbours, skip this node
-    #     if VG.degree(nodeTuple) == 0: continue
-
-    #     # Write the main node first
-    #     ws.write(row, 0, "------------", wbm.logFormat)
-    #     ws.write(row, 1, nodeTuple[0], wbm.logFormat)
-    #     ws.write(row, 2, nodeTuple[1], wbm.dirFormat)
-
-    #     # Write its neighbours
-    #     for neighbourNodeTuple in VG.neighbors(nodeTuple):
-    #         row += 1
-    #         ws.write(row, 1, neighbourNodeTuple[0])
-    #         ws.write(row, 2, neighbourNodeTuple[1], wbm.dirFormat)
-    #     row += 1
-
-    ###
     row = 1
     cliques = find_cliques(VG)
     cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
@@ -1045,8 +1023,8 @@ def likeTermsPost(ws):
         if len(clique) <= 1: continue
 
         wbm.incrementFileCount(ws)
-        ws.write(row, 0, "------------", wbm.logFormat)
-        ws.write(row, 1, clique[0][0], wbm.logFormat)
+        ws.write(row, 0, "------------", wbm.separatorFormat)
+        ws.write(row, 1, clique[0][0])
         ws.write(row, 2, clique[0][1], wbm.dirFormat)
         ws.write(row, 3, getOwnerCatch(clique[0][2]))
         ws.write(row, 4, getLastModifiedDate(clique[0][2]))
