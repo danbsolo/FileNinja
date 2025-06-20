@@ -508,105 +508,110 @@ class WorkbookManager:
         yellowFont = self.wb.add_format({**yellowMap, "border": 1})
         ws.merge_range("A7:B7", "YELLOW HIGHLIGHTS", yellowCenterFont)
         ws.write(7, 0, "Identical File", yellowFont)
-        ws.write(8, 0, "Large File Type", yellowFont)
-        ws.write(9, 0, "Old Files", yellowFont)
-        ws.write(10, 0, "Empty Directory", yellowFont)
+        ws.write(8, 0, "Multiple Version", yellowFont) # TODO: Here
+        ws.write(9, 0, "Large File Type", yellowFont)
+        ws.write(10, 0, "Old Files", yellowFont)
+        ws.write(11, 0, "Empty Directory", yellowFont)
 
         ws.write(7, 1, "Recommend review of identical files in 3 or more folders. Change to [RED HIGHLIGHTS] for deletion.", wrappedBorderFont)
-        ws.write(8, 1, "Recommend review of large files types. If deemed transitory information and not information of business value (IBV), change to  [RED HIGHLIGHTS] for deletion.  ", wrappedBorderFont)
-        ws.write(9, 1, "Recommend review of files that have not been accessed for more than 730 days / two years but less than 1095 days / 3 years. If deemed transitory information and not information of business value (IBV), change to  [RED HIGHLIGHTS] for deletion.  ", wrappedBorderFont)
-        ws.write(10, 1, "Recommend reviewing directories that contain 2 files for directory deletion and moving the 2 files to the parent directory until 3 or more files have accumulated. Change to [RED HIGHLIGHTS] any directories that you want deleted and the 2 files moved to the parent directory.", wrappedBorderFont)
+        ws.write(8, 1, "Recommend review of multiple file versions. Change to [RED HIGHLIGHTS] for deletion.", wrappedBorderFont) # TODO: Here
+        ws.write(9, 1, "Recommend review of large files types. If deemed transitory information and not information of business value (IBV), change to  [RED HIGHLIGHTS] for deletion.  ", wrappedBorderFont)
+        ws.write(10, 1, "Recommend review of files that have not been accessed for more than 730 days / two years but less than 1095 days / 3 years. If deemed transitory information and not information of business value (IBV), change to  [RED HIGHLIGHTS] for deletion.  ", wrappedBorderFont)
+        ws.write(11, 1, "Recommend reviewing directories that contain 2 files for directory deletion and moving the 2 files to the parent directory until 3 or more files have accumulated. Change to [RED HIGHLIGHTS] any directories that you want deleted and the 2 files moved to the parent directory.", wrappedBorderFont)
         #for row in range(9, 11): ws.set_row(row, 30) # for setting height, if ever needed
 
         ##
         purpleCenterFont = self.wb.add_format({**purpleCenterMap, "top": 2, "bottom": 2, "right": 1})
         purpleFont = self.wb.add_format({**purpleMap, "border": 1})
-        ws.merge_range("A12:B12", "PURPLE HIGHLIGHTS", purpleCenterFont)
-        ws.write(12, 0, "Identical File", purpleFont)
-        ws.write(12, 1, "Recommend reviewing the series of identical files that exist in a minimum of three distinct folders. Change to [RED HIGHLIGHTS] for deletion.", wrappedBorderFont)
+        ws.merge_range("A13:B13", "PURPLE HIGHLIGHTS", purpleCenterFont)
+        ws.write(13, 0, "Identical File", purpleFont)
+        ws.write(13, 1, "Recommend reviewing the series of identical files that exist in a minimum of three distinct folders. Change to [RED HIGHLIGHTS] for deletion.", wrappedBorderFont)
 
         ##
         noColorCenterFont = self.wb.add_format({**noColorCenterMap, "top": 2, "bottom": 2, "right": 1})
-        noColorFont = self.wb.add_format({**noColorMap, "border": 1})
-        ws.merge_range("A14:B14", "NO HIGHLIGHTS", noColorCenterFont)
-        ws.write(14, 0, "Identical File", noColorFont)
-        ws.write(15, 0, "Replace Space with Hyphen", noColorFont)
-        ws.write(16, 0, "Replace Bad Character", noColorFont)
-        ws.write(17, 0, "Exceed Character Count", noColorFont)
+        noColorFont = self.wb.add_format({**noColorMap, **wrappedMap, "border": 1})
+        ws.merge_range("A15:B15", "NO HIGHLIGHTS", noColorCenterFont)
+        ws.write(15, 0, "Identical File", noColorFont)
+        ws.write(16, 0, "Replace Space with Hyphen", noColorFont)
+        ws.write(17, 0, "Replace Bad Character", noColorFont)
+        ws.write(18, 0, "Exceed Character Count", noColorFont)
 
-        ws.write(14, 1, "Recommend review of identical files. Change to [RED HIGHLIGHTS] for deletion.", baseBorderFont)
-        ws.write(15, 1, "Recommend replacing all spaces in directory and files names with hyphens (-) to align with PAEC file naming convention and IM best practices. Change to [YELLOW HIGHLIGHTS] any directory or file that you do not want modified.", wrappedBorderFont)
-        ws.write(16, 1, "Recommend replacing all bad characters in directory and files names with hyphens (-) or other approproriate character to align with PAEC file naming convention and IM best practices. Change to [YELLOW HIGHLIGHTS] any directory or file that you do not want modified.", wrappedBorderFont)
-        ws.write(17, 1, "Change to [YELLOW HIGHLIGHTS] priority files that you want to make sure are being backed up on the shared drive. Recommend directory and/or file names will be provided for your review before changes are made. ", wrappedBorderFont)
+        ws.write(15, 1, "Recommend review of identical files. Change to [RED HIGHLIGHTS] for deletion.", baseBorderFont)
+        ws.write(16, 1, "Recommend replacing all spaces in directory and files names with hyphens (-) to align with PAEC file naming convention and IM best practices. Change to [YELLOW HIGHLIGHTS] any directory or file that you do not want modified.", wrappedBorderFont)
+        ws.write(17, 1, "Recommend replacing all bad characters in directory and files names with hyphens (-) or other approproriate character to align with PAEC file naming convention and IM best practices. Change to [YELLOW HIGHLIGHTS] any directory or file that you do not want modified.", wrappedBorderFont)
+        ws.write(18, 1, "Change to [YELLOW HIGHLIGHTS] priority files that you want to make sure are being backed up on the shared drive. Recommend directory and/or file names will be provided for your review before changes are made. ", wrappedBorderFont)
 
         ##
         whiteSpaceFont = self.wb.add_format({**whiteBackgroundMap, "top": 2})
         importantTopFont = self.wb.add_format({**wrappedMap, "bold": True, "top": 1, "left": 1, "right": 1})
         importantMiddleFont = self.wb.add_format({**wrappedMap, "bold": True, "left": 1, "right": 1})
         importantBottomFont = self.wb.add_format({**wrappedMap, "bold": True, "bottom": 1, "left": 1, "right": 1})
-        ws.write(18, 0, "", whiteSpaceFont)
-        ws.write(18, 1, "", whiteSpaceFont)
-        ws.write(19, 1, "IMPORTANT - For Identical File, Large Files Type, Old File, Empty Directory, and Empty File; all files or folders that retain [RED HIGHIGHTS] will be modified, as per appropriate fix procedure.", importantTopFont)
-        ws.write(20, 1, "IMPORTANT - For Replace Space with Hyphen, Bad Character, and Exceed Character Count; changing folder and file names will break existing links and shortcuts to the files or folders. Links and shortcuts will have to be updated.", importantMiddleFont)
-        ws.write(21, 1, "IMPORTANT - For Exceed Character Count; files where the file path exceeds 200 characters are not being backed up on the shared drive.", importantBottomFont)
+        ws.write(19, 0, "", whiteSpaceFont)
+        ws.write(19, 1, "", whiteSpaceFont)
+        ws.write(20, 1, "IMPORTANT - For Identical File, Large Files Type, Old File, Empty Directory, and Empty File; all files or folders that retain [RED HIGHIGHTS] will be modified, as per appropriate fix procedure.", importantTopFont)
+        ws.write(21, 1, "IMPORTANT - For Replace Space with Hyphen, Bad Character, and Exceed Character Count; changing folder and file names will break existing links and shortcuts to the files or folders. Links and shortcuts will have to be updated.", importantMiddleFont)
+        ws.write(22, 1, "IMPORTANT - For Exceed Character Count; files where the file path exceeds 200 characters are not being backed up on the shared drive.", importantBottomFont)
 
-        # FRENCH SECTION
+        # FRENCH
         ##
-        ws.write(23, 0, "Français", self.wb.add_format({**baseFontBoldMap}))
-
-        ##
-        ws.write(24, 0, "TYPE D’ERREUR", blueFont)
-        ws.write(24, 1, "RECOMMANDATION", blueFont)
+        ws.write(24, 0, "Français", self.wb.add_format({**baseFontBoldMap}))
 
         ##
-        ws.merge_range("A26:B26", "SURBRILLANCE ROUGE", redCenterFont)
-        ws.write(26, 0, "Fichier identique", redFont)
-        ws.write(27, 0, "Ancien fichier", redFont)
-        ws.write(28, 0, "Répertoire vide", redFont)
-        ws.write(29, 0, "Dossier vide", redFont)
-
-        ws.write(26, 1, "On recommande la suppression des fichiers identiques se trouvant dans le même dossier. Mettez en [SURBRILLANCE JAUNE] tous les fichiers que vous ne souhaitez pas voir supprimés.", wrappedBorderFont)
-        ws.write(27, 1, "Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), on recommande la suppression des fichiers qui n’ont pas été consultés depuis plus de 1095 jours/3 ans. Mettez-en [SURBRILLANCE JAUNE] tous les fichiers que vous ne souhaitez pas voir supprimés.", wrappedBorderFont)
-        ws.write(28, 1, "On recommande la suppression des répertoires qui contiennent un fichier ou moins et le déplacement de ce fichier vers le répertoire parent jusqu’à ce que trois (3) fichiers ou plus soient regroupés. Mettez en [SURBRILLANCE JAUNE] tout répertoire que vous ne voulez pas supprimer, et dont vous ne voulez pas que le fichier ou moins qu’il contient soit déplacé vers le répertoire parent.", wrappedBorderFont)
-        ws.write(29, 1, "On recommande la suppression des fichiers qui sont soit vides, soit corrompus, soit impossibles d’accès. Mettez en [SURBRILLANCE JAUNE] tous les fichiers que vous ne souhaitez pas voir supprimés.", wrappedBorderFont)
+        ws.write(25, 0, "TYPE D’ERREUR", blueFont)
+        ws.write(25, 1, "RECOMMANDATION", blueFont)
 
         ##
-        ws.merge_range("A31:B31", "SURBRILLANCE JAUNE", yellowCenterFont)
-        ws.write(31, 0, "Fichier identique", yellowFont)
-        ws.write(32, 0, "Type de fichiers volumineux", yellowFont)
-        ws.write(33, 0, "Ancien fichier", yellowFont)
-        ws.write(34, 0, "Répertoire vide", yellowFont)
+        ws.merge_range("A27:B27", "SURBRILLANCE ROUGE", redCenterFont)
+        ws.write(27, 0, "Fichier identique", redFont)
+        ws.write(28, 0, "Ancien fichier", redFont)
+        ws.write(29, 0, "Répertoire vide", redFont)
+        ws.write(30, 0, "Dossier vide", redFont)
 
-        ws.write(31, 1, "On recommande l’examen des dossiers identiques dans trois (3) dossiers ou plus. Mettez les éléments en [SURBRILLANCE ROUGE] aux fins de suppression.", wrappedBorderFont)
-        ws.write(32, 1, "On recommande l’examen des types de fichiers volumineux. Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.  ", wrappedBorderFont)
-        ws.write(33, 1, "On recommande l’examen des dossiers qui n’ont pas été consultés depuis plus de 730 jours/2 ans, mais moins de 1095 jours/3 ans. Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.  ", wrappedBorderFont)
-        ws.write(34, 1, "On recommande l’examen des répertoires qui contiennent deux (2) fichiers aux fins de suppression et le déplacement de ces fichiers vers le répertoire parent jusqu’à ce que trois (3) fichiers ou plus soient regroupés. Mettez en [SURBRILLANCE ROUGE] tout répertoire que vous souhaitez voir supprimé et les deux (2) fichiers déplacés vers le répertoire parent.", wrappedBorderFont)
-
-        ##
-        ws.merge_range("A36:B36", "SURBRILLANCE MAUVE", purpleCenterFont)
-        ws.write(36, 0, "Fichier identique", purpleFont)
-
-        ws.write(36, 1, "On recommande d’examiner les séries de dossiers identiques qui existent dans au moins trois (3) dossiers distincts. Mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.", wrappedBorderFont)
+        ws.write(27, 1, "On recommande la suppression des fichiers identiques se trouvant dans le même dossier. Mettez en [SURBRILLANCE JAUNE] tous les fichiers que vous ne souhaitez pas voir supprimés.", wrappedBorderFont)
+        ws.write(28, 1, "Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), on recommande la suppression des fichiers qui n’ont pas été consultés depuis plus de 1095 jours/3 ans. Mettez-en [SURBRILLANCE JAUNE] tous les fichiers que vous ne souhaitez pas voir supprimés.", wrappedBorderFont)
+        ws.write(29, 1, "On recommande la suppression des répertoires qui contiennent un fichier ou moins et le déplacement de ce fichier vers le répertoire parent jusqu’à ce que trois (3) fichiers ou plus soient regroupés. Mettez en [SURBRILLANCE JAUNE] tout répertoire que vous ne voulez pas supprimer, et dont vous ne voulez pas que le fichier ou moins qu’il contient soit déplacé vers le répertoire parent.", wrappedBorderFont)
+        ws.write(30, 1, "On recommande la suppression des fichiers qui sont soit vides, soit corrompus, soit impossibles d’accès. Mettez en [SURBRILLANCE JAUNE] tous les fichiers que vous ne souhaitez pas voir supprimés.", wrappedBorderFont)
 
         ##
-        ws.merge_range("A38:B38", "AUCUNE SURBRILLANCE ", noColorCenterFont)
-        ws.write(38, 0, "Fichier identique", noColorFont)
-        ws.write(39, 0, "Remplacement des espaces par des traits d’union ", noColorFont)
-        ws.write(40, 0, "Remplacement des caractères non acceptés", noColorFont)
-        ws.write(41, 0, "Dépassement du nombre de caractères", noColorFont)
+        ws.merge_range("A32:B32", "SURBRILLANCE JAUNE", yellowCenterFont)
+        ws.write(32, 0, "Fichier identique", yellowFont)
+        ws.write(33, 0, "Versions multiple", yellowFont) # TODO: Here
+        ws.write(34, 0, "Type de fichiers volumineux", yellowFont)
+        ws.write(35, 0, "Ancien fichier", yellowFont)
+        ws.write(36, 0, "Répertoire vide", yellowFont)
 
-        ws.write(38, 1, "On recommande l’examen des dossiers identiques. Mettez les éléments en [SURBRILLANCE ROUGE] aux fins de suppression.", baseBorderFont)
-        ws.write(39, 1, "On recommande de remplacer tous les espaces dans les noms de répertoires et de fichiers par des traits d’union (-) afin de respecter la convention d’appellation des fichiers de l’ECAP et les pratiques exemplaires en matière de gestion de l’information. Mettez en [SURBRILLANCE JAUNE] tout répertoire ou fichier que vous ne souhaitez pas modifier.", wrappedBorderFont)
-        ws.write(40, 1, "On recommande de remplacer tous les caractères non acceptés dans les noms de répertoires et de fichiers par des traits d’union (-) ou d’autres caractères appropriés afin de respecter la convention d’appellation des fichiers de l’ECAP et les pratiques exemplaires en matière de gestion de l’information. Mettez en [SURBRILLANCE JAUNE] tout répertoire ou fichier que vous ne souhaitez pas modifier.", wrappedBorderFont)
-        ws.write(41, 1, "Mettez en [SURBRILLANCE JAUNE] les fichiers prioritaires qui, à votre avis, doivent être sauvegardés sur le disque partagé. Les noms des répertoires ou des fichiers recommandés vous seront fournis aux fins d’examen avant que les changements ne soient effectués. ", wrappedBorderFont)
+        ws.write(32, 1, "On recommande l’examen des dossiers identiques dans trois (3) dossiers ou plus. Mettez les éléments en [SURBRILLANCE ROUGE] aux fins de suppression.", wrappedBorderFont)
+        ws.write(33, 1, "Recommander la révision de plusieurs versions de fichiers. Changer en [HIGHLIGHTS ROUGES] pour suppression.", wrappedBorderFont) # TODO: Here
+        ws.write(34, 1, "On recommande l’examen des types de fichiers volumineux. Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.  ", wrappedBorderFont)
+        ws.write(35, 1, "On recommande l’examen des dossiers qui n’ont pas été consultés depuis plus de 730 jours/2 ans, mais moins de 1095 jours/3 ans. Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.  ", wrappedBorderFont)
+        ws.write(36, 1, "On recommande l’examen des répertoires qui contiennent deux (2) fichiers aux fins de suppression et le déplacement de ces fichiers vers le répertoire parent jusqu’à ce que trois (3) fichiers ou plus soient regroupés. Mettez en [SURBRILLANCE ROUGE] tout répertoire que vous souhaitez voir supprimé et les deux (2) fichiers déplacés vers le répertoire parent.", wrappedBorderFont)
 
         ##
-        ws.write(42, 0, "", whiteSpaceFont)
-        ws.write(42, 1, "", whiteSpaceFont)
-        ws.write(43, 1, "IMPORTANT - Pour Fichier identique, Type de fichiers volumineux, Ancien fichier, Répertoire vide et Fichier vide, tous les fichiers ou dossiers qui sont encore en [SURBRILLANCE ROUGE] seront modifiés, conformément à la procédure de correction appropriée.", importantTopFont)
-        ws.write(44, 1, "IMPORTANT - Pour Remplacement des espaces par des traits d’union, Remplacement des caractères non acceptés, Dépassement du nombre de caractères, la modification des noms de dossiers et de fichiers entraînera la rupture des liens et des raccourcis existants vers les fichiers ou les dossiers. Les liens et les raccourcis devront être mis à jour.", importantMiddleFont)
-        ws.write(45, 1, "IMPORTANT - Pour Dépassement du nombre de caractères, les fichiers dont le chemin d’accès dépasse 200 caractères ne sont pas sauvegardés sur le disque partagé.", importantBottomFont)
+        ws.merge_range("A38:B38", "SURBRILLANCE MAUVE", purpleCenterFont)
+        ws.write(38, 0, "Fichier identique", purpleFont)
 
+        ws.write(38, 1, "On recommande d’examiner les séries de dossiers identiques qui existent dans au moins trois (3) dossiers distincts. Mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.", wrappedBorderFont)
+
+        ##
+        ws.merge_range("A40:B40", "AUCUNE SURBRILLANCE ", noColorCenterFont)
+        ws.write(40, 0, "Fichier identique", noColorFont)
+        ws.write(41, 0, "Remplacement des espaces par des traits d’union ", noColorFont)
+        ws.write(42, 0, "Remplacement des caractères non acceptés", noColorFont)
+        ws.write(43, 0, "Dépassement du nombre de caractères", noColorFont)
+
+        ws.write(40, 1, "On recommande l’examen des dossiers identiques. Mettez les éléments en [SURBRILLANCE ROUGE] aux fins de suppression.", baseBorderFont)
+        ws.write(41, 1, "On recommande de remplacer tous les espaces dans les noms de répertoires et de fichiers par des traits d’union (-) afin de respecter la convention d’appellation des fichiers de l’ECAP et les pratiques exemplaires en matière de gestion de l’information. Mettez en [SURBRILLANCE JAUNE] tout répertoire ou fichier que vous ne souhaitez pas modifier.", wrappedBorderFont)
+        ws.write(42, 1, "On recommande de remplacer tous les caractères non acceptés dans les noms de répertoires et de fichiers par des traits d’union (-) ou d’autres caractères appropriés afin de respecter la convention d’appellation des fichiers de l’ECAP et les pratiques exemplaires en matière de gestion de l’information. Mettez en [SURBRILLANCE JAUNE] tout répertoire ou fichier que vous ne souhaitez pas modifier.", wrappedBorderFont)
+        ws.write(43, 1, "Mettez en [SURBRILLANCE JAUNE] les fichiers prioritaires qui, à votre avis, doivent être sauvegardés sur le disque partagé. Les noms des répertoires ou des fichiers recommandés vous seront fournis aux fins d’examen avant que les changements ne soient effectués. ", wrappedBorderFont)
+
+        ##
+        ws.write(44, 0, "", whiteSpaceFont)
+        ws.write(44, 1, "", whiteSpaceFont)
+        ws.write(45, 1, "IMPORTANT - Pour Fichier identique, Type de fichiers volumineux, Ancien fichier, Répertoire vide et Fichier vide, tous les fichiers ou dossiers qui sont encore en [SURBRILLANCE ROUGE] seront modifiés, conformément à la procédure de correction appropriée.", importantTopFont)
+        ws.write(46, 1, "IMPORTANT - Pour Remplacement des espaces par des traits d’union, Remplacement des caractères non acceptés, Dépassement du nombre de caractères, la modification des noms de dossiers et de fichiers entraînera la rupture des liens et des raccourcis existants vers les fichiers ou les dossiers. Les liens et les raccourcis devront être mis à jour.", importantMiddleFont)
+        ws.write(47, 1, "IMPORTANT - Pour Dépassement du nombre de caractères, les fichiers dont le chemin d’accès dépasse 200 caractères ne sont pas sauvegardés sur le disque partagé.", importantBottomFont)
+
+        #
 
 
     def incrementRow(self, ws):

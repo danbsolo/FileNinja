@@ -25,7 +25,7 @@ EMPTY_FILE = "Empty File~"
 CHARACTER_LIMIT = "Exceed Character Limit"
 IDENTICAL_FILE = "Identical File~"
 FILE_EXTENSION_SUMMARY = "Large File Size#"
-MULTIPLE_VERSION = "Multiple Version Error#"
+MULTIPLE_VERSION = "Multiple Version#"
 
 DELETE_EMPTY_FILE = "Delete Empty File~"
 SPACE_FILE_FIX = "Replace Space w Hyphen (FILE)"
