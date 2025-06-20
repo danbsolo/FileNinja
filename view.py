@@ -153,14 +153,15 @@ def launchView(isAdmin: bool):
 
         tk.messagebox.showinfo("README DNE", "README file does not exist.")
 
-    def changeColorMode():
-        nonlocal onDefaultColorMode
-        if onDefaultColorMode:
-            onDefaultColorMode = False
-            changeChildrenColor(root, "#202124", "white", "gray20", "gray20")
+
+    def changeColorMode(parentWidget):
+        nonlocal onOriginalColorMode
+        if onOriginalColorMode:
+            onOriginalColorMode = False
+            changeChildrenColor(parentWidget, "#202124", "white", "gray20", "gray20")
         else:
-            onDefaultColorMode = True
-            changeChildrenColor(root, originalBg, originalFg, originalActiveBg, originalSelectColor)
+            onOriginalColorMode = True
+            changeChildrenColor(parentWidget, originalBg, originalFg, originalActiveBg, originalSelectColor)
 
 
     def changeChildrenColor(widget, bgColor, fgColor, activeBgColor, selectColor):
@@ -231,7 +232,6 @@ set "batchFilename=%~n0"\n\
 pause')
 
 
-
     def loadSettingsFromJSON():
         filePath = filedialog.askopenfilename(title="Load File-Ninja settings",
                             filetypes=[("JSON files", "*.json")])
@@ -267,7 +267,35 @@ pause')
         excludeListbox.delete(0, tk.END)
         for item in settings[EXCLUDED_DIRS_KEY]:
             excludeDirectory(item)
-        
+
+
+    def openAdvancedOptionsWindow():
+        nonlocal advancedOptionsWindow
+
+        # If this window is already open, lift it to the forefront
+        if advancedOptionsWindow and advancedOptionsWindow.winfo_exists():
+            advancedOptionsWindow.lift()
+            return
+
+        advancedOptionsWindow = tk.Toplevel(root)
+        advancedOptionsWindow.title(f"{FILE_NINJA} Advanced Options")
+
+        frame1 = tk.Frame(advancedOptionsWindow)
+        frame1.pack(fill="x", padx=10, pady=3)
+
+        includeSubdirectoriesCheckbutton = tk.Checkbutton(frame1, text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
+        includeSubdirectoriesCheckbutton.pack()
+        includeHiddenFilesCheckbutton = tk.Checkbutton(frame1, text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
+        includeHiddenFilesCheckbutton.pack(side=tk.TOP)
+
+        includeSubdirectoriesTip = Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
+        includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures ignore hidden files by default.", hover_delay=tooltipHoverDelay)
+
+
+        # TODO: HACKY COLOR SOLUTION for now
+        changeChildrenColor(advancedOptionsWindow, "#202124", "white", "gray20", "gray20")
+
+
 
 
     listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
@@ -277,16 +305,18 @@ pause')
     root = tk.Tk()
     root.title(FILE_NINJA)
     root.resizable(0, 0)
-    rootWidth = 500 if isAdmin else 345
-    rootHeight = (listboxHeight * listboxHeightMultiplier) + (425 if isAdmin else 345)
+    rootWidth = 500 if isAdmin else 365
+    rootHeight = (listboxHeight * listboxHeightMultiplier) + (420 if isAdmin else 295)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
+
+    advancedOptionsWindow = None
 
     # The following line of code breaks Hovertips. It just does.
     # if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
         
     frames = []
-    for i in range(11):
-        frames.append(tk.Frame(root, bd=0, relief=tk.SOLID))
+    for i in range(10):
+        frames.append(tk.Frame(root)) # bd=0, relief=tk.SOLID
         frames[i].pack(fill="x", padx=10, pady=3)
 
     # aesthetic/layout variables
@@ -295,8 +325,8 @@ pause')
     fontGeneral = (fontType, fontSize)
     fontSmall = (fontType, int(fontSize/3*2))
     listboxWidth = int(rootWidth/15) if isAdmin else int(rootWidth/10)  # listboxHeight defined above
-    finalButtonsWidth = 20 if isAdmin else 12  # HARD CODED WIDTH
-    qolButtonsWidth = 12 # ALSO HARD CODED
+    characterHalfRootWidth = 20 if isAdmin else 14  # HARD CODED WIDTH
+    characterThirdRootWidth = 12 # ALSO HARD CODED
     tooltipHoverDelay = 0
 
     # data variables
@@ -341,7 +371,6 @@ pause')
         findListbox.insert(tk.END, findProcedureName)
     findListbox.select_set(0)
     findListbox.config(font=fontSmall)
-
     if isAdmin:
         fixListbox = tk.Listbox(frames[4], selectmode=tk.MULTIPLE, exportselection=0, width=listboxWidth, height=listboxHeight)
         for fixProcedureName in FIX_PROCEDURES_DISPLAY:
@@ -349,18 +378,21 @@ pause')
         fixListbox.config(font=fontSmall)
         fixListbox.pack(side=tk.RIGHT)
         findListbox.pack(side=tk.LEFT)
+        frames[4].pack(fill="x", padx=10, pady=(0, 3))
     else:
         findListbox.pack()
-    frames[4].pack(fill="x", padx=10, pady=(0, 3))
+        frames[4].pack(pady=0)
 
     if isAdmin:
         parameterLabel = tk.Label(frames[5], text="Parameter#:", font=fontGeneral)
         argumentEntry = tk.Entry(frames[5], textvariable=parameterVar, width=rootWidth, font=fontSmall)
         parameterLabel.pack(side=tk.LEFT)
         argumentEntry.pack(side=tk.LEFT)
+    else:
+        frames[5].pack(pady=0)
 
-    includeSubdirectoriesCheckbutton = tk.Checkbutton(frames[6], text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
-    includeSubdirectoriesCheckbutton.pack(side=tk.LEFT)
+    addRecommendationsCheckbutton = tk.Checkbutton(frames[6], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
+    addRecommendationsCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
         allowModifyCheckbutton = tk.Checkbutton(frames[6], text="Enable Modifications", variable=allowModifyState, font=fontGeneral)
         allowModifyCheckbutton.pack(padx=(0, 0), side=tk.LEFT)  # , padx=(0, 50)
@@ -370,42 +402,39 @@ pause')
     frames[6].pack(pady=(3, 0))
 
     if isAdmin:
-        includeHiddenFilesCheckbutton = tk.Checkbutton(frames[7], text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
-        includeHiddenFilesCheckbutton.pack(side=tk.LEFT)
-        addRecommendationsCheckbutton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
-        addRecommendationsCheckbutton.pack(padx=(19, 0),side=tk.LEFT)
+        advancedOptionsButton = tk.Button(frames[7], text="Advanced Options", command=openAdvancedOptionsWindow, width=characterHalfRootWidth, font=fontGeneral)
+        readMeButton = tk.Button(frames[7], text="README", command=openReadMe, width=characterHalfRootWidth, font=fontGeneral)
+        advancedOptionsButton.pack(padx=(6, 5), side=tk.LEFT)
+        readMeButton.pack(padx=(5, 6), side=tk.LEFT)
     else:
-        addRecommendationsCheckbutton = tk.Checkbutton(frames[7], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
-        addRecommendationsCheckbutton.pack(side=tk.LEFT)
         frames[7].pack(pady=0)
 
     if isAdmin:
-        saveSettingsButton = tk.Button(frames[8], text="Save Settings", command=saveSettingsIntoJSON, width=qolButtonsWidth, font=fontGeneral)
-        loadSettingsButton = tk.Button(frames[8], text="Load Settings", command=loadSettingsFromJSON, width=qolButtonsWidth, font=fontGeneral)
-        readMeButton = tk.Button(frames[8], text="README", command=openReadMe, width=qolButtonsWidth, font=fontGeneral)
+        saveSettingsButton = tk.Button(frames[8], text="Save Settings", command=saveSettingsIntoJSON, width=characterThirdRootWidth, font=fontGeneral)
+        loadSettingsButton = tk.Button(frames[8], text="Load Settings", command=loadSettingsFromJSON, width=characterThirdRootWidth, font=fontGeneral)
+        resultsButton = tk.Button(frames[8], text="Results", command=openResultsDirectory, width=characterThirdRootWidth, font=fontGeneral)
         saveSettingsButton.pack(padx=(17, 0), side=tk.LEFT)
         loadSettingsButton.pack(padx=(10, 0), side=tk.LEFT)
-        readMeButton.pack(padx=(10, 0), side=tk.LEFT)
+        resultsButton.pack(padx=(10, 0), side=tk.LEFT)
     else:
         frames[8].pack(pady=0)
-
-    executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=finalButtonsWidth, font=fontGeneral)
-    executeButton.pack()
-    frames[9].configure(width=rootWidth/2)
-    frames[9].pack(side=tk.LEFT, expand=True)
-
-    resultsButton = tk.Button(frames[10], text="Results", command=openResultsDirectory, width=finalButtonsWidth, font=fontGeneral)
-    resultsButton.pack()
-    frames[10].configure(width=rootWidth/2)
-    frames[10].pack(side=tk.LEFT, expand=True)
-
+    
+    if isAdmin:
+        executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=rootWidth, font=fontGeneral)
+        executeButton.pack()
+        frames[9].pack(expand=True)
+    else:
+        executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=characterHalfRootWidth, font=fontGeneral)
+        resultsButton = tk.Button(frames[9], text="Results", command=openResultsDirectory, width=characterHalfRootWidth, font=fontGeneral)
+        executeButton.pack(padx=(0, 20), side=tk.LEFT)
+        resultsButton.pack(side=tk.LEFT)
+    
 
     # tool tips
     browseTip = Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay)  
     dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
     excludeTip = Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay)
     findTip = Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay)
-    includeSubdirectoriesTip = Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
     readMeTip = Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay)
     addRecommendationsTip = Hovertip(addRecommendationsCheckbutton, "~ -> has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay)
     executeTip = Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay)
@@ -414,28 +443,27 @@ pause')
         fixTip = Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay)
         parameterTip = Hovertip(parameterLabel, "# -> requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay)
         allowModifyTip = Hovertip(allowModifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
-        includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures ignore hidden files by default.", hover_delay=tooltipHoverDelay)
+        advancedOptionsTip = Hovertip(advancedOptionsButton, "Access advanced options", hover_delay=tooltipHoverDelay)
         saveSettingsTip = Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay)
         loadSettingsTip = Hovertip(loadSettingsButton, "Load settings from a JSON file.", hover_delay=tooltipHoverDelay)
 
 
     # color mode stuff
-    onDefaultColorMode = True
+    onOriginalColorMode = True
     originalBg = browseButton.cget("bg")
     originalFg = browseButton.cget("fg")
     originalActiveBg = browseButton.cget("activebackground")
-    originalSelectColor = includeSubdirectoriesCheckbutton.cget("selectcolor")
+    originalSelectColor = addRecommendationsCheckbutton.cget("selectcolor")
 
 
     # bindings
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
     if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
-    root.bind('<Control-Key-w>', lambda e: root.destroy())
-    root.bind('<Control-Key-W>', lambda e: root.destroy())
-    root.bind("<Button-2>", lambda _: changeColorMode()) # middle click
+    root.bind('<Control-Key-w>', lambda _: root.destroy())
+    root.bind('<Control-Key-W>', lambda _: root.destroy())
+    root.bind("<Button-2>", lambda _: changeColorMode(root)) # middle click
     root.protocol("WM_DELETE_WINDOW", closeWindow)
-
 
     # set icon image (if available)
     if os.path.exists(LOGO_PATH):
@@ -443,7 +471,7 @@ pause')
         root.iconphoto(False, logoImg)
 
     # premature call for default dark mode
-    changeColorMode()
+    changeColorMode(root)
 
-
+    #
     root.mainloop()
