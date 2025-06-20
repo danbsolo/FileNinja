@@ -483,7 +483,7 @@ def identicalFilePost(ws):
     row = 1
     for hashCode in HASH_AND_FILES.keys():
         if (numOfFiles := len(HASH_AND_FILES[hashCode][0])) > 1:
-            ws.write(row, 0, "------------", wbm.separatorFormat)
+            ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
 
             for i in range(numOfFiles):
                 longFileAbsolute = HASH_AND_FILES[hashCode][2][i]
@@ -555,10 +555,9 @@ def identicalFilePostRecommend(ws):
 
     for hashCode in duplicatedHashes:
         numOfFiles = len(HASH_AND_FILES[hashCode][0])
-        ws.write(row, 0, "------------", wbm.separatorFormat)
+        ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
 
-        defaultItemFormat = None
-        # If there are 3 or more duplicates, highlight them all yellow at least. Otherwise, just flag as normal.
+        # Prioritize the seriesOfIdenticalFiles flag. Then the numFiles>=3 flag. Then regular flag.
         if (hashCode in flaggedHashes):
             defaultItemFormat = wbm.warningMiddlingFormat
         elif (numOfFiles >= 3):
@@ -1024,23 +1023,17 @@ def multipleVersionPost(ws):
     cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
     
     for clique in cliques:
-        # skip single node cliques
         if len(clique) <= 1: continue
 
         wbm.incrementFileCount(ws)
-        ws.write(row, 0, "------------", wbm.separatorFormat)
-        ws.write(row, 1, clique[0][0])
-        ws.write(row, 2, clique[0][1], wbm.dirFormat)
-        ws.write(row, 3, getOwnerCatch(clique[0][2]))
-        ws.write(row, 4, getLastModifiedDate(clique[0][2]))
+        ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
 
-        for nodeTuple in clique[1:]:
-            row += 1
+        for nodeTuple in clique: #clique[1:]
             ws.write(row, 1, nodeTuple[0])
             ws.write(row, 2, nodeTuple[1], wbm.dirFormat)
             ws.write(row, 3, getOwnerCatch(nodeTuple[2]))
             ws.write(row, 4, getLastModifiedDate(nodeTuple[2]))
-        row += 1
+            row += 1
 
     NODE_TUPLES.clear()
     FILTERED_NAMES.clear()
@@ -1060,22 +1053,31 @@ def multipleVersionPostRecommend(ws):
     cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
     
     for clique in cliques:
-        if len(clique) <= 1: continue
+        if (cliqueLength := len(clique)) <= 1: continue
 
         wbm.incrementFileCount(ws)
-        ws.write(row, 0, "------------", wbm.separatorFormat)
-        ws.write(row, 1, clique[0][0])
-        ws.write(row, 2, clique[0][1], wbm.dirFormat)
-        ws.write(row, 3, getOwnerCatch(clique[0][2]))
-        ws.write(row, 4, getLastModifiedDate(clique[0][2]))
+        ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
 
-        for nodeTuple in clique[1:]:
+        mostRecentLMDate = getLastModifiedDate(clique[0][2])
+        lastModifiedDates = [mostRecentLMDate,]
+        mostRecentDateIndexes = {0} # Since more than one lmDate can be the same date and the most recent simultaneously
+        for i in range(1, cliqueLength):
+            lmDate = getLastModifiedDate(clique[i][2])
+            lastModifiedDates.append(lmDate)
+            
+            # Compare ISO date strings lexicographically, which works because they're in the format YYYY-MM-DD
+            if lmDate > mostRecentLMDate:
+                mostRecentLMDate = lmDate
+                mostRecentDateIndexes = {i} # Start the set anew
+            elif lmDate == mostRecentLMDate:
+                mostRecentDateIndexes.add(i) # Add to the current set
+
+        for i in range(cliqueLength): #clique[1:]
+            ws.write(row, 1, clique[i][0], wbm.warningWeakFormat if i not in mostRecentDateIndexes else wbm.errorFormat)
+            ws.write(row, 2, clique[i][1], wbm.dirFormat)
+            ws.write(row, 3, getOwnerCatch(clique[i][2]))
+            ws.write(row, 4, getLastModifiedDate(clique[i][2]))
             row += 1
-            ws.write(row, 1, nodeTuple[0])
-            ws.write(row, 2, nodeTuple[1], wbm.dirFormat)
-            ws.write(row, 3, getOwnerCatch(nodeTuple[2]))
-            ws.write(row, 4, getLastModifiedDate(nodeTuple[2]))
-        row += 1
 
     NODE_TUPLES.clear()
     FILTERED_NAMES.clear()

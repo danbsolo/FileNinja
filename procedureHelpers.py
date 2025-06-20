@@ -3,6 +3,7 @@ from workbookManager import WorkbookManager
 from datetime import date
 import threading
 
+GROUP_SEPARATOR = "------------"
 
 def setWorkbookManager(newManager: WorkbookManager):
     # Globally declare the WorkbookManager object
