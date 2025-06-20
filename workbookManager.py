@@ -51,7 +51,7 @@ class WorkbookManager:
         self.errorFormat = self.wb.add_format({"bold": True})  # "bg_color": "#FF4444", # reddish
         self.boldFormat = self.wb.add_format({"bold": True})
         self.modifyFormat = self.wb.add_format({"bg_color": "#00FF80", "bold": True})  # greenish
-        self.logFormat = self.wb.add_format({"bg_color": "#E2725B", "bold": True})  # terracotta
+        self.logFormat = self.wb.add_format({"bg_color": "#8A7768", "bold": True})  # brownish
         self.headerFormat = self.wb.add_format({"bg_color": "#C0C0C0", "bold": True})  # grayish
         self.summaryValueFormat = self.wb.add_format({})
 
