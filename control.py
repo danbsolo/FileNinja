@@ -7,7 +7,7 @@ from defs import *
 import common
 
 
-def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, includeGISFiles:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
+def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
     # If dirAbsolute value was not selected (empty string)
     if (not dirAbsolute): return (-2, None)
 
@@ -103,7 +103,7 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
                 return (-3, None)
 
     try:
-        wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, includeGISFiles, excludedDirs)
+        wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs)
         wbm.close()
         os.startfile(workbookPathName)
     except Exception as e:
@@ -120,7 +120,6 @@ def launchControllerFromSettings(settings):
         False,
         settings[INCLUDE_HIDDEN_FILES_KEY],
         settings[ADD_RECOMMENDATIONS_KEY],
-        settings[INCLUDE_GIS_FILES_KEY],
         settings[SELECTED_FIND_PROCEDURES_KEY],
         settings[SELECTED_FIX_PROCEDURES_KEY],
         settings[ARG_UNPROCESSED_KEY],

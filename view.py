@@ -24,7 +24,7 @@ def launchView(isAdmin: bool):
             return
         
         currentStatusPair = (STATUS_RUNNING, None)
-        currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()), bool(includeGISFilesState.get()),
+        currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
@@ -200,7 +200,6 @@ def launchView(isAdmin: bool):
             ALLOW_MODIFY_KEY: bool(allowModifyState.get()),
             INCLUDE_HIDDEN_FILES_KEY: bool(includeHiddenFilesState.get()),
             ADD_RECOMMENDATIONS_KEY: bool(addRecommendationsState.get()),
-            INCLUDE_GIS_FILES_KEY: bool(includeGISFilesState.get())
         }
 
         # differentiate between running an exe or python
@@ -255,7 +254,6 @@ pause')
         allowModifyState.set(settings[ALLOW_MODIFY_KEY])
         includeHiddenFilesState.set(settings[INCLUDE_HIDDEN_FILES_KEY]) 
         addRecommendationsState.set(settings[ADD_RECOMMENDATIONS_KEY])
-        includeGISFilesState.set(settings[INCLUDE_GIS_FILES_KEY])
 
         findListbox.selection_clear(0, tk.END)
         for i in range(findListbox.size()):
