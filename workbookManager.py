@@ -334,6 +334,7 @@ class WorkbookManager:
         
         start = time()
 
+        # TODO: Perhaps introduce a parallel "functionOption"
         self.functionMap = {}
 
         self.functionMap["processFileExcludeExtensions"] = {
