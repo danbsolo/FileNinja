@@ -103,7 +103,7 @@ class WorkbookManager:
         # Onenote files have a ".one-----" extension. The longest onenote extension is 8 characters long. Ignore them.
         # > Technically, something called "fileName.one.txt" would get ignored, but the likelihood of that existing is very low
         # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
-        if fileName.startswith("~$") or ".one" in fileName[-8:]:
+        if fileName.startswith("~$") or os.path.splitext(fileName)[1].lower() in self.extensionsToOmit:
             return
     
         longFileAbsolute = longDirAbsolute + "\\" + fileName
@@ -328,7 +328,7 @@ class WorkbookManager:
             self.sheetLocks[ws] = Lock()
 
 
-    def initiateCrawl(self, baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs):
+    def initiateCrawl(self, baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, includeGISFiles, excludedDirs):
         def addLongPathPrefix(dirAbsolute):
             if dirAbsolute.startswith('\\\\'):
                 return '\\\\?\\UNC' + dirAbsolute[1:]
@@ -337,12 +337,17 @@ class WorkbookManager:
         
         start = time()
 
+        self.extensionsToOmit = {".one", ".onepkg", ".onetoc2", ".onebak"}
+        if not includeGISFiles:
+            self.extensionsToOmit.add(".shp")
+            self.extensionsToOmit.add(".dbf")
+
         if includeHiddenFiles:
             self.hiddenFileCheck = lambda longFileAbsolute: self.includeHiddenFilesCheck(longFileAbsolute)
         else:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
         
-        self.styleSummarySheet(baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations)
+        self.styleSummarySheet(baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, includeGISFiles)
         
 
         if self.doFileProceduresExist():
@@ -453,7 +458,7 @@ class WorkbookManager:
         self.summarySheet.activate()  # view this worksheet on startup
 
         # For summarySheet, first # rows are used for mainstay metrics. Skip a line, then write a variable number of procedure metrics.
-        self.sheetRows[self.summarySheet] = 14
+        self.sheetRows[self.summarySheet] = 15
 
         # create the legend sheet if recommendations are on
         if not addRecommendations: return
@@ -627,35 +632,37 @@ class WorkbookManager:
             self.sheetRows[ws] += amount
             self.summaryCounts[ws] += amount
 
-
-    def styleSummarySheet(self, dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations):
+    # TODO: This should merge with populateSummarySheet
+    def styleSummarySheet(self, dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, includeGISFiles):
         self.summarySheet.set_column(0, 0, 34)
         self.summarySheet.set_column(1, 1, 15)
         
         self.summarySheet.write(0, 0, "Directory Path", self.headerFormat)
         self.summarySheet.write(1, 0, "Excluded Directories", self.headerFormat)
         self.summarySheet.write(2, 0, "Include Subdirectories", self.headerFormat)
-        self.summarySheet.write(3, 0, "Allow Modify", self.headerFormat)
+        self.summarySheet.write(3, 0, "Enable Modifications", self.headerFormat)
         self.summarySheet.write(4, 0, "Include Hidden Files", self.headerFormat)
         self.summarySheet.write(5, 0, "Add Recommendations", self.headerFormat)
-        self.summarySheet.write(6, 0, "Argument(s)", self.headerFormat)
-        self.summarySheet.write(8, 0, "Directory count", self.headerFormat)
-        self.summarySheet.write(9, 0, "Directory error count / %", self.headerFormat)
-        self.summarySheet.write(10, 0, "File count", self.headerFormat)
-        self.summarySheet.write(11, 0, "File error count / %", self.headerFormat)
-        self.summarySheet.write(12, 0, "Execution time (s)", self.headerFormat)
+        self.summarySheet.write(6, 0, "Include GIS Files", self.headerFormat)
+        self.summarySheet.write(7, 0, "Argument(s)", self.headerFormat)
+        self.summarySheet.write(9, 0, "Directory count", self.headerFormat)
+        self.summarySheet.write(10, 0, "Directory error count / %", self.headerFormat)
+        self.summarySheet.write(11, 0, "File count", self.headerFormat)
+        self.summarySheet.write(12, 0, "File error count / %", self.headerFormat)
+        self.summarySheet.write(13, 0, "Execution time (s)", self.headerFormat)
 
         self.summarySheet.write(0, 1, dirAbsolute, self.summaryValueFormat)
         self.summarySheet.write(2, 1, str(includeSubdirectories), self.summaryValueFormat)
         self.summarySheet.write(3, 1, str(allowModify), self.summaryValueFormat)
         self.summarySheet.write(4, 1, str(includeHiddenFiles), self.summaryValueFormat)
         self.summarySheet.write(5, 1, str(addRecommendations), self.summaryValueFormat)
+        self.summarySheet.write(6, 1, str(includeGISFiles), self.summaryValueFormat)
 
         # HARD CODED atip stuff
         # which is okay because the code can't get here without this being agreed upon. Therefore, don't need a separate variable.
         if allowModify:
-            self.summarySheet.write(7, 0, "NO LIT-HOLD / ATIP", self.headerFormat)
-            self.summarySheet.write(7, 1, str(True))
+            self.summarySheet.write(8, 0, "NO LIT-HOLD / ATIP", self.headerFormat)
+            self.summarySheet.write(8, 1, str(True))
 
 
     def populateSummarySheet(self, excludedDirs):
@@ -667,7 +674,7 @@ class WorkbookManager:
             if arg == ():
                 continue
             
-            self.summarySheet.write(6, col, f"{arg[0] if len(arg) <= 1 else arg} : {procedureObject.name}", self.summaryValueFormat)
+            self.summarySheet.write(7, col, f"{arg[0] if len(arg) <= 1 else arg} : {procedureObject.name}", self.summaryValueFormat)
             col += 1
 
         if self.filesScannedCount == 0: fileErrorPercentage = 0
@@ -675,13 +682,13 @@ class WorkbookManager:
         if self.foldersScannedCount == 0: folderErrorPercentage = 0
         else: folderErrorPercentage = round(self.folderErrorCount / self.foldersScannedCount * 100, 2)
 
-        self.summarySheet.write_number(8, 1, self.foldersScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(9, 1, self.folderErrorCount, self.summaryValueFormat)
-        self.summarySheet.write(9, 2, "{}%".format(folderErrorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(10, 1, self.filesScannedCount, self.summaryValueFormat)
-        self.summarySheet.write_number(11, 1, self.fileErrorCount, self.summaryValueFormat)
-        self.summarySheet.write(11, 2, "{}%".format(fileErrorPercentage), self.summaryValueFormat)
-        self.summarySheet.write_number(12, 1, round(self.executionTime, 4), self.summaryValueFormat)
+        self.summarySheet.write_number(9, 1, self.foldersScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(10, 1, self.folderErrorCount, self.summaryValueFormat)
+        self.summarySheet.write(10, 2, "{}%".format(folderErrorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(11, 1, self.filesScannedCount, self.summaryValueFormat)
+        self.summarySheet.write_number(12, 1, self.fileErrorCount, self.summaryValueFormat)
+        self.summarySheet.write(12, 2, "{}%".format(fileErrorPercentage), self.summaryValueFormat)
+        self.summarySheet.write_number(13, 1, round(self.executionTime, 4), self.summaryValueFormat)
         
         i = 1
         for exDir in excludedDirs:

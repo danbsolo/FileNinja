@@ -24,7 +24,7 @@ def launchView(isAdmin: bool):
             return
         
         currentStatusPair = (STATUS_RUNNING, None)
-        currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
+        currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()), bool(includeGISFilesState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
@@ -200,6 +200,7 @@ def launchView(isAdmin: bool):
             ALLOW_MODIFY_KEY: bool(allowModifyState.get()),
             INCLUDE_HIDDEN_FILES_KEY: bool(includeHiddenFilesState.get()),
             ADD_RECOMMENDATIONS_KEY: bool(addRecommendationsState.get()),
+            INCLUDE_GIS_FILES_KEY: bool(includeGISFilesState.get())
         }
 
         # differentiate between running an exe or python
@@ -254,6 +255,7 @@ pause')
         allowModifyState.set(settings[ALLOW_MODIFY_KEY])
         includeHiddenFilesState.set(settings[INCLUDE_HIDDEN_FILES_KEY]) 
         addRecommendationsState.set(settings[ADD_RECOMMENDATIONS_KEY])
+        includeGISFilesState.set(settings[INCLUDE_GIS_FILES_KEY])
 
         findListbox.selection_clear(0, tk.END)
         for i in range(findListbox.size()):
@@ -284,7 +286,7 @@ pause')
             return
 
         advancedOptionsWindow = tk.Toplevel(root)
-        advancedOptionsWindow.title(f"Adv Options")
+        advancedOptionsWindow.title(f"Advanced Options")
         advancedOptionsWindow.resizable(0, 0)
         advancedOptionsWindow.geometry("+{}+{}".format(root.winfo_pointerx()+rootWidth//2, root.winfo_pointery()))
 
@@ -296,11 +298,14 @@ pause')
 
         includeSubdirectoriesCheckbutton = tk.Checkbutton(frame1, text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
         includeHiddenFilesCheckbutton = tk.Checkbutton(frame1, text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
+        includeGISFilesCheckbutton = tk.Checkbutton(frame1, text="Include GIS Files (.shp & .dbf)", variable=includeGISFilesState, font=fontGeneral)
         includeSubdirectoriesCheckbutton.pack()
         includeHiddenFilesCheckbutton.pack(side=tk.TOP)
+        includeGISFilesCheckbutton.pack(side=tk.TOP)
 
         Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay) # includeSubdirectoriesTip
         Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures always ignore hidden files.", hover_delay=tooltipHoverDelay) # includeHiddenFilesTip
+        Hovertip(includeGISFilesCheckbutton, "Include GIS files with the .shp or .dbf extension.", hover_delay=tooltipHoverDelay)
 
         if onDarkMode:
             changeToDarkMode(advancedOptionsWindow)
@@ -347,6 +352,7 @@ pause')
     allowModifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=0)
     addRecommendationsState = tk.IntVar(value=0)
+    includeGISFilesState = tk.IntVar(value=0)
     excludedDirs = []
     currentStatusPair = (STATUS_IDLE, None)
 
@@ -454,7 +460,7 @@ pause')
         Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay) # fixTip
         Hovertip(parameterLabel, "# -> requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay) # parameterTip
         Hovertip(allowModifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay) # allowModifyTip
-        Hovertip(advancedOptionsButton, "Access advanced options", hover_delay=tooltipHoverDelay) # advancedOptionsTip
+        Hovertip(advancedOptionsButton, "Access advanced options.", hover_delay=tooltipHoverDelay) # advancedOptionsTip
         Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay) # saveSettingsTip
         Hovertip(loadSettingsButton, "Load settings from a JSON file.", hover_delay=tooltipHoverDelay) # loadSettingsTip
 
