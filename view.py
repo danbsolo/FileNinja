@@ -199,7 +199,7 @@ def launchView(isAdmin: bool):
             SELECTED_FIX_PROCEDURES_KEY: [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
             ARG_UNPROCESSED_KEY: parameterVar.get(),
             INCLUDE_SUBDIRECTORIES_KEY: bool(includeSubdirectoriesState.get()),
-            #ALLOW_MODIFY_KEY: bool(allowModifyState.get()),
+            ENABLE_MODIFICATIONS_KEY: bool(allowModifyState.get()),
             INCLUDE_HIDDEN_FILES_KEY: bool(includeHiddenFilesState.get()),
             ADD_RECOMMENDATIONS_KEY: bool(addRecommendationsState.get()),
         }
@@ -253,7 +253,7 @@ pause')
          
         dirAbsoluteVar.set(settings[DIR_ABSOLUTE_KEY])
         includeSubdirectoriesState.set(settings[INCLUDE_SUBDIRECTORIES_KEY])
-        #allowModifyState.set(settings[ALLOW_MODIFY_KEY])
+        allowModifyState.set(settings[ENABLE_MODIFICATIONS_KEY])
         includeHiddenFilesState.set(settings[INCLUDE_HIDDEN_FILES_KEY]) 
         addRecommendationsState.set(settings[ADD_RECOMMENDATIONS_KEY])
         excludedExtensionsVar.set(settings[EXCLUDED_EXTENSIONS_KEY])

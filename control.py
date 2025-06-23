@@ -127,7 +127,7 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
 
 
 def launchControllerFromSettings(settings):
-    # settings[ALLOW_MODIFY_KEY]
+    # "Enable Modifications" is always set to False
     return launchController(
         settings[DIR_ABSOLUTE_KEY],
         settings[INCLUDE_SUBDIRECTORIES_KEY],
