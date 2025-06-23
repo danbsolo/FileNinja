@@ -100,9 +100,7 @@ class WorkbookManager:
     
     
     def processFile(self, longDirAbsolute, dirAbsolute, fileName, needsFolderWritten, tpeIndex):
-        # Hidden files should be ignored. This includes temporary Microsoft files (begins with "~$").
-        # TODO: In the event that no extensions are excluded, this line (after the *or*) is redundant. Fix that.
-        if fileName.startswith("~$") or os.path.splitext(fileName)[1].lower() in self.excludedExtensions:
+        if self.functionMap["processFileExcludeExtensions"][self.processFileExcludeExtensionsOption](fileName):
             return
     
         longFileAbsolute = longDirAbsolute + "\\" + fileName
@@ -336,16 +334,24 @@ class WorkbookManager:
         
         start = time()
 
-        # TODO: THIS IS HACKY
+        self.functionMap = {}
+
+        self.functionMap["processFileExcludeExtensions"] = {
+            True: lambda fileName: fileName.startswith("~$") or os.path.splitext(fileName)[1].lower() in self.excludedExtensions,
+            False: lambda fileName: fileName.startswith("~$")
+        }
         if excludedExtensions:
+            self.processFileExcludeExtensionsOption = True
             self.excludedExtensions = excludedExtensions
         else:
-            self.excludedExtensions = []
+            self.processFileExcludeExtensionsOption = False
+            self.excludedExtensions = None
 
         if includeHiddenFiles:
             self.hiddenFileCheck = lambda longFileAbsolute: self.includeHiddenFilesCheck(longFileAbsolute)
         else:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
+        
         
         self.styleSummarySheet(baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations)
         
