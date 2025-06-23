@@ -5,9 +5,10 @@ import procedureFunctions
 import traceback
 from defs import *
 import common
+import re
 
 
-def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str]):
+def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str], excludedExtensionsUnprocessed:str):
     # If dirAbsolute value was not selected (empty string)
     if (not dirAbsolute): return (-2, None)
 
@@ -53,6 +54,19 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
         # If subdirectories are not included but excluded dirs are specified, clear it
         if excludedDirs:
             excludedDirs.clear()
+
+    # Check excluded extensions
+    excludedExtensions = None
+    if excludedExtensionsUnprocessed:
+        excludedExtensions = excludedExtensionsUnprocessed.split(",")
+
+        for i in range(len(excludedExtensions)):
+            excludedExtensions[i] = excludedExtensions[i].strip().lower()
+            currentExt = excludedExtensions[i]
+            if not currentExt or not bool(re.fullmatch(r"\.[a-zA-Z0-9]+", currentExt)):
+                return (-13, None)
+            
+        excludedExtensions = set(excludedExtensions)
 
     # Create RESULTS directory if it does not exist
     try: os.mkdir(RESULTS_DIRECTORY)
@@ -103,7 +117,7 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
                 return (-3, None)
 
     try:
-        wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs)
+        wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs, excludedExtensions)
         wbm.close()
         os.startfile(workbookPathName)
     except Exception as e:
@@ -123,7 +137,8 @@ def launchControllerFromSettings(settings):
         settings[SELECTED_FIND_PROCEDURES_KEY],
         settings[SELECTED_FIX_PROCEDURES_KEY],
         settings[ARG_UNPROCESSED_KEY],
-        settings[EXCLUDED_DIRS_KEY]
+        settings[EXCLUDED_DIRS_KEY],
+        settings[EXCLUDED_EXTENSIONS_KEY]
     )
 
 

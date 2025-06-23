@@ -28,7 +28,8 @@ def launchView(isAdmin: bool):
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
-                    excludedDirs)
+                    excludedDirs,
+                    excludedExtensionsVar.get())
 
     def scheduleCheckIfDone(t):
         root.after(500, checkIfDone, t)
@@ -193,11 +194,12 @@ def launchView(isAdmin: bool):
         settings = {
             DIR_ABSOLUTE_KEY: dirAbsoluteVar.get(),
             EXCLUDED_DIRS_KEY: excludedDirs,
+            EXCLUDED_EXTENSIONS_KEY: excludedExtensionsVar.get(),
             SELECTED_FIND_PROCEDURES_KEY: [findListbox.get(fm) for fm in findListbox.curselection()],
             SELECTED_FIX_PROCEDURES_KEY: [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
             ARG_UNPROCESSED_KEY: parameterVar.get(),
             INCLUDE_SUBDIRECTORIES_KEY: bool(includeSubdirectoriesState.get()),
-            ALLOW_MODIFY_KEY: bool(allowModifyState.get()),
+            #ALLOW_MODIFY_KEY: bool(allowModifyState.get()),
             INCLUDE_HIDDEN_FILES_KEY: bool(includeHiddenFilesState.get()),
             ADD_RECOMMENDATIONS_KEY: bool(addRecommendationsState.get()),
         }
@@ -251,9 +253,10 @@ pause')
          
         dirAbsoluteVar.set(settings[DIR_ABSOLUTE_KEY])
         includeSubdirectoriesState.set(settings[INCLUDE_SUBDIRECTORIES_KEY])
-        allowModifyState.set(settings[ALLOW_MODIFY_KEY])
+        #allowModifyState.set(settings[ALLOW_MODIFY_KEY])
         includeHiddenFilesState.set(settings[INCLUDE_HIDDEN_FILES_KEY]) 
         addRecommendationsState.set(settings[ADD_RECOMMENDATIONS_KEY])
+        excludedExtensionsVar.set(settings[EXCLUDED_EXTENSIONS_KEY])
 
         findListbox.selection_clear(0, tk.END)
         for i in range(findListbox.size()):
@@ -286,6 +289,7 @@ pause')
         advancedOptionsWindow = tk.Toplevel(root)
         advancedOptionsWindow.title(f"Advanced Options")
         advancedOptionsWindow.resizable(0, 0)
+        # advancedOptionsWindow.geometry("500x200")
         advancedOptionsWindow.geometry("+{}+{}".format(root.winfo_pointerx()+rootWidth//2, root.winfo_pointery()))
 
         if logoImg:
@@ -293,17 +297,22 @@ pause')
 
         frame1 = tk.Frame(advancedOptionsWindow)
         frame1.pack(fill="x", padx=10, pady=3)
+        frame2 = tk.Frame(advancedOptionsWindow)
+        frame2.pack(fill="x", padx=10, pady=3)
 
         includeSubdirectoriesCheckbutton = tk.Checkbutton(frame1, text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
         includeHiddenFilesCheckbutton = tk.Checkbutton(frame1, text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
-        includeGISFilesCheckbutton = tk.Checkbutton(frame1, text="Include GIS Files (.shp & .dbf)", variable=includeGISFilesState, font=fontGeneral)
-        includeSubdirectoriesCheckbutton.pack()
+        includeSubdirectoriesCheckbutton.pack(side=tk.TOP)
         includeHiddenFilesCheckbutton.pack(side=tk.TOP)
-        includeGISFilesCheckbutton.pack(side=tk.TOP)
 
+        excludedExtensionsLabel = tk.Label(frame2, text="Extensions to Exclude:", font=fontGeneral)
+        excludedExtensionsEntry = tk.Entry(frame2, textvariable=excludedExtensionsVar, width=45, font=fontSmall)
+        excludedExtensionsLabel.pack(side=tk.LEFT)
+        excludedExtensionsEntry.pack(side=tk.LEFT)
+        
         Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay) # includeSubdirectoriesTip
         Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures always ignore hidden files.", hover_delay=tooltipHoverDelay) # includeHiddenFilesTip
-        Hovertip(includeGISFilesCheckbutton, "Include GIS files with the .shp or .dbf extension.", hover_delay=tooltipHoverDelay)
+        Hovertip(excludedExtensionsLabel, "Comma separated list of extensions to exclude from scan.", hover_delay=tooltipHoverDelay)
 
         if onDarkMode:
             changeToDarkMode(advancedOptionsWindow)
@@ -346,11 +355,11 @@ pause')
     # data variables
     dirAbsoluteVar = tk.StringVar()
     parameterVar = tk.StringVar()
+    excludedExtensionsVar = tk.StringVar(value=".one, .onepkg, .onetoc2, .onebak, .shp, .dbf")
     includeSubdirectoriesState = tk.IntVar(value=1)
     allowModifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=0)
     addRecommendationsState = tk.IntVar(value=0)
-    includeGISFilesState = tk.IntVar(value=0)
     excludedDirs = []
     currentStatusPair = (STATUS_IDLE, None)
 
@@ -364,11 +373,11 @@ pause')
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.LEFT)
     
-    excludeButton = tk.Button(frames[2], text="Browse to Exclude", command=queryExcludeDirectory, font=fontGeneral, width=rootWidth)
+    excludeDirButton = tk.Button(frames[2], text="Browse to Exclude", command=queryExcludeDirectory, font=fontGeneral, width=rootWidth)
     excludeScrollbar = tk.Scrollbar(frames[2], orient=tk.HORIZONTAL)
     excludeListbox = tk.Listbox(frames[2], exportselection=0, width=rootWidth, height=0, xscrollcommand=excludeScrollbar.set)
     excludeScrollbar.config(command=excludeListbox.xview)
-    excludeButton.pack()
+    excludeDirButton.pack()
     excludeListbox.pack()
     excludeScrollbar.pack()
     
@@ -448,7 +457,7 @@ pause')
     # tool tips
     Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay) # browseTip
     Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay) # dirHeaderTip
-    Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay) # excludeTip
+    Hovertip(excludeDirButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay) # excludeTip
     Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay) # findTip
     Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay) # readMeTip
     Hovertip(addRecommendationsCheckbutton, "~ -> has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay) # addRecommendationsTip

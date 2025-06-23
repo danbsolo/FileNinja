@@ -35,6 +35,7 @@ REPLACE_CHARACTER_FOLDER = "Replace Character (DIR)#"
 
 DIR_ABSOLUTE_KEY = "dirAbsolute"
 EXCLUDED_DIRS_KEY = "excludedDirs"
+EXCLUDED_EXTENSIONS_KEY = "excludedExtensions"
 SELECTED_FIND_PROCEDURES_KEY = "selectedFindProcedures"
 SELECTED_FIX_PROCEDURES_KEY = "selectedFixProcedures"
 ARG_UNPROCESSED_KEY = "argUnprocessed"
@@ -49,9 +50,10 @@ JSON_KEYS = [
     SELECTED_FIX_PROCEDURES_KEY,
     ARG_UNPROCESSED_KEY,
     INCLUDE_SUBDIRECTORIES_KEY,
-    ALLOW_MODIFY_KEY,
+    #ALLOW_MODIFY_KEY,
     INCLUDE_HIDDEN_FILES_KEY,
     ADD_RECOMMENDATIONS_KEY,
+    EXCLUDED_EXTENSIONS_KEY
 ]
 
 STATUS_SUCCESSFUL = 0
@@ -75,6 +77,7 @@ EXIT_STATUS_CODES = {
     -10: "ERROR: JSON Decode error.",
     -11: "ERROR: Missing keys in JSON.",
     -12: "ERROR: File path does not exist.",
+    -13: "ERROR: Invalid excluded extension.",
     STATUS_UNEXPECTED: "ERROR: Unexpected condition occurred."
 }
 
