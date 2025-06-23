@@ -154,15 +154,20 @@ def launchView(isAdmin: bool):
         tk.messagebox.showinfo("README DNE", "README file does not exist.")
 
 
-    def changeColorMode(parentWidget):
-        nonlocal onOriginalColorMode
-        if onOriginalColorMode:
-            onOriginalColorMode = False
-            changeChildrenColor(parentWidget, "#202124", "white", "gray20", "gray20")
-        else:
-            onOriginalColorMode = True
-            changeChildrenColor(parentWidget, originalBg, originalFg, originalActiveBg, originalSelectColor)
+    def changeToDarkMode(parentWidget):
+        changeChildrenColor(parentWidget, "#202124", "white", "gray20", "gray20")
 
+    def changeToLightMode(parentWidget):
+        changeChildrenColor(parentWidget, "#F1F1F1", "#000000", "#F1F1F1", "#FFFFFF")
+        
+    def changeColorMode(parentWidget):
+        nonlocal onDarkMode
+        if onDarkMode:
+            onDarkMode = False
+            changeToLightMode(parentWidget)
+        else:
+            onDarkMode = True
+            changeToDarkMode(parentWidget)
 
     def changeChildrenColor(widget, bgColor, fgColor, activeBgColor, selectColor):
         widgetAttributes = widget.keys()
@@ -274,27 +279,33 @@ pause')
 
         # If this window is already open, lift it to the forefront
         if advancedOptionsWindow and advancedOptionsWindow.winfo_exists():
+            advancedOptionsWindow.deiconify()
             advancedOptionsWindow.lift()
             return
 
         advancedOptionsWindow = tk.Toplevel(root)
-        advancedOptionsWindow.title(f"{FILE_NINJA} Advanced Options")
+        advancedOptionsWindow.title(f"Adv Options")
+        advancedOptionsWindow.resizable(0, 0)
+        advancedOptionsWindow.geometry("+{}+{}".format(root.winfo_pointerx()+rootWidth//2, root.winfo_pointery()))
+
+        if logoImg:
+            advancedOptionsWindow.iconphoto(False, logoImg)
 
         frame1 = tk.Frame(advancedOptionsWindow)
         frame1.pack(fill="x", padx=10, pady=3)
 
         includeSubdirectoriesCheckbutton = tk.Checkbutton(frame1, text="Include Subdirectories", variable=includeSubdirectoriesState, font=fontGeneral)
-        includeSubdirectoriesCheckbutton.pack()
         includeHiddenFilesCheckbutton = tk.Checkbutton(frame1, text="Include Hidden Files", variable=includeHiddenFilesState, font=fontGeneral)
+        includeSubdirectoriesCheckbutton.pack()
         includeHiddenFilesCheckbutton.pack(side=tk.TOP)
 
-        includeSubdirectoriesTip = Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay)
-        includeHiddenFilesTip = Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures ignore hidden files by default.", hover_delay=tooltipHoverDelay)
+        Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay) # includeSubdirectoriesTip
+        Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures always ignore hidden files.", hover_delay=tooltipHoverDelay) # includeHiddenFilesTip
 
-
-        # TODO: HACKY COLOR SOLUTION for now
-        changeChildrenColor(advancedOptionsWindow, "#202124", "white", "gray20", "gray20")
-
+        if onDarkMode:
+            changeToDarkMode(advancedOptionsWindow)
+        else:
+            changeToLightMode(advancedOptionsWindow)
 
 
 
@@ -313,7 +324,7 @@ pause')
 
     # The following line of code breaks Hovertips. It just does.
     # if isAdmin: root.attributes('-topmost', True)  # keeps root window at top layer
-        
+    
     frames = []
     for i in range(10):
         frames.append(tk.Frame(root)) # bd=0, relief=tk.SOLID
@@ -431,29 +442,21 @@ pause')
     
 
     # tool tips
-    browseTip = Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay)  
-    dirHeaderTip = Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay)
-    excludeTip = Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay)
-    findTip = Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay)
-    readMeTip = Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay)
-    addRecommendationsTip = Hovertip(addRecommendationsCheckbutton, "~ -> has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay)
-    executeTip = Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay)
-    resultsTip = Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay)
+    Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay) # browseTip
+    Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay) # dirHeaderTip
+    Hovertip(excludeButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay) # excludeTip
+    Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay) # findTip
+    Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay) # readMeTip
+    Hovertip(addRecommendationsCheckbutton, "~ -> has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay) # addRecommendationsTip
+    Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay) # executeTip
+    Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay) # resultsTip
     if isAdmin: 
-        fixTip = Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay)
-        parameterTip = Hovertip(parameterLabel, "# -> requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay)
-        allowModifyTip = Hovertip(allowModifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay)
-        advancedOptionsTip = Hovertip(advancedOptionsButton, "Access advanced options", hover_delay=tooltipHoverDelay)
-        saveSettingsTip = Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay)
-        loadSettingsTip = Hovertip(loadSettingsButton, "Load settings from a JSON file.", hover_delay=tooltipHoverDelay)
-
-
-    # color mode stuff
-    onOriginalColorMode = True
-    originalBg = browseButton.cget("bg")
-    originalFg = browseButton.cget("fg")
-    originalActiveBg = browseButton.cget("activebackground")
-    originalSelectColor = addRecommendationsCheckbutton.cget("selectcolor")
+        Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay) # fixTip
+        Hovertip(parameterLabel, "# -> requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay) # parameterTip
+        Hovertip(allowModifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay) # allowModifyTip
+        Hovertip(advancedOptionsButton, "Access advanced options", hover_delay=tooltipHoverDelay) # advancedOptionsTip
+        Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay) # saveSettingsTip
+        Hovertip(loadSettingsButton, "Load settings from a JSON file.", hover_delay=tooltipHoverDelay) # loadSettingsTip
 
 
     # bindings
@@ -466,12 +469,14 @@ pause')
     root.protocol("WM_DELETE_WINDOW", closeWindow)
 
     # set icon image (if available)
+    logoImg = None
     if os.path.exists(LOGO_PATH):
         logoImg = tk.PhotoImage(file=LOGO_PATH)
         root.iconphoto(False, logoImg)
 
-    # premature call for default dark mode
+    # change to dark mode as a de facto default. Note: tkinter's "option_add()" is too inconsistent to use instead
+    onDarkMode = False
     changeColorMode(root)
 
-    #
+
     root.mainloop()
