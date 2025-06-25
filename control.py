@@ -31,7 +31,7 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
     dirAbsolute = dirAbsolute.replace("/", "\\")
 
-    # 
+    #
     if includeSubdirectories:
         # If excludedDirs are specified, run checks accordingly
         if excludedDirs:
@@ -58,12 +58,15 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
     # Check excluded extensions
     excludedExtensions = None
     if excludedExtensionsUnprocessed:
-        excludedExtensions = excludedExtensionsUnprocessed.split(",")
-
+        # Remove trailing and leading whitespace
+        # Then, remove trailing and leading commas so the noExtension ("") isn't added accidentally
+        # Split by comma
+        excludedExtensions = excludedExtensionsUnprocessed.strip().strip(",").split(",")
         for i in range(len(excludedExtensions)):
             excludedExtensions[i] = excludedExtensions[i].strip().lower()
             currentExt = excludedExtensions[i]
-            if not currentExt or not bool(re.fullmatch(r"\.[a-zA-Z0-9]+", currentExt)):
+            if not bool(re.fullmatch(r"\.[a-zA-Z0-9]+", currentExt)) and currentExt != "":
+                print(f"|{currentExt}| is invalid")
                 return (-13, None)
             
         excludedExtensions = set(excludedExtensions)

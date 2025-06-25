@@ -411,10 +411,9 @@ class WorkbookManager:
 
         initialRows = {}
         for (dirAbsolute, dirFolders, dirFiles) in walkObject:
-            # Ignore specifically OneNote_RecycleBin folders. Assumes these NEVER have subdirectories.
             # Ignore excluded directories.
             # Get "long file path". If folder is hidden, ignore it. Anything within a hidden folder is inadvertently ignored.
-            if (dirAbsolute.endswith("OneNote_RecycleBin")) or (dirAbsolute in excludedDirsSet) or self.isHidden(longDirAbsolute := addLongPathPrefix(dirAbsolute)):
+            if (dirAbsolute in excludedDirsSet) or self.isHidden(longDirAbsolute := addLongPathPrefix(dirAbsolute)):
                 dirFolders[:] = []
                 continue
 
