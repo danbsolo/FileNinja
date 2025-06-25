@@ -498,12 +498,16 @@ def identicalFilePost(ws):
 
 def identicalFilePostRecommend(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "File", wbm.headerFormat)
-    ws.write(0, 2, "Directory", wbm.headerFormat)
-    ws.write(0, 3, "Owner", wbm.headerFormat)
-    ws.write(0, 4, "Last Modified", wbm.headerFormat)
+    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
+    ws.write(0, 2, "File", wbm.headerFormat)
+    ws.write(0, 3, "Directory", wbm.headerFormat)
+    ws.write(0, 4, "Owner", wbm.headerFormat)
+    ws.write(0, 5, "Last Modified", wbm.headerFormat)
 
-    ### NOTE: TACKLING PURPLE HIGHLIGHTING
+    # hide "Delete" column
+    ws.set_column("B:B", None, None, {"hidden": True})
+
+    ### purple highlights
     dirToHashGraph = nx.Graph() # bipartite graph
     flaggedHashes = set()
     duplicatedHashes = set()
@@ -578,26 +582,26 @@ def identicalFilePostRecommend(ws):
                 folderAndItem[dirAbsoluteKey].sort(key=len, reverse=True)
 
                 # Write the first one normally
-                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
-                ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
-                ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
+                ws.write(row, 2, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
+                ws.write(row, 3, dirAbsoluteKey, wbm.dirFormat)
+                ws.write(row, 4, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
+                ws.write(row, 5, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
                 row += 1
 
                 # Write the rest in strong warning format
                 for i in range(1, dirAbsoluteNumOfFiles):
-                    ws.write(row, 1, folderAndItem[dirAbsoluteKey][i][0], wbm.warningStrongFormat)
-                    ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                    ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][i][1]))
-                    ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][i][1]))
+                    ws.write(row, 2, folderAndItem[dirAbsoluteKey][i][0], wbm.warningStrongFormat)
+                    ws.write(row, 3, dirAbsoluteKey, wbm.dirFormat)
+                    ws.write(row, 4, getOwnerCatch(folderAndItem[dirAbsoluteKey][i][1]))
+                    ws.write(row, 5, getLastModifiedDate(folderAndItem[dirAbsoluteKey][i][1]))
                     row += 1
             
             # If this file is only duplicated once in this directory, just write it normally
             else:
-                ws.write(row, 1, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
-                ws.write(row, 2, dirAbsoluteKey, wbm.dirFormat)
-                ws.write(row, 3, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
-                ws.write(row, 4, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
+                ws.write(row, 2, folderAndItem[dirAbsoluteKey][0][0], defaultItemFormat)
+                ws.write(row, 3, dirAbsoluteKey, wbm.dirFormat)
+                ws.write(row, 4, getOwnerCatch(folderAndItem[dirAbsoluteKey][0][1]))
+                ws.write(row, 5, getLastModifiedDate(folderAndItem[dirAbsoluteKey][0][1]))
                 row += 1
 
         folderAndItem.clear()
