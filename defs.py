@@ -278,6 +278,7 @@ FIX_PROCEDURES_DISPLAY = [
     "",
     "",
     "",
+    "",
     DELETE_EMPTY_FILE,
     SPACE_FOLDER_FIX,
     SPACE_FILE_FIX,
