@@ -355,7 +355,7 @@ pause')
     # data variables
     dirAbsoluteVar = tk.StringVar()
     parameterVar = tk.StringVar()
-    excludedExtensionsVar = tk.StringVar(value=".one, .onepkg, .onetoc2, .onebak, .shp, .dbf")
+    excludedExtensionsVar = tk.StringVar(value=".one, .onepkg, .onetoc2, .onebak, .shp, .dbf,")
     includeSubdirectoriesState = tk.IntVar(value=1)
     allowModifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=0)
