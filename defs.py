@@ -1,5 +1,5 @@
-from procedureFunctions import *
-from procedureClass import *
+from .procedureFunctions import *
+from .procedureClass import *
 
 # TODO: Partition this file into multiple defs.
 
@@ -10,6 +10,7 @@ HCS_ASSETS_PATH = "\\\\BNO-files\\NP-GROUPS\\PAEC-ECAP\\PAE-EAP\\Horizontal-Coor
 README_ADMIN = "README-Admin.docx"
 README_LITE = "README-Lite.docx"
 LOGO_PATH = HCS_ASSETS_PATH + "File-Ninja-Logo-Square.png"
+SHARED_UTILS_PATH = "..\\shared\\"
 
 # NOTE: Excel worksheet name must be <= 31 characters
 # The following characters are also invalid: / \ ? * : [ ]

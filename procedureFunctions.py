@@ -1,8 +1,8 @@
-from procedureHelpers import *
+from .procedureHelpers import *
 import hashlib
-from getFileOwner import getOwnerCatch
+from .getFileOwner import getOwnerCatch
 from collections import defaultdict
-from ExcelWritePackage import ExcelWritePackage
+from .ExcelWritePackage import ExcelWritePackage
 from threading import Lock
 from sys import maxsize as MAXSIZE
 from datetime import datetime

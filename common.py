@@ -1,4 +1,4 @@
-from defs import *
+from .defs import *
 import json
 
 

@@ -1,15 +1,16 @@
 import tkinter as tk
 from tkinter import filedialog
 import os
-from defs import *
+from .defs import *
 import sys
 from idlelib.tooltip import Hovertip
 import threading
-import filesScannedSharedVar
-import control
+from . import filesScannedSharedVar
+from . import control
 import json
-import common
-
+from . import common
+from shared import guiController, viewHelpers
+from FileChop import fileChop
 
 
 def launchView(isAdmin: bool):
@@ -155,41 +156,6 @@ def launchView(isAdmin: bool):
         tk.messagebox.showinfo("README DNE", "README file does not exist.")
 
 
-    def changeToDarkMode(parentWidget):
-        changeChildrenColor(parentWidget, "#202124", "white", "gray20", "gray20")
-
-    def changeToLightMode(parentWidget):
-        changeChildrenColor(parentWidget, "#F1F1F1", "#000000", "#F1F1F1", "#FFFFFF")
-        
-    def changeColorMode(parentWidget):
-        nonlocal onDarkMode
-        if onDarkMode:
-            onDarkMode = False
-            changeToLightMode(parentWidget)
-        else:
-            onDarkMode = True
-            changeToDarkMode(parentWidget)
-
-    def changeChildrenColor(widget, bgColor, fgColor, activeBgColor, selectColor):
-        widgetAttributes = widget.keys()
-
-        if "bg" in widgetAttributes:
-            widget.config(bg=bgColor)
-        if "fg" in widgetAttributes:
-            widget.config(fg=fgColor)
-        if "activebackground" in widgetAttributes:
-            widget.config(activebackground=activeBgColor)
-        if "activeforeground" in widgetAttributes:
-            widget.config(activeforeground=fgColor)
-        if "selectcolor" in widgetAttributes:
-            widget.config(selectcolor=selectColor)
-        if "insertbackground" in widgetAttributes:
-            widget.config(insertbackground=fgColor)
-
-        for child in widget.winfo_children():
-            changeChildrenColor(child, bgColor, fgColor, activeBgColor,selectColor)
-
-
     def saveSettingsIntoJSON():
         settings = {
             DIR_ABSOLUTE_KEY: dirAbsoluteVar.get(),
@@ -292,7 +258,7 @@ pause')
         # advancedOptionsWindow.geometry("500x200")
         advancedOptionsWindow.geometry("+{}+{}".format(root.winfo_pointerx()+rootWidth//2, root.winfo_pointery()))
 
-        if logoImg:
+        if logoImg := guiC.getLogoIcon():
             advancedOptionsWindow.iconphoto(False, logoImg)
 
         frame1 = tk.Frame(advancedOptionsWindow)
@@ -314,10 +280,17 @@ pause')
         Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures always ignore hidden files.", hover_delay=tooltipHoverDelay) # includeHiddenFilesTip
         Hovertip(excludedExtensionsLabel, "Comma separated list of extensions to exclude from scan.", hover_delay=tooltipHoverDelay)
 
-        if onDarkMode:
-            changeToDarkMode(advancedOptionsWindow)
+        if guiC.isOnDarkMode:
+            viewHelpers.changeToDarkMode(advancedOptionsWindow)
         else:
-            changeToLightMode(advancedOptionsWindow)
+            viewHelpers.changeToLightMode(advancedOptionsWindow)
+
+
+    def openAddOnWindow():
+        # TODO: Account for running from exes (same directory).
+        # TODO: Account for file not existing.
+        # subprocess.Popen(["python", "..\\FileChop\\fileChop.py"])
+        fileChop.launchApplication()
 
 
 
@@ -331,7 +304,6 @@ pause')
     rootWidth = 500 if isAdmin else 365
     rootHeight = (listboxHeight * listboxHeightMultiplier) + (420 if isAdmin else 295)
     root.geometry("{}x{}".format(rootWidth, rootHeight))
-
     advancedOptionsWindow = None
 
     # The following line of code breaks Hovertips. It just does.
@@ -476,20 +448,12 @@ pause')
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
     if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
-    root.bind('<Control-Key-w>', lambda _: root.destroy())
-    root.bind('<Control-Key-W>', lambda _: root.destroy())
-    root.bind("<Button-2>", lambda _: changeColorMode(root)) # middle click
     root.protocol("WM_DELETE_WINDOW", closeWindow)
+    root.bind('<Control-Key-q>', lambda _: openAddOnWindow())
+    root.bind('<Control-Key-Q>', lambda _: openAddOnWindow())
 
-    # set icon image (if available)
-    logoImg = None
-    if os.path.exists(LOGO_PATH):
-        logoImg = tk.PhotoImage(file=LOGO_PATH)
-        root.iconphoto(False, logoImg)
-
-    # change to dark mode as a de facto default. Note: tkinter's "option_add()" is too inconsistent to use instead
-    onDarkMode = False
-    changeColorMode(root)
+    guiC = guiController.GUIController(root)
+    guiC.standardInitialize()
 
 
     root.mainloop()
