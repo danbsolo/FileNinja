@@ -421,7 +421,6 @@ def identicalFileStart(arg, ws):
     global HASH_AND_FILES
     global EMPTY_INPUT_HASH_CODE
     global LOCK_DUPLICATE_CONTENT
-    global EXTENSIONS_TO_OMIT
 
     HASH_AND_FILES = {}
     hashFunc = hashlib.new("sha256")
@@ -499,9 +498,9 @@ def identicalFilePostRecommend(ws):
 
     ### purple highlights
     dirToHashGraph = nx.Graph() # bipartite graph
-    flaggedHashes = set()
+    #flaggedHashes = set()
     duplicatedHashes = set()
-    hashOccurrences = defaultdict(int)
+    #hashOccurrences = defaultdict(int)
     # dirAbsoluteNodeList = []
     for hashCode in HASH_AND_FILES:
         if (len(HASH_AND_FILES[hashCode][0])) <= 1:
@@ -513,34 +512,34 @@ def identicalFilePostRecommend(ws):
             dirToHashGraph.add_edge(hashCode, dirAbsolute)
             # dirAbsoluteNodeList.append(dirAbsolute)
 
-    for hashCodeNode in duplicatedHashes:
-        # If this hashCode has already been flagged, don't look into it again
-        if hashCodeNode in flaggedHashes: continue
+    # for hashCodeNode in duplicatedHashes:
+    #     # If this hashCode has already been flagged, don't look into it again
+    #     if hashCodeNode in flaggedHashes: continue
 
-        hashCodeNodeNeighborDirs = list(dirToHashGraph.neighbors(hashCodeNode))
+    #     hashCodeNodeNeighborDirs = list(dirToHashGraph.neighbors(hashCodeNode))
 
-        # If this hashCode is only found within 2 directories, skip it
-        if len(hashCodeNodeNeighborDirs) < 3: continue
+    #     # If this hashCode is only found within 2 directories, skip it
+    #     if len(hashCodeNodeNeighborDirs) < 3: continue
 
-        # Loop through the nC3 combinations
-        for setOfDirs in combinations(hashCodeNodeNeighborDirs, 3):
-            hashOccurrences.clear()
+    #     # Loop through the nC3 combinations
+    #     for setOfDirs in combinations(hashCodeNodeNeighborDirs, 3):
+    #         hashOccurrences.clear()
 
-            # Count how many times each hash appears across the set of 3 directories
-            for dir in setOfDirs:
-                for dirNodeNeighbourHashCode in dirToHashGraph.neighbors(dir):
-                    hashOccurrences[dirNodeNeighbourHashCode] += 1
+    #         # Count how many times each hash appears across the set of 3 directories
+    #         for dir in setOfDirs:
+    #             for dirNodeNeighbourHashCode in dirToHashGraph.neighbors(dir):
+    #                 hashOccurrences[dirNodeNeighbourHashCode] += 1
             
-            # Record which hashes appear 3 times
-            for ho in hashOccurrences:
-                if (hashOccurrences[ho]) >= 3: # should be ==, probably
-                    flaggedHashes.add(ho)
+    #         # Record which hashes appear 3 times
+    #         for ho in hashOccurrences:
+    #             if (hashOccurrences[ho]) >= 3: # should be ==, probably
+    #                 flaggedHashes.add(ho)
             
-        #for dirAbsoluteNode in list(dirToHashGraph.neighbors(hashCodeNode)):
-            # Loop through the files of the 3 or more neighbors
-    # for hashCodeNode in HASH_AND_FILES:
-    #     print(hashCodeNode, len(list(dirToHashGraph.neighbors(hashCodeNode))))
-    #     print()
+    #     #for dirAbsoluteNode in list(dirToHashGraph.neighbors(hashCodeNode)):
+    #         # Loop through the files of the 3 or more neighbors
+    # # for hashCodeNode in HASH_AND_FILES:
+    # #     print(hashCodeNode, len(list(dirToHashGraph.neighbors(hashCodeNode))))
+    # #     print()
     ###
 
     row = 1
@@ -550,10 +549,12 @@ def identicalFilePostRecommend(ws):
         numOfFiles = len(HASH_AND_FILES[hashCode][0])
         ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
 
-        # Prioritize the seriesOfIdenticalFiles flag. Then the numFiles>=3 flag. Then regular flag.
-        if (hashCode in flaggedHashes):
-            defaultItemFormat = wbm.warningMiddlingFormat
-        elif (numOfFiles >= 3):
+        ## Prioritize the seriesOfIdenticalFiles flag. Then the numFiles>=3 flag. Then regular flag.
+        # if (hashCode in flaggedHashes):
+        #     defaultItemFormat = wbm.warningMiddlingFormat
+        # elif (numOfFiles >= 3):
+        #     defaultItemFormat = wbm.warningWeakFormat
+        if (numOfFiles >= 3):
             defaultItemFormat = wbm.warningWeakFormat
         else:
             defaultItemFormat = wbm.errorFormat
