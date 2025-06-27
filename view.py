@@ -10,7 +10,7 @@ from . import control
 import json
 from . import common
 from shared import guiController, viewHelpers
-from FileChop import fileChop
+# from FileChop import fileChop
 
 
 def launchView(isAdmin: bool):
@@ -273,6 +273,8 @@ pause')
 
         excludedExtensionsLabel = tk.Label(frame2, text="Extensions to Exclude:", font=fontGeneral)
         excludedExtensionsEntry = tk.Entry(frame2, textvariable=excludedExtensionsVar, width=45, font=fontSmall)
+        excludedExtensionsEntry.icursor(tk.END)
+        excludedExtensionsEntry.xview_moveto(1.0)
         excludedExtensionsLabel.pack(side=tk.LEFT)
         excludedExtensionsEntry.pack(side=tk.LEFT)
         
@@ -286,11 +288,11 @@ pause')
             viewHelpers.changeToLightMode(advancedOptionsWindow)
 
 
-    def openAddOnWindow():
-        # TODO: Account for running from exes (same directory).
-        # TODO: Account for file not existing.
-        # subprocess.Popen(["python", "..\\FileChop\\fileChop.py"])
-        fileChop.launchApplication()
+    # def openAddOnWindow():
+    #     # TODO: Account for running from exes (same directory).
+    #     # TODO: Account for file not existing.
+    #     # subprocess.Popen(["python", "..\\FileChop\\fileChop.py"])
+    #     fileChop.launchApplication()
 
 
 
@@ -327,7 +329,8 @@ pause')
     # data variables
     dirAbsoluteVar = tk.StringVar()
     parameterVar = tk.StringVar()
-    excludedExtensionsVar = tk.StringVar(value=".one, .onepkg, .onetoc2, .onebak, .shp, .dbf,")
+    excludedExtensionsVar = tk.StringVar(
+        value=".shp, .dbf, .shx, .gbd, .sbd, .sbx, .spx, .sbn, .qpj, .atx, .cpg, .prj, .gdbtablx, .gdbtable, .freelist, .horizon, .gdbindexes, .one, .onepkg, .onetoc2, .onebak,")
     includeSubdirectoriesState = tk.IntVar(value=1)
     allowModifyState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=0)
@@ -449,8 +452,8 @@ pause')
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
     if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
     root.protocol("WM_DELETE_WINDOW", closeWindow)
-    root.bind('<Control-Key-q>', lambda _: openAddOnWindow())
-    root.bind('<Control-Key-Q>', lambda _: openAddOnWindow())
+    # root.bind('<Control-Key-q>', lambda _: openAddOnWindow())
+    # root.bind('<Control-Key-Q>', lambda _: openAddOnWindow())
 
     guiC = guiController.GUIController(root)
     guiC.standardInitialize()

@@ -524,7 +524,7 @@ class WorkbookManager:
         ws.write(10, 0, "Old Files", yellowFont)
         ws.write(11, 0, "Empty Directory", yellowFont)
 
-        ws.write(7, 1, "Recommend review of identical files in 3 or more folders. Change to [RED HIGHLIGHTS] for deletion.", wrappedBorderFont)
+        ws.write(7, 1, "Recommend review of 3 or more identical files. Change to [RED HIGHLIGHTS] for deletion.", wrappedBorderFont)
         ws.write(8, 1, "Recommend review of multiple file versions. Change to [RED HIGHLIGHTS] for deletion.", wrappedBorderFont) # TODO: Here
         ws.write(9, 1, "Recommend review of large files types. If deemed transitory information and not information of business value (IBV), change to  [RED HIGHLIGHTS] for deletion.  ", wrappedBorderFont)
         ws.write(10, 1, "Recommend review of files that have not been accessed for more than 730 days / two years but less than 1095 days / 3 years. If deemed transitory information and not information of business value (IBV), change to  [RED HIGHLIGHTS] for deletion.  ", wrappedBorderFont)
@@ -591,7 +591,7 @@ class WorkbookManager:
         ws.write(35, 0, "Ancien fichier", yellowFont)
         ws.write(36, 0, "Répertoire vide", yellowFont)
 
-        ws.write(32, 1, "On recommande l’examen des dossiers identiques dans trois (3) dossiers ou plus. Mettez les éléments en [SURBRILLANCE ROUGE] aux fins de suppression.", wrappedBorderFont)
+        ws.write(32, 1, "On recommande de revoir trois fichiers identiques ou plus. Mettez les éléments en [SURBRILLANCE ROUGE] aux fins de suppression.", wrappedBorderFont)
         ws.write(33, 1, "Recommander la révision de plusieurs versions de fichiers. Changer en [HIGHLIGHTS ROUGES] pour suppression.", wrappedBorderFont) # TODO: Here
         ws.write(34, 1, "On recommande l’examen des types de fichiers volumineux. Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.  ", wrappedBorderFont)
         ws.write(35, 1, "On recommande l’examen des dossiers qui n’ont pas été consultés depuis plus de 730 jours/2 ans, mais moins de 1095 jours/3 ans. Si l’information est considérée comme transitoire et non comme une information à valeur opérationnelle (IVO), mettez l’élément en [SURBRILLANCE ROUGE] aux fins de suppression.  ", wrappedBorderFont)

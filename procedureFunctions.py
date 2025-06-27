@@ -429,12 +429,6 @@ def identicalFileStart(arg, ws):
     EMPTY_INPUT_HASH_CODE = hashFunc.hexdigest()
     LOCK_DUPLICATE_CONTENT = Lock()
 
-    # EXTENSIONS_TO_OMIT = {
-    #     ".shx", ".gbd", ".sbd", ".spx", ".sbx", ".spx", ".sbn",
-    #     ".qpj", ".atx", ".gdbtablx", ".gdbtable",
-    #     ".freelist", ".horizon", ".gdbindexes", ".cpg", ".prj" 
-    # }
-
 def identicalFileHelper(longFileAbsolute:str):    
     hashFunc = hashlib.new("sha256")
     
@@ -445,10 +439,6 @@ def identicalFileHelper(longFileAbsolute:str):
     return hashFunc.hexdigest()
 
 def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws):
-    # _, ext = getRootNameAndExtension(itemName)
-    # if ext in EXTENSIONS_TO_OMIT:
-    #     return (False,)
-
     try:
         hashCode = identicalFileHelper(longFileAbsolute)
     except Exception:  # FileNotFoundError, PermissionError, OSError, UnicodeDecodeError
