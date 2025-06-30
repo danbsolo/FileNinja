@@ -10,7 +10,7 @@ import string
 import networkx as nx
 from difflib import SequenceMatcher
 from networkx.algorithms.clique import find_cliques
-from itertools import combinations
+# from itertools import combinations
 
 
 def setWorkbookManager(newManager: WorkbookManager):
