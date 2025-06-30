@@ -1,10 +1,10 @@
-from .workbookManager import WorkbookManager
+from workbookManager import WorkbookManager
 from datetime import datetime
-from . import procedureHelpers
-from . import procedureFunctions
+import procedureHelpers
+import procedureFunctions
 import traceback
-from .defs import *
-from . import common
+from defs import *
+import common
 import re
 
 

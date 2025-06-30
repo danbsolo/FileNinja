@@ -1,10 +1,10 @@
-from . import view
-from . import control
-from .import common
+import view
+import control
+import common
 import sys
 from concurrent.futures import ThreadPoolExecutor
 import time
-from . import filesScannedSharedVar
+import filesScannedSharedVar
 import ctypes
 
 

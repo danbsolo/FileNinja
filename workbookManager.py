@@ -3,8 +3,8 @@ from typing import List
 from time import time
 import os
 import stat
-from . import filesScannedSharedVar
-from .ExcelWritePackage import ExcelWritePackage
+import filesScannedSharedVar
+from ExcelWritePackage import ExcelWritePackage
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 

@@ -1,5 +1,5 @@
-from .procedureFunctions import *
-from .procedureClass import *
+from procedureFunctions import *
+from procedureClass import *
 
 # TODO: Partition this file into multiple defs.
 

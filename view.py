@@ -1,15 +1,17 @@
 import tkinter as tk
 from tkinter import filedialog
 import os
-from .defs import *
+
+import sharedGuiController
+from defs import *
 import sys
 from idlelib.tooltip import Hovertip
 import threading
-from . import filesScannedSharedVar
-from . import control
+import filesScannedSharedVar
+import control
 import json
-from . import common
-from shared import guiController, viewHelpers
+import common
+import sharedViewHelpers
 # from FileChop import fileChop
 
 
@@ -283,9 +285,9 @@ pause')
         Hovertip(excludedExtensionsLabel, "Comma separated list of extensions to exclude from scan.", hover_delay=tooltipHoverDelay)
 
         if guiC.isOnDarkMode:
-            viewHelpers.changeToDarkMode(advancedOptionsWindow)
+            sharedViewHelpers.changeToDarkMode(advancedOptionsWindow)
         else:
-            viewHelpers.changeToLightMode(advancedOptionsWindow)
+            sharedViewHelpers.changeToLightMode(advancedOptionsWindow)
 
 
     # def openAddOnWindow():
@@ -455,7 +457,7 @@ pause')
     # root.bind('<Control-Key-q>', lambda _: openAddOnWindow())
     # root.bind('<Control-Key-Q>', lambda _: openAddOnWindow())
 
-    guiC = guiController.GUIController(root)
+    guiC = sharedGuiController.GUIController(root)
     guiC.standardInitialize()
 
 

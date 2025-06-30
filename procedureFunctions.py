@@ -1,8 +1,8 @@
-from .procedureHelpers import *
+from procedureHelpers import *
 import hashlib
-from .getFileOwner import getOwnerCatch
+from getFileOwner import getOwnerCatch
 from collections import defaultdict
-from .ExcelWritePackage import ExcelWritePackage
+from ExcelWritePackage import ExcelWritePackage
 from threading import Lock
 from sys import maxsize as MAXSIZE
 from datetime import datetime
@@ -1021,7 +1021,7 @@ def multipleVersionPost(ws):
 
     row = 1
     cliques = find_cliques(VG)
-    cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
+    cliques = sorted(list(cliques), key=lambda clique: clique[0][0].lower())
     
     for clique in cliques:
         if len(clique) <= 1: continue
@@ -1054,8 +1054,8 @@ def multipleVersionPostRecommend(ws):
     
     row = 1
     cliques = find_cliques(VG)
-    cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
-    
+    cliques = sorted(list(cliques), key=lambda clique: clique[0][0].lower())
+
     for clique in cliques:
         if (cliqueLength := len(clique)) <= 1: continue
 
