@@ -196,7 +196,7 @@ ALL_PROCEDURES = {
         multipleVersionBase,
         validatorFunction=numberRangeValidator,
         argBoundary=(1, 100),
-        defaultArgument=(95,),
+        defaultArgument=(98,),
         isConcurrentOnly=False,
         startFunction=multipleVersionStart,
         postFunction=multipleVersionPost,
