@@ -463,10 +463,14 @@ def identicalFileBase(longFileAbsolute:str, _, dirAbsolute:str, itemName:str, ws
 
 def identicalFilePost(ws):
     ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "File", wbm.headerFormat)
-    ws.write(0, 2, "Directory", wbm.headerFormat)
-    ws.write(0, 3, "Owner", wbm.headerFormat)
-    ws.write(0, 4, "Last Modified", wbm.headerFormat)
+    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
+    ws.write(0, 2, "File", wbm.headerFormat)
+    ws.write(0, 3, "Directory", wbm.headerFormat)
+    ws.write(0, 4, "Owner", wbm.headerFormat)
+    ws.write(0, 5, "Last Modified", wbm.headerFormat)
+
+    # hide the "Delete" column
+    ws.set_column("B:B", None, None, {"hidden": True})
 
     row = 1
     for hashCode in HASH_AND_FILES.keys():
@@ -475,10 +479,10 @@ def identicalFilePost(ws):
 
             for i in range(numOfFiles):
                 longFileAbsolute = HASH_AND_FILES[hashCode][2][i]
-                ws.write(row, 1, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
-                ws.write(row, 2, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
-                ws.write(row, 3, getOwnerCatch(longFileAbsolute))
-                ws.write(row, 4, getLastModifiedDate(longFileAbsolute))
+                ws.write(row, 2, HASH_AND_FILES[hashCode][0][i], wbm.errorFormat)
+                ws.write(row, 3, HASH_AND_FILES[hashCode][1][i], wbm.dirFormat)
+                ws.write(row, 4, getOwnerCatch(longFileAbsolute))
+                ws.write(row, 5, getLastModifiedDate(longFileAbsolute))
                 row += 1
                 
     HASH_AND_FILES.clear()
@@ -493,7 +497,6 @@ def identicalFilePostRecommend(ws):
     ws.write(0, 4, "Owner", wbm.headerFormat)
     ws.write(0, 5, "Last Modified", wbm.headerFormat)
 
-    # hide "Delete" column
     ws.set_column("B:B", None, None, {"hidden": True})
 
     ### purple highlights
@@ -1007,11 +1010,15 @@ def multipleVersionBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:s
 def multipleVersionPost(ws):
     global NODE_TUPLES
     ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Item", wbm.headerFormat)
-    ws.write(0, 2, "Directory", wbm.headerFormat)
-    ws.write(0, 3, "Owner", wbm.headerFormat)
-    ws.write(0, 4, "Last Modified", wbm.headerFormat)
+    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
+    ws.write(0, 2, "Item", wbm.headerFormat)
+    ws.write(0, 3, "Directory", wbm.headerFormat)
+    ws.write(0, 4, "Owner", wbm.headerFormat)
+    ws.write(0, 5, "Last Modified", wbm.headerFormat)
     
+    # hide the "Delete" column
+    ws.set_column("B:B", None, None, {"hidden": True})
+
     row = 1
     cliques = find_cliques(VG)
     cliques = sorted(list(cliques), key=lambda clique: clique[0][1].lower())
@@ -1023,10 +1030,10 @@ def multipleVersionPost(ws):
         ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
 
         for nodeTuple in clique: #clique[1:]
-            ws.write(row, 1, nodeTuple[0])
-            ws.write(row, 2, nodeTuple[1], wbm.dirFormat)
-            ws.write(row, 3, getOwnerCatch(nodeTuple[2]))
-            ws.write(row, 4, getLastModifiedDate(nodeTuple[2]))
+            ws.write(row, 2, nodeTuple[0])
+            ws.write(row, 3, nodeTuple[1], wbm.dirFormat)
+            ws.write(row, 4, getOwnerCatch(nodeTuple[2]))
+            ws.write(row, 5, getLastModifiedDate(nodeTuple[2]))
             row += 1
 
     NODE_TUPLES.clear()
@@ -1037,10 +1044,13 @@ def multipleVersionPost(ws):
 def multipleVersionPostRecommend(ws):
     global NODE_TUPLES
     ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Item", wbm.headerFormat)
-    ws.write(0, 2, "Directory", wbm.headerFormat)
-    ws.write(0, 3, "Owner", wbm.headerFormat)
-    ws.write(0, 4, "Last Modified", wbm.headerFormat)
+    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
+    ws.write(0, 2, "Item", wbm.headerFormat)
+    ws.write(0, 3, "Directory", wbm.headerFormat)
+    ws.write(0, 4, "Owner", wbm.headerFormat)
+    ws.write(0, 5, "Last Modified", wbm.headerFormat)
+
+    ws.set_column("B:B", None, None, {"hidden": True})
     
     row = 1
     cliques = find_cliques(VG)
@@ -1067,10 +1077,10 @@ def multipleVersionPostRecommend(ws):
                 mostRecentDateIndexes.add(i) # Add to the current set
 
         for i in range(cliqueLength): #clique[1:]
-            ws.write(row, 1, clique[i][0], wbm.warningWeakFormat if i not in mostRecentDateIndexes else wbm.errorFormat)
-            ws.write(row, 2, clique[i][1], wbm.dirFormat)
-            ws.write(row, 3, getOwnerCatch(clique[i][2]))
-            ws.write(row, 4, getLastModifiedDate(clique[i][2]))
+            ws.write(row, 2, clique[i][0], wbm.warningWeakFormat if i not in mostRecentDateIndexes else wbm.errorFormat)
+            ws.write(row, 3, clique[i][1], wbm.dirFormat)
+            ws.write(row, 4, getOwnerCatch(clique[i][2]))
+            ws.write(row, 5, getLastModifiedDate(clique[i][2]))
             row += 1
 
     NODE_TUPLES.clear()
