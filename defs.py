@@ -1,5 +1,5 @@
-from procedureFunctions import *
-from procedureClass import *
+from FileNinjaSuite.FileNinja.procedureFunctions import *
+from FileNinjaSuite.FileNinja.procedureClass import *
 
 # TODO: Partition this file into multiple defs.
 
@@ -27,6 +27,7 @@ CHARACTER_LIMIT = "Exceed Character Limit"
 IDENTICAL_FILE = "Identical File~"
 FILE_EXTENSION_SUMMARY = "Large File Size#"
 MULTIPLE_VERSION = "Multiple Version#"
+SEARCH_FUNCTION = "Search Function#"
 
 DELETE_EMPTY_FILE = "Delete Empty File~"
 SPACE_FILE_FIX = "Replace Space w Hyphen (FILE)"
@@ -203,6 +204,14 @@ ALL_PROCEDURES = {
         recommendPostFunction=multipleVersionPostRecommend
     ),
 
+    SEARCH_FUNCTION: Procedure(
+        SEARCH_FUNCTION,
+        True,
+        searchFunctionBase,
+        validatorFunction=multipleStringValidator,
+        startFunction=searchFunctionStart
+    ),
+
 
 ### FIX PROCEDURES ################################################################################
     DELETE_EMPTY_FILE: Procedure(
@@ -237,7 +246,7 @@ ALL_PROCEDURES = {
         searchAndReplaceFolderBase,
         searchAndReplaceFolderModify,
         startFunction=searchAndReplaceFolderStart,
-        validatorFunction=multiplePairsOfStringsValidator,
+        validatorFunction=multiplePairReplaceValidator,
         argBoundary=">",
         postFunction=fixfolderModifyPost
     ),
@@ -248,7 +257,7 @@ ALL_PROCEDURES = {
         searchAndReplaceFileBase,
         searchAndReplaceFileModify,
         startFunction=searchAndReplaceFileStart,
-        validatorFunction=multiplePairsOfStringsValidator,
+        validatorFunction=multiplePairReplaceValidator,
         argBoundary=">"
     ),
 }
@@ -259,6 +268,7 @@ ALL_PROCEDURES = {
 FIND_PROCEDURES_DISPLAY = [
     LIST_ALL,
     LIST_ALL_OWNER,
+    SEARCH_FUNCTION,
     IDENTICAL_FILE,
     MULTIPLE_VERSION,
     FILE_EXTENSION_SUMMARY,
@@ -269,10 +279,11 @@ FIND_PROCEDURES_DISPLAY = [
     SPACE_FILE_FIND,
     BAD_CHARACTER_DIRECTORY,
     BAD_CHARACTER_FILE,
-    CHARACTER_LIMIT
+    CHARACTER_LIMIT,
 ]
 
 FIX_PROCEDURES_DISPLAY = [
+    "",
     "",
     "",
     "",

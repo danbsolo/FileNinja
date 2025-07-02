@@ -1,4 +1,4 @@
-from defs import *
+from FileNinjaSuite.FileNinja.defs import *
 import json
 
 

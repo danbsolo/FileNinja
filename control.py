@@ -1,10 +1,10 @@
-from workbookManager import WorkbookManager
+from FileNinjaSuite.FileNinja.workbookManager import WorkbookManager
 from datetime import datetime
-import procedureHelpers
-import procedureFunctions
+from FileNinjaSuite.FileNinja import procedureHelpers
+from FileNinjaSuite.FileNinja import procedureFunctions
 import traceback
-from defs import *
-import common
+from FileNinjaSuite.FileNinja.defs import *
+from FileNinjaSuite.FileNinja import common
 import re
 
 

@@ -1,5 +1,5 @@
 import os
-from workbookManager import WorkbookManager
+from FileNinjaSuite.FileNinja.workbookManager import WorkbookManager
 from datetime import date
 import threading
 

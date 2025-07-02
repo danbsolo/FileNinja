@@ -1,8 +1,8 @@
-from procedureHelpers import *
+from FileNinjaSuite.FileNinja.procedureHelpers import *
 import hashlib
-from getFileOwner import getOwnerCatch
+from FileNinjaSuite.FileNinja.getFileOwner import getOwnerCatch
 from collections import defaultdict
-from ExcelWritePackage import ExcelWritePackage
+from FileNinjaSuite.FileNinja.ExcelWritePackage import ExcelWritePackage
 from threading import Lock
 from sys import maxsize as MAXSIZE
 from datetime import datetime
@@ -659,6 +659,140 @@ def emptyFileFindRecommend(longFileAbsolute:str, _1, _2, itemName:str, ws):
     return (False,)
 
 
+def multipleVersionStart(arg, _):
+    global VG
+    global NODE_TUPLES
+    global FILTERED_NAMES
+    global NUM_NODES
+    global SIMILARITY_THRESHOLD
+    VG = nx.Graph()
+    NODE_TUPLES = []
+    FILTERED_NAMES = []
+    NUM_NODES = 0
+    SIMILARITY_THRESHOLD = arg[0] / 100
+    
+def multipleVersionSimilarityMeasureHelper(s, t):  # similarity measurer
+    return SequenceMatcher(None, s, t).ratio()
+
+def multipleVersionFilterHelper(s):
+    # Filters:
+    # remove extension
+    # enable case-insensitivty via lower casing ubiquitously
+    return getRootNameAndExtension(s)[0].lower()
+
+def multipleVersionBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
+    global NUM_NODES
+    newNodeTuple = (itemName, dirAbsolute, longFileAbsolute)
+    filteredItemName = multipleVersionFilterHelper(itemName)
+
+    for i in range(NUM_NODES):
+        if multipleVersionSimilarityMeasureHelper(FILTERED_NAMES[i], filteredItemName) >= SIMILARITY_THRESHOLD:  # our threshold
+            VG.add_edge(NODE_TUPLES[i], newNodeTuple)
+    
+    FILTERED_NAMES.append(filteredItemName)
+    NODE_TUPLES.append(newNodeTuple)
+    VG.add_node(newNodeTuple)  # only executes if no edges were added
+    NUM_NODES += 1
+    return (False,)
+    
+def multipleVersionPost(ws):
+    global NODE_TUPLES
+    ws.write(0, 0, "Separator", wbm.headerFormat)
+    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
+    ws.write(0, 2, "Item", wbm.headerFormat)
+    ws.write(0, 3, "Directory", wbm.headerFormat)
+    ws.write(0, 4, "Owner", wbm.headerFormat)
+    ws.write(0, 5, "Last Modified", wbm.headerFormat)
+    
+    # hide the "Delete" column
+    ws.set_column("B:B", None, None, {"hidden": True})
+
+    row = 1
+    cliques = find_cliques(VG)
+    cliques = sorted(list(cliques), key=lambda clique: clique[0][0].lower())
+    
+    for clique in cliques:
+        if len(clique) <= 1: continue
+
+        wbm.incrementFileCount(ws)
+        ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
+
+        for nodeTuple in clique: #clique[1:]
+            ws.write(row, 2, nodeTuple[0])
+            ws.write(row, 3, nodeTuple[1], wbm.dirFormat)
+            ws.write(row, 4, getOwnerCatch(nodeTuple[2]))
+            ws.write(row, 5, getLastModifiedDate(nodeTuple[2]))
+            row += 1
+
+    NODE_TUPLES.clear()
+    FILTERED_NAMES.clear()
+    ws.freeze_panes(1, 0)
+    ws.autofit()
+
+def multipleVersionPostRecommend(ws):
+    global NODE_TUPLES
+    ws.write(0, 0, "Separator", wbm.headerFormat)
+    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
+    ws.write(0, 2, "Item", wbm.headerFormat)
+    ws.write(0, 3, "Directory", wbm.headerFormat)
+    ws.write(0, 4, "Owner", wbm.headerFormat)
+    ws.write(0, 5, "Last Modified", wbm.headerFormat)
+
+    ws.set_column("B:B", None, None, {"hidden": True})
+    
+    row = 1
+    cliques = find_cliques(VG)
+    cliques = sorted(list(cliques), key=lambda clique: clique[0][0].lower())
+
+    for clique in cliques:
+        if (cliqueLength := len(clique)) <= 1: continue
+
+        wbm.incrementFileCount(ws)
+        ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
+
+        mostRecentLMDate = getLastModifiedDate(clique[0][2])
+        lastModifiedDates = [mostRecentLMDate,]
+        mostRecentDateIndexes = {0} # Since more than one lmDate can be the same date and the most recent simultaneously
+        for i in range(1, cliqueLength):
+            lmDate = getLastModifiedDate(clique[i][2])
+            lastModifiedDates.append(lmDate)
+            
+            # Compare ISO date strings lexicographically, which works because they're in the format YYYY-MM-DD
+            if lmDate > mostRecentLMDate:
+                mostRecentLMDate = lmDate
+                mostRecentDateIndexes = {i} # Start the set anew
+            elif lmDate == mostRecentLMDate:
+                mostRecentDateIndexes.add(i) # Add to the current set
+
+        for i in range(cliqueLength): #clique[1:]
+            ws.write(row, 2, clique[i][0], wbm.warningWeakFormat if i not in mostRecentDateIndexes else wbm.errorFormat)
+            ws.write(row, 3, clique[i][1], wbm.dirFormat)
+            ws.write(row, 4, getOwnerCatch(clique[i][2]))
+            ws.write(row, 5, getLastModifiedDate(clique[i][2]))
+            row += 1
+
+    NODE_TUPLES.clear()
+    FILTERED_NAMES.clear()
+    ws.freeze_panes(1, 0)
+    ws.autofit()
+
+
+def searchFunctionStart(arg, ws):
+    writeDefaultHeaders(arg, ws)
+    
+    global SEARCH_FUNCTION_KEY_WORDS
+    SEARCH_FUNCTION_KEY_WORDS = arg
+    
+    for i in range(len(SEARCH_FUNCTION_KEY_WORDS)):
+        SEARCH_FUNCTION_KEY_WORDS[i] = SEARCH_FUNCTION_KEY_WORDS[i].lower()
+
+def searchFunctionBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
+    homogenizedLowerItemName = itemName.lower()
+    for keyWord in SEARCH_FUNCTION_KEY_WORDS:
+        if keyWord in homogenizedLowerItemName:
+            wbm.incrementRowAndFileCount(ws)
+            return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))
+    return (False,)
 
 
 ## FIX FUNCTIONS#########################################################################################################
@@ -969,121 +1103,3 @@ def deleteEmptyFileModify(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute
                 lastModifiedEwp,
                 outcomeEwp)   
     return (False,)
-
-
-def multipleVersionStart(arg, _):
-    global VG
-    global NODE_TUPLES
-    global FILTERED_NAMES
-    global NUM_NODES
-    global SIMILARITY_THRESHOLD
-    VG = nx.Graph()
-    NODE_TUPLES = []
-    FILTERED_NAMES = []
-    NUM_NODES = 0
-    SIMILARITY_THRESHOLD = arg[0] / 100
-    
-def multipleVersionSimilarityMeasureHelper(s, t):  # similarity measurer
-    return SequenceMatcher(None, s, t).ratio()
-
-def multipleVersionFilterHelper(s):
-    # Filters:
-    # remove extension
-    # enable case-insensitivty via lower casing ubiquitously
-    return getRootNameAndExtension(s)[0].lower()
-
-def multipleVersionBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
-    global NUM_NODES
-    newNodeTuple = (itemName, dirAbsolute, longFileAbsolute)
-    filteredItemName = multipleVersionFilterHelper(itemName)
-
-    for i in range(NUM_NODES):
-        if multipleVersionSimilarityMeasureHelper(FILTERED_NAMES[i], filteredItemName) >= SIMILARITY_THRESHOLD:  # our threshold
-            VG.add_edge(NODE_TUPLES[i], newNodeTuple)
-    
-    FILTERED_NAMES.append(filteredItemName)
-    NODE_TUPLES.append(newNodeTuple)
-    VG.add_node(newNodeTuple)  # only executes if no edges were added
-    NUM_NODES += 1
-    return (False,)
-    
-def multipleVersionPost(ws):
-    global NODE_TUPLES
-    ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
-    ws.write(0, 2, "Item", wbm.headerFormat)
-    ws.write(0, 3, "Directory", wbm.headerFormat)
-    ws.write(0, 4, "Owner", wbm.headerFormat)
-    ws.write(0, 5, "Last Modified", wbm.headerFormat)
-    
-    # hide the "Delete" column
-    ws.set_column("B:B", None, None, {"hidden": True})
-
-    row = 1
-    cliques = find_cliques(VG)
-    cliques = sorted(list(cliques), key=lambda clique: clique[0][0].lower())
-    
-    for clique in cliques:
-        if len(clique) <= 1: continue
-
-        wbm.incrementFileCount(ws)
-        ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
-
-        for nodeTuple in clique: #clique[1:]
-            ws.write(row, 2, nodeTuple[0])
-            ws.write(row, 3, nodeTuple[1], wbm.dirFormat)
-            ws.write(row, 4, getOwnerCatch(nodeTuple[2]))
-            ws.write(row, 5, getLastModifiedDate(nodeTuple[2]))
-            row += 1
-
-    NODE_TUPLES.clear()
-    FILTERED_NAMES.clear()
-    ws.freeze_panes(1, 0)
-    ws.autofit()
-
-def multipleVersionPostRecommend(ws):
-    global NODE_TUPLES
-    ws.write(0, 0, "Separator", wbm.headerFormat)
-    ws.write(0, 1, "Staged for Deletion", wbm.headerFormat)
-    ws.write(0, 2, "Item", wbm.headerFormat)
-    ws.write(0, 3, "Directory", wbm.headerFormat)
-    ws.write(0, 4, "Owner", wbm.headerFormat)
-    ws.write(0, 5, "Last Modified", wbm.headerFormat)
-
-    ws.set_column("B:B", None, None, {"hidden": True})
-    
-    row = 1
-    cliques = find_cliques(VG)
-    cliques = sorted(list(cliques), key=lambda clique: clique[0][0].lower())
-
-    for clique in cliques:
-        if (cliqueLength := len(clique)) <= 1: continue
-
-        wbm.incrementFileCount(ws)
-        ws.write(row, 0, GROUP_SEPARATOR, wbm.separatorFormat)
-
-        mostRecentLMDate = getLastModifiedDate(clique[0][2])
-        lastModifiedDates = [mostRecentLMDate,]
-        mostRecentDateIndexes = {0} # Since more than one lmDate can be the same date and the most recent simultaneously
-        for i in range(1, cliqueLength):
-            lmDate = getLastModifiedDate(clique[i][2])
-            lastModifiedDates.append(lmDate)
-            
-            # Compare ISO date strings lexicographically, which works because they're in the format YYYY-MM-DD
-            if lmDate > mostRecentLMDate:
-                mostRecentLMDate = lmDate
-                mostRecentDateIndexes = {i} # Start the set anew
-            elif lmDate == mostRecentLMDate:
-                mostRecentDateIndexes.add(i) # Add to the current set
-
-        for i in range(cliqueLength): #clique[1:]
-            ws.write(row, 2, clique[i][0], wbm.warningWeakFormat if i not in mostRecentDateIndexes else wbm.errorFormat)
-            ws.write(row, 3, clique[i][1], wbm.dirFormat)
-            ws.write(row, 4, getOwnerCatch(clique[i][2]))
-            ws.write(row, 5, getLastModifiedDate(clique[i][2]))
-            row += 1
-
-    NODE_TUPLES.clear()
-    FILTERED_NAMES.clear()
-    ws.freeze_panes(1, 0)
-    ws.autofit()

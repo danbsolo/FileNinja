@@ -1,10 +1,10 @@
-import view
-import control
-import common
+from FileNinjaSuite.FileNinja import view
+from FileNinjaSuite.FileNinja import control
+from FileNinjaSuite.FileNinja import common
+from FileNinjaSuite.FileNinja import filesScannedSharedVar
 import sys
 from concurrent.futures import ThreadPoolExecutor
 import time
-import filesScannedSharedVar
 import ctypes
 
 

@@ -85,7 +85,7 @@ def minimumIntToInfinityValidator(arg:str, minimum:int):
         return
 
 
-def pairOfStringsValidator(arg:str, separator:str):
+def singlePairReplaceValidator(arg:str, separator:str):
     try:
         separatorIndex = arg.rfind(separator)
         
@@ -100,15 +100,12 @@ def pairOfStringsValidator(arg:str, separator:str):
     except:
         return
 
-
-def multiplePairsOfStringsValidator(arg:str, separator:str):
-    multiplePairs = tuple()
-
+def multiplePairReplaceValidator(arg:str, separator:str):
     try:
         multiplePairs = arg.split("*")
 
         for i in range(len(multiplePairs)):
-            pair = pairOfStringsValidator(multiplePairs[i], separator)
+            pair = singlePairReplaceValidator(multiplePairs[i], separator)
 
             if pair is None:
                 return
@@ -116,5 +113,24 @@ def multiplePairsOfStringsValidator(arg:str, separator:str):
             multiplePairs[i] = pair
 
         return multiplePairs
+    except:
+        return
+
+
+def multipleStringValidator(arg:str, _):
+    processedMultipleStrings = []
+    try:
+        rawMultipleStrings = arg.split("*")
+
+        for i in range(len(rawMultipleStrings)):
+            currentItem = rawMultipleStrings[i].strip()
+
+            if currentItem is None:
+                return
+            
+            if currentItem not in processedMultipleStrings:
+                processedMultipleStrings.append(currentItem)
+            
+        return processedMultipleStrings
     except:
         return
