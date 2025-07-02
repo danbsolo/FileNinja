@@ -782,14 +782,10 @@ def searchFunctionStart(arg, ws):
     
     global SEARCH_FUNCTION_KEY_WORDS
     SEARCH_FUNCTION_KEY_WORDS = arg
-    
-    for i in range(len(SEARCH_FUNCTION_KEY_WORDS)):
-        SEARCH_FUNCTION_KEY_WORDS[i] = SEARCH_FUNCTION_KEY_WORDS[i].lower()
 
 def searchFunctionBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
-    homogenizedLowerItemName = itemName.lower()
     for keyWord in SEARCH_FUNCTION_KEY_WORDS:
-        if keyWord in homogenizedLowerItemName:
+        if keyWord in itemName:
             wbm.incrementRowAndFileCount(ws)
             return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))
     return (False,)
