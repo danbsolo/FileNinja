@@ -777,19 +777,32 @@ def multipleVersionPostRecommend(ws):
     ws.autofit()
 
 
-def searchFunctionStart(arg, ws):
+def searchFunctionFileStart(arg, ws):
     writeDefaultHeaders(arg, ws)
-    
-    global SEARCH_FUNCTION_KEY_WORDS
-    SEARCH_FUNCTION_KEY_WORDS = arg
+    global SEARCH_FUNCTION_FILE_KEY_WORDS
+    SEARCH_FUNCTION_FILE_KEY_WORDS = arg
 
-def searchFunctionBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
-    for keyWord in SEARCH_FUNCTION_KEY_WORDS:
+def searchFunctionFileBase(longFileAbsolute:str, longDirAbsolute:str, dirAbsolute:str, itemName:str, ws):
+    for keyWord in SEARCH_FUNCTION_FILE_KEY_WORDS:
         if keyWord in itemName:
             wbm.incrementRowAndFileCount(ws)
             return (2, ExcelWritePackage(wbm.sheetRows[ws], wbm.ITEM_COL, itemName, ws))
     return (False,)
 
+def searchFunctionDirStart(arg, ws):
+    writeDefaultHeaders(arg, ws)
+    global SEARCH_FUNCTION_DIR_KEY_WORDS
+    SEARCH_FUNCTION_DIR_KEY_WORDS = arg
+
+def searchFunctionDirBase(dirAbsolute, dirBasename, dirFolders, dirFiles, ws):
+    for keyWord in SEARCH_FUNCTION_DIR_KEY_WORDS:
+        if keyWord in dirBasename:
+            wbm.incrementRowAndFileCount(ws)
+            row = wbm.sheetRows[ws]
+            return (2,
+                    ExcelWritePackage(row, wbm.DIR_COL, dirAbsolute, ws, wbm.dirFormat),
+                    ExcelWritePackage(row, wbm.ITEM_COL, dirBasename, ws, wbm.errorFormat))
+    return (False,)
 
 ## FIX FUNCTIONS#########################################################################################################
 
