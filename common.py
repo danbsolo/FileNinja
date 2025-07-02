@@ -1,15 +1,6 @@
 from FileNinjaSuite.FileNinja.defs import *
+from FileNinjaSuite.Shared.sharedCommon import *
 import json
-
-
-def interpretError(exitPair):
-    exitCode, exitMessage = exitPair
-    
-    if exitMessage:
-        return f"{EXIT_STATUS_CODES[exitCode]} >>> {exitMessage}"
-    else:
-        return EXIT_STATUS_CODES[exitCode]
-
 
 def loadSettingsFromJSON(filePath):
     if not os.path.exists(filePath):

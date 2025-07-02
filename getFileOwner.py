@@ -128,6 +128,7 @@ def getOwnerCatch(longFileAbsolute):
     CACHE_EVENTS[longFileAbsolute].wait()
     return OWNER_INFO_CACHE[longFileAbsolute]
 
+
 # Example usage:
 if __name__ == '__main__':
     import sys

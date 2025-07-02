@@ -2,9 +2,9 @@ from FileNinjaSuite.FileNinja.workbookManager import WorkbookManager
 from datetime import datetime
 from FileNinjaSuite.FileNinja import procedureHelpers
 from FileNinjaSuite.FileNinja import procedureFunctions
-import traceback
 from FileNinjaSuite.FileNinja.defs import *
 from FileNinjaSuite.FileNinja import common
+import traceback
 import re
 
 
@@ -123,7 +123,7 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
         wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs, excludedExtensions)
         wbm.close()
         os.startfile(workbookPathName)
-    except Exception as e:
+    except:
         return (STATUS_UNEXPECTED, f"{traceback.format_exc()}")
     
     return (STATUS_SUCCESSFUL, None)

@@ -9,28 +9,20 @@ from FileNinjaSuite.FileNinja import filesScannedSharedVar
 from FileNinjaSuite.FileNinja import control
 import json
 from FileNinjaSuite.FileNinja import common
-from FileNinjaSuite.Shared import guiController, viewHelpers
+from FileNinjaSuite.Shared import guiController, sharedViewHelpers
 #from FileNinjaSuite.FileChop import fileChop
 
 
 def launchView(isAdmin: bool):
-    def launchControllerWorker():
-        nonlocal currentStatusPair
-
-        # Double check that the user wants to allow modifications
-        if allowModifyState.get() and not tk.messagebox.askyesnocancel(
-            "Confirmation", 
-            "Modifications are irreversible. By proceeding with the Fix procedure(s), you are confirming the action has been requested by the data owner and that there are no identified Litigation Holds (LIT-HOLD) or Access to Information and Privacy (ATIP) requests for in scope data. Proceed?"):
-            currentStatusPair = (STATUS_SUCCESSFUL, None)
-            return
-        
-        currentStatusPair = (STATUS_RUNNING, None)
-        currentStatusPair = control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
+    def launchControllerWorker(): 
+        guiC.setStatusRunning()
+        currentStatusPair = (control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
                     excludedDirs,
-                    excludedExtensionsVar.get())
+                    excludedExtensionsVar.get()))
+        guiC.setCurrentStatus(currentStatusPair[0], currentStatusPair[1])
 
     def scheduleCheckIfDone(t):
         root.after(500, checkIfDone, t)
@@ -42,13 +34,11 @@ def launchView(isAdmin: bool):
             executeButton.config(text="Execute", state="normal")
             filesScannedSharedVar.FILES_SCANNED = 0
 
-            nonlocal currentStatusPair
-            exitCode, _ = currentStatusPair
+            exitCode, _ = guiC.getCurrentStatus()
             if exitCode == STATUS_SUCCESSFUL:
                 return          
-            tk.messagebox.showerror(f"Error: {exitCode}", common.interpretError(currentStatusPair))
-
-            currentStatusPair = (STATUS_IDLE, None)
+            tk.messagebox.showerror(f"Error: {exitCode}", common.interpretError(guiC.getCurrentStatus()))
+            guiC.setStatusIdle()
         
         else:
             # Otherwise check again after the specified number of milliseconds.
@@ -58,7 +48,13 @@ def launchView(isAdmin: bool):
             scheduleCheckIfDone(t)
     
 
-    def launchController():            
+    def launchControllerFromView():            
+        # Double check that the user wants to allow modifications
+        if allowModifyState.get() and not tk.messagebox.askyesnocancel(
+            "Confirmation", 
+            "Modifications are irreversible. By proceeding with the Fix procedure(s), you are confirming the action has been requested by the data owner and that there are no identified Litigation Holds (LIT-HOLD) or Access to Information and Privacy (ATIP) requests for in scope data. Proceed?"):
+            return
+        
         root.title(FILE_NINJA + ": RUNNING...")
         executeButton.config(text="RUNNING....", state="disabled")
 
@@ -117,13 +113,6 @@ def launchView(isAdmin: bool):
             os.startfile(RESULTS_DIRECTORY)
         else:
             tk.messagebox.showinfo("Directory DNE", "Directory \"" + RESULTS_DIRECTORY + "\" does not exist in current directory. Try executing the program first.")
-
-
-    def closeWindow():
-        if currentStatusPair[0] == STATUS_RUNNING:
-            sys.exit()  # Force close
-        else:
-            root.destroy()  # End gracefully
             
 
     def onSelectFixlistbox(e):
@@ -283,9 +272,9 @@ pause')
         Hovertip(excludedExtensionsLabel, "Comma separated list of extensions to exclude from scan.", hover_delay=tooltipHoverDelay)
 
         if guiC.isOnDarkMode:
-            viewHelpers.changeToDarkMode(advancedOptionsWindow)
+            sharedViewHelpers.changeToDarkMode(advancedOptionsWindow)
         else:
-            viewHelpers.changeToLightMode(advancedOptionsWindow)
+            sharedViewHelpers.changeToLightMode(advancedOptionsWindow)
 
 
     # def openAddOnWindow():
@@ -336,8 +325,6 @@ pause')
     includeHiddenFilesState = tk.IntVar(value=0)
     addRecommendationsState = tk.IntVar(value=0)
     excludedDirs = []
-    currentStatusPair = (STATUS_IDLE, None)
-
 
     # widget layout
     browseButton = tk.Button(frames[0], text="Browse to Select", command=selectDirectory, font=fontGeneral, width=rootWidth)
@@ -419,11 +406,11 @@ pause')
         frames[8].pack(pady=0)
     
     if isAdmin:
-        executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=rootWidth, font=fontGeneral)
+        executeButton = tk.Button(frames[9], text="Execute", command=launchControllerFromView, width=rootWidth, font=fontGeneral)
         executeButton.pack()
         frames[9].pack(expand=True)
     else:
-        executeButton = tk.Button(frames[9], text="Execute", command=launchController, width=characterHalfRootWidth, font=fontGeneral)
+        executeButton = tk.Button(frames[9], text="Execute", command=launchControllerFromView, width=characterHalfRootWidth, font=fontGeneral)
         resultsButton = tk.Button(frames[9], text="Results", command=openResultsDirectory, width=characterHalfRootWidth, font=fontGeneral)
         executeButton.pack(padx=(0, 20), side=tk.LEFT)
         resultsButton.pack(side=tk.LEFT)
@@ -451,7 +438,6 @@ pause')
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
     if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
-    root.protocol("WM_DELETE_WINDOW", closeWindow)
     # root.bind('<Control-Key-q>', lambda _: openAddOnWindow())
     # root.bind('<Control-Key-Q>', lambda _: openAddOnWindow())
 

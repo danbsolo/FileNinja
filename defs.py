@@ -1,15 +1,13 @@
 from FileNinjaSuite.FileNinja.procedureFunctions import *
 from FileNinjaSuite.FileNinja.procedureClass import *
+from FileNinjaSuite.Shared.sharedDefs import *
 
 # TODO: Partition this file into multiple defs.
 
 FILE_NINJA = "File-Ninja"
 RESULTS_DIRECTORY = FILE_NINJA + "-Results"
-# HCS_ASSETS_PATH = "Z:\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\Assets\\"
-HCS_ASSETS_PATH = "\\\\BNO-files\\NP-GROUPS\\PAEC-ECAP\\PAE-EAP\\Horizontal-Coordination-Support\\Admin\\HCS-Tools-Procedures\\File-Ninja\\Assets\\"
 README_ADMIN = "README-Admin.docx"
 README_LITE = "README-Lite.docx"
-LOGO_PATH = HCS_ASSETS_PATH + "File-Ninja-Logo-Square.png"
 SHARED_UTILS_PATH = "..\\shared\\"
 
 # NOTE: Excel worksheet name must be <= 31 characters
@@ -58,31 +56,6 @@ JSON_KEYS = [
     ADD_RECOMMENDATIONS_KEY,
     EXCLUDED_EXTENSIONS_KEY
 ]
-
-STATUS_SUCCESSFUL = 0
-STATUS_IDLE = 1
-STATUS_RUNNING = 102  # 102 == The HTTP response code for "Still processing"
-STATUS_UNEXPECTED = -999
-
-EXIT_STATUS_CODES = {
-    STATUS_SUCCESSFUL: "Successful.",
-    STATUS_IDLE: "Idle.",
-    STATUS_RUNNING: "*Should* still be processing.",
-    -1: "ERROR: Could not open file. Close file and try again.",
-    -2: "ERROR: Invalid directory.",
-    -3: "ERROR: Invalid argument.",
-    -4: "ERROR: Invalid excluded directory.",
-    -5: "ERROR: Invalid settings. Cannot run multiple Fix Procedures when modify is checked.",
-    -6: "ERROR: Invalid arguments. Separate with \"/\"",
-    -7: "ERROR: Invalid settings. Cannot run modifications simultaneously with recommendations and/or hidden files.",
-    -8: "ERROR: No procedures selected.",
-    -9: "ERROR: Directory does not exist.",
-    -10: "ERROR: JSON Decode error.",
-    -11: "ERROR: Missing keys in JSON.",
-    -12: "ERROR: File path does not exist.",
-    -13: "ERROR: Invalid excluded extension.",
-    STATUS_UNEXPECTED: "ERROR: Unexpected condition occurred."
-}
 
 
 ### PROCEDURE DEFINITIONS ###

@@ -1,5 +1,6 @@
-import os
 from FileNinjaSuite.FileNinja.workbookManager import WorkbookManager
+from FileNinjaSuite.Shared.sharedProcedureHelpers import *
+import os
 from datetime import date
 import threading
 
@@ -9,13 +10,6 @@ def setWorkbookManager(newManager: WorkbookManager):
     # Globally declare the WorkbookManager object
     global wbm
     wbm = newManager
-
-
-def addLongPathPrefix(dirAbsolute):
-    if dirAbsolute.startswith('\\\\'):
-        return '\\\\?\\UNC' + dirAbsolute[1:]
-    else:
-        return '\\\\?\\' + dirAbsolute
 
 
 def writeOwnerAndLastModifiedHeaders(_, ws):
@@ -32,23 +26,6 @@ def writeDefaultHeaders(_, ws):
 def writeDefaultAndOwnerAndLastModifiedHeaders(_, ws):
     writeDefaultHeaders(_, ws)
     writeOwnerAndLastModifiedHeaders(_, ws)
-
-
-def joinDirToFileName(dirAbsolute, fileName):
-    return dirAbsolute + "\\" + fileName
-
-
-def getRootNameAndExtension(itemName):
-    rootName, extension = os.path.splitext(itemName)
-    return (rootName, extension.lower())
-
-
-def getDirectoryBaseName(dirAbsolute):
-    return os.path.basename(dirAbsolute)
-
-
-def getDirectoryDirName(dirAbsolute):
-    return os.path.dirname(dirAbsolute)
 
 
 LAST_MODIFIED_INFO_CACHE = {}
