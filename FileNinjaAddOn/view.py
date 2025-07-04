@@ -110,10 +110,10 @@ def launchView():
     outputColEntry.pack(side=tk.LEFT)
 
     #
-    rowLabel = tk.Label(frames[5], text="Row Range: ", font=fontGeneral)
+    rowRangeLabel = tk.Label(frames[5], text="Row Range: ", font=fontGeneral)
     firstRowEntry = tk.Entry(frames[5], textvariable=firstRowVar, font=fontSmall, width=4)
     lastRowEntry = tk.Entry(frames[5], textvariable=lastRowVar, font=fontSmall, width=4)
-    rowLabel.pack(side=tk.LEFT)
+    rowRangeLabel.pack(side=tk.LEFT)
     firstRowEntry.pack(side=tk.LEFT)
     lastRowEntry.pack(side=tk.LEFT)
 
@@ -121,13 +121,24 @@ def launchView():
     executeButton = tk.Button(frames[6], text="Execute", command=initiateControllerThread, font=fontGeneral)
     executeButton.pack()
 
-    # Bindings
+    # tool tips
+    hoverTipsDictionary = {
+        browseButton: "Browse to select an excel workbook.",
+        worksheetHeaderLabel: "Select a worksheet from loaded workbook.",
+        procedureHeaderLabel: "Select a procedure.",
+        inputColLabel: "Set input column.",
+        outputColLabel: "Set output column.",
+        rowRangeLabel: "Set row range.",
+        executeButton: "Execute program."
+    }
+
+    # bindings
     worksheetCombobox.bind("<<ComboboxSelected>>", lambda _: updateMaxRow())
     procedureCombobox.bind("<<ComboboxSelected>>", lambda _: updateColumns())
 
     # color mode change
     guiC = guiController.GUIController(root, TITLE)
     guiC.standardInitialize()
-
+    guiC.createHoverTips(hoverTipsDictionary)
 
     root.mainloop()

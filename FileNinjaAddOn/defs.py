@@ -9,31 +9,31 @@ NAME_CHOP_AI_QUERY = "Name-Chop AI Query"
 NAME_CHOP_MODIFIER = "Name-Chop Modifier"
 FILE_SHRED_FLAT = "File-Shred (FLAT)"
 FILE_SHRED_TREE = "File-Shred (TREE)"
-TYPO_FIXER = "Typo Fixer AI Query"
+# TYPO_FIXER = "Typo Fixer AI Query"
 
 
 AI_PROCEDURES = {
     NAME_CHOP_AI_QUERY: Procedure(
         NAME_CHOP_AI_QUERY, 
-        nameChopAIQueryFunction, 
+        nameChopAIQuery, 
         "aiQueryPrompt.txt"),
     
     NAME_CHOP_MODIFIER: Procedure(
         NAME_CHOP_MODIFIER, 
-        nameChopModifierFunction),
+        nameChopModifier),
 
     FILE_SHRED_FLAT: Procedure(
         FILE_SHRED_FLAT,
-        fileShredFlatFunction),
+        fileShredFlat),
 
     FILE_SHRED_TREE: Procedure(
         FILE_SHRED_TREE,
-        fileShredTreeFunction),
+        fileShredTree),
     
-    TYPO_FIXER: Procedure(
-        TYPO_FIXER, 
-        typoFixerFunction, 
-        "typoFixerPrompt.txt")
+    # TYPO_FIXER: Procedure(
+    #     TYPO_FIXER, 
+    #     typoFixerFunction, 
+    #     "typoFixerPrompt.txt")
 }
 
 PROCEDURES_DISPLAY = {
@@ -41,5 +41,5 @@ PROCEDURES_DISPLAY = {
     NAME_CHOP_MODIFIER: ("B", "E"),
     FILE_SHRED_FLAT: ("C", "B"),
     FILE_SHRED_TREE: ("B", ""),
-    TYPO_FIXER: ("A", "B"),
+    # TYPO_FIXER: ("A", "B"),
 }

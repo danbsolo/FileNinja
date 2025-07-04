@@ -379,7 +379,6 @@ pause')
         executeButton.pack(padx=(0, 20), side=tk.LEFT)
         resultsButton.pack(side=tk.LEFT)
     
-
     # tool tips
     hoverTipDictionary = {
         browseButton: "Browse to select a directory.",

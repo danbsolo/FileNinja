@@ -5,7 +5,7 @@ from FileNinjaSuite.Shared.sharedProcedureHelpers import *
 
 
 
-def nameChopAIQueryFunction(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
+def nameChopAIQuery(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
     i = 0
     lastRowYielded = firstRow + len(outputList) -1
     
@@ -22,7 +22,7 @@ def nameChopAIQueryFunction(inColIndex, outColIndex, firstRow, lastRow, inputLis
 
 
 
-def nameChopModifierFunction(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
+def nameChopModifier(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
     """Slight bug in that a file can be successfully 'renamed' into the same text but with different cases,
     even if it wasn't actually modified."""
 
@@ -72,7 +72,7 @@ def nameChopModifierFunction(inColIndex, outColIndex, firstRow, lastRow, inputLi
 
 
 # TODO: Lots of repeated code between this and the TREE version. Fix that.
-def fileShredFlatFunction(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
+def fileShredFlat(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
     # inColIndex is the fileNames column
     # directory is assumed to be to the right of this index
     # outColIndex is the "stage for deletion" column
@@ -99,7 +99,7 @@ def fileShredFlatFunction(inColIndex, outColIndex, firstRow, lastRow, inputList,
 
 
 
-def fileShredTreeFunction(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
+def fileShredTree(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
     fileColIndex = inColIndex
     dirColIndex = 1
     deletionColIndex = outColIndex
@@ -134,9 +134,9 @@ def fileShredTreeFunction(inColIndex, outColIndex, firstRow, lastRow, inputList,
         
 
 
-def typoFixerFunction(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
-    # write
-    i = 0
-    for cellRow in range(firstRow, lastRow+1):
-        ws.cell(row=cellRow, column=outColIndex, value=outputList.outputList[i])
-        i += 1
+# def typoFixerFunction(inColIndex, outColIndex, firstRow, lastRow, inputList, outputList, ws):
+#     # write
+#     i = 0
+#     for cellRow in range(firstRow, lastRow+1):
+#         ws.cell(row=cellRow, column=outColIndex, value=outputList.outputList[i])
+#         i += 1
