@@ -44,9 +44,9 @@ def main():
                 lastFilesScanned = filesScannedSharedVar.FILES_SCANNED
                 print(lastFilesScanned)
 
-        exitPair = future.result()
+        exitCode, exitMessage = future.result()
 
-    print(common.interpretError(exitPair))
+    print(common.interpretError(exitCode, exitMessage))
 
 
 

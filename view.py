@@ -3,7 +3,6 @@ from tkinter import filedialog
 import os
 from FileNinjaSuite.FileNinja.defs import *
 import sys
-import threading
 from FileNinjaSuite.FileNinja import filesScannedSharedVar
 from FileNinjaSuite.FileNinja import control
 import json
@@ -13,49 +12,11 @@ from FileNinjaSuite.Shared import guiController, sharedViewHelpers
 
 
 def launchView(isAdmin: bool):
-    def launchControllerThread(): 
-        guiC.setStatusRunning()
-        currentStatusPair = (control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(enableModificationsState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
-                    [findListbox.get(fm) for fm in findListbox.curselection()],
-                    [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
-                    parameterVar.get(),
-                    excludedDirs,
-                    excludedExtensionsVar.get()))
-        guiC.setCurrentStatus(currentStatusPair[0], currentStatusPair[1])
+    def threadAliveFunction():
+        executeButton.config(text=f"{filesScannedSharedVar.FILES_SCANNED} files")
 
-    def scheduleCheckIfDone(t):
-        root.after(500, checkIfDone, t)
-
-    def checkIfDone(t):
-        # If the thread has finished
-        if not t.is_alive():
-            root.title(TITLE)
-            executeButton.config(text="Execute", state="normal")
-            filesScannedSharedVar.FILES_SCANNED = 0
-
-            exitCode, _ = guiC.getCurrentStatus()
-            if exitCode == STATUS_SUCCESSFUL:
-                return        
-            tk.messagebox.showerror(f"Error: {exitCode}", common.interpretError(guiC.getCurrentStatus()))
-            guiC.setStatusIdle()
-        
-        else:
-            # Otherwise check again after the specified number of milliseconds.
-            filesScanned = filesScannedSharedVar.FILES_SCANNED
-            root.title(f"{TITLE} ({filesScanned})")
-            executeButton.config(text=f"{filesScanned} files")
-            scheduleCheckIfDone(t)
-
-    def initiateControllerThread():                    
-        root.title(TITLE + ": RUNNING...")
-        executeButton.config(text="RUNNING...", state="disabled")
-
-        executionThread = threading.Thread(target=launchControllerThread)
-        executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
-        executionThread.start()
-
-        scheduleCheckIfDone(executionThread)
-
+    def threadDoneFunction():
+        filesScannedSharedVar.FILES_SCANNED = 0
 
     def confirmEnableModificationsAndInitiateControllerThread():
         # Double check that the user wants to enable modifications
@@ -64,7 +25,14 @@ def launchView(isAdmin: bool):
             "Modifications are irreversible. By proceeding with the Fix procedure(s), you are confirming the action has been requested by the data owner and that there are no identified Litigation Holds (LIT-HOLD) or Access to Information and Privacy (ATIP) requests for in scope data. Proceed?"):
             return
         
-        initiateControllerThread()
+        guiC.setThreadVars(executeButton, threadAliveFunction, threadDoneFunction)
+        guiC.initiateControllerThread(lambda:
+                                        control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(enableModificationsState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
+                                        [findListbox.get(fm) for fm in findListbox.curselection()],
+                                        [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
+                                        parameterVar.get(),
+                                        excludedDirs,
+                                        excludedExtensionsVar.get()))
 
 
     def selectDirectory():
@@ -93,7 +61,6 @@ def launchView(isAdmin: bool):
         newHeight = len(excludedDirs) + 1
         excludeListbox.config(height = newHeight)
         root.geometry("{}x{}".format(rootWidth, rootHeight + (newHeight * listboxHeightMultiplier)))
-
 
     def removeExcludedDirectory():
         selection = excludeListbox.curselection()
@@ -282,6 +249,7 @@ pause')
             sharedViewHelpers.changeToLightMode(advancedOptionsWindow)
 
 
+
     listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
     listboxHeightMultiplier = 17
 
@@ -439,7 +407,7 @@ pause')
     if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
 
     # guiController stuff
-    guiC = guiController.GUIController(root)
+    guiC = guiController.GUIController(root, TITLE)
     guiC.standardInitialize()
     guiC.createHoverTips(hoverTipDictionary)
 
