@@ -3,7 +3,6 @@ from tkinter import filedialog
 import os
 from FileNinjaSuite.FileNinja.defs import *
 import sys
-from idlelib.tooltip import Hovertip
 import threading
 from FileNinjaSuite.FileNinja import filesScannedSharedVar
 from FileNinjaSuite.FileNinja import control
@@ -14,9 +13,9 @@ from FileNinjaSuite.Shared import guiController, sharedViewHelpers
 
 
 def launchView(isAdmin: bool):
-    def launchControllerWorker(): 
+    def launchControllerThread(): 
         guiC.setStatusRunning()
-        currentStatusPair = (control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(allowModifyState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
+        currentStatusPair = (control.launchController(dirAbsoluteVar.get(), bool(includeSubdirectoriesState.get()), bool(enableModificationsState.get()), bool(includeHiddenFilesState.get()), bool(addRecommendationsState.get()),
                     [findListbox.get(fm) for fm in findListbox.curselection()],
                     [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
                     parameterVar.get(),
@@ -30,39 +29,42 @@ def launchView(isAdmin: bool):
     def checkIfDone(t):
         # If the thread has finished
         if not t.is_alive():
-            root.title(FILE_NINJA)
+            root.title(TITLE)
             executeButton.config(text="Execute", state="normal")
             filesScannedSharedVar.FILES_SCANNED = 0
 
             exitCode, _ = guiC.getCurrentStatus()
             if exitCode == STATUS_SUCCESSFUL:
-                return          
+                return        
             tk.messagebox.showerror(f"Error: {exitCode}", common.interpretError(guiC.getCurrentStatus()))
             guiC.setStatusIdle()
         
         else:
             # Otherwise check again after the specified number of milliseconds.
             filesScanned = filesScannedSharedVar.FILES_SCANNED
-            root.title(f"{FILE_NINJA} ({filesScanned})")
+            root.title(f"{TITLE} ({filesScanned})")
             executeButton.config(text=f"{filesScanned} files")
             scheduleCheckIfDone(t)
-    
 
-    def launchControllerFromView():            
-        # Double check that the user wants to allow modifications
-        if allowModifyState.get() and not tk.messagebox.askyesnocancel(
-            "Confirmation", 
-            "Modifications are irreversible. By proceeding with the Fix procedure(s), you are confirming the action has been requested by the data owner and that there are no identified Litigation Holds (LIT-HOLD) or Access to Information and Privacy (ATIP) requests for in scope data. Proceed?"):
-            return
-        
-        root.title(FILE_NINJA + ": RUNNING...")
-        executeButton.config(text="RUNNING....", state="disabled")
+    def initiateControllerThread():                    
+        root.title(TITLE + ": RUNNING...")
+        executeButton.config(text="RUNNING...", state="disabled")
 
-        executionThread = threading.Thread(target=launchControllerWorker)
+        executionThread = threading.Thread(target=launchControllerThread)
         executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
         executionThread.start()
 
         scheduleCheckIfDone(executionThread)
+
+
+    def confirmEnableModificationsAndInitiateControllerThread():
+        # Double check that the user wants to enable modifications
+        if enableModificationsState.get() and not tk.messagebox.askyesnocancel(
+            "Confirm Enabling of Modifications", 
+            "Modifications are irreversible. By proceeding with the Fix procedure(s), you are confirming the action has been requested by the data owner and that there are no identified Litigation Holds (LIT-HOLD) or Access to Information and Privacy (ATIP) requests for in scope data. Proceed?"):
+            return
+        
+        initiateControllerThread()
 
 
     def selectDirectory():
@@ -74,7 +76,7 @@ def launchView(isAdmin: bool):
             dirAbsoluteVar.set(potentialDirectory)
 
 
-    def queryExcludeDirectory():
+    def selectExcludeDirectory():
         potentialExcludedDirectory = filedialog.askdirectory(title="Browse to EXCLUDE",
                                                              initialdir=dirAbsoluteVar.get(),
                                                              mustexist=True)
@@ -82,9 +84,9 @@ def launchView(isAdmin: bool):
         if (not potentialExcludedDirectory) or (potentialExcludedDirectory in excludedDirs):
             return
         
-        excludeDirectory(potentialExcludedDirectory)
+        commenceExcludeDirectory(potentialExcludedDirectory)
 
-    def excludeDirectory(directoryToBeExcluded):
+    def commenceExcludeDirectory(directoryToBeExcluded):
         excludedDirs.append(directoryToBeExcluded)
         excludeListbox.insert(tk.END, directoryToBeExcluded)
         
@@ -154,7 +156,7 @@ def launchView(isAdmin: bool):
             SELECTED_FIX_PROCEDURES_KEY: [fixListbox.get(fm) for fm in fixListbox.curselection()] if isAdmin else [],
             ARG_UNPROCESSED_KEY: parameterVar.get(),
             INCLUDE_SUBDIRECTORIES_KEY: bool(includeSubdirectoriesState.get()),
-            ENABLE_MODIFICATIONS_KEY: bool(allowModifyState.get()),
+            ENABLE_MODIFICATIONS_KEY: bool(enableModificationsState.get()),
             INCLUDE_HIDDEN_FILES_KEY: bool(includeHiddenFilesState.get()),
             ADD_RECOMMENDATIONS_KEY: bool(addRecommendationsState.get()),
         }
@@ -208,7 +210,7 @@ pause')
          
         dirAbsoluteVar.set(settings[DIR_ABSOLUTE_KEY])
         includeSubdirectoriesState.set(settings[INCLUDE_SUBDIRECTORIES_KEY])
-        allowModifyState.set(settings[ENABLE_MODIFICATIONS_KEY])
+        enableModificationsState.set(settings[ENABLE_MODIFICATIONS_KEY])
         includeHiddenFilesState.set(settings[INCLUDE_HIDDEN_FILES_KEY]) 
         addRecommendationsState.set(settings[ADD_RECOMMENDATIONS_KEY])
         excludedExtensionsVar.set(settings[EXCLUDED_EXTENSIONS_KEY])
@@ -229,7 +231,7 @@ pause')
         
         excludeListbox.delete(0, tk.END)
         for item in settings[EXCLUDED_DIRS_KEY]:
-            excludeDirectory(item)
+            commenceExcludeDirectory(item)
 
 
     def openAdvancedOptionsWindow():
@@ -242,7 +244,7 @@ pause')
             return
 
         advancedOptionsWindow = tk.Toplevel(root)
-        advancedOptionsWindow.title(f"Advanced Options")
+        advancedOptionsWindow.title(f"{TITLE} Advanced Options")
         advancedOptionsWindow.resizable(0, 0)
         # advancedOptionsWindow.geometry("500x200")
         advancedOptionsWindow.geometry("+{}+{}".format(root.winfo_pointerx()+rootWidth//2, root.winfo_pointery()))
@@ -267,9 +269,12 @@ pause')
         excludedExtensionsLabel.pack(side=tk.LEFT)
         excludedExtensionsEntry.pack(side=tk.LEFT)
         
-        Hovertip(includeSubdirectoriesCheckbutton, "Dive into all subdirectories, other than those excluded.", hover_delay=tooltipHoverDelay) # includeSubdirectoriesTip
-        Hovertip(includeHiddenFilesCheckbutton, "Include hidden files in Find procedure output. Fix procedures always ignore hidden files.", hover_delay=tooltipHoverDelay) # includeHiddenFilesTip
-        Hovertip(excludedExtensionsLabel, "Comma separated list of extensions to exclude from scan.", hover_delay=tooltipHoverDelay)
+        guiC.createHoverTips({
+            includeSubdirectoriesCheckbutton: "Dive into all subdirectories, other than those excluded.",
+            includeHiddenFilesCheckbutton: "Include hidden files in Find procedure output. Fix procedures always ignore hidden files.",
+            excludedExtensionsLabel: "Comma separated list of extensions to exclude from scan."
+            }
+        )
 
         if guiC.isOnDarkMode:
             sharedViewHelpers.changeToDarkMode(advancedOptionsWindow)
@@ -277,20 +282,12 @@ pause')
             sharedViewHelpers.changeToLightMode(advancedOptionsWindow)
 
 
-    # def openAddOnWindow():
-    #     # TODO: Account for running from exes (same directory).
-    #     # TODO: Account for file not existing.
-    #     # subprocess.Popen(["python", "..\\FileChop\\fileChop.py"])
-    #     fileChop.launchApplication()
-
-
-
     listboxHeight = max(len(FIND_PROCEDURES_DISPLAY), len(FIX_PROCEDURES_DISPLAY)) + 1
     listboxHeightMultiplier = 17
 
     # root window stuff
     root = tk.Tk()
-    root.title(FILE_NINJA)
+    root.title(TITLE)
     root.resizable(0, 0)
     rootWidth = 500 if isAdmin else 365
     rootHeight = (listboxHeight * listboxHeightMultiplier) + (420 if isAdmin else 295)
@@ -306,22 +303,21 @@ pause')
         frames[i].pack(fill="x", padx=10, pady=3)
 
     # aesthetic/layout variables
-    fontType = "None"
+    fontType = None
     fontSize = 15
     fontGeneral = (fontType, fontSize)
     fontSmall = (fontType, int(fontSize/3*2))
     listboxWidth = int(rootWidth/15) if isAdmin else int(rootWidth/10)  # listboxHeight defined above
     characterHalfRootWidth = 20 if isAdmin else 14  # HARD CODED WIDTH
     characterThirdRootWidth = 12 # ALSO HARD CODED
-    tooltipHoverDelay = 0
 
     # data variables
     dirAbsoluteVar = tk.StringVar()
     parameterVar = tk.StringVar()
     excludedExtensionsVar = tk.StringVar(
-        value=".shp, .dbf, .shx, .gbd, .sbd, .sbx, .spx, .sbn, .qpj, .atx, .cpg, .prj, .gdbtablx, .gdbtable, .freelist, .horizon, .gdbindexes, .one, .onepkg, .onetoc2, .onebak,")
+        value=".shp, .dbf, .shx, .sbd, .sbx, .spx, .sbn, .qpj, .atx, .cpg, .prj, .gbd, .gdbtablx, .gdbtable, .freelist, .horizon, .gdbindexes, .one, .onepkg, .onetoc2, .onebak,")
     includeSubdirectoriesState = tk.IntVar(value=1)
-    allowModifyState = tk.IntVar(value=0)
+    enableModificationsState = tk.IntVar(value=0)
     includeHiddenFilesState = tk.IntVar(value=0)
     addRecommendationsState = tk.IntVar(value=0)
     excludedDirs = []
@@ -335,7 +331,7 @@ pause')
     dirHeaderLabel.pack(side=tk.LEFT)
     dirLabel.pack(side=tk.LEFT)
     
-    excludeDirButton = tk.Button(frames[2], text="Browse to Exclude", command=queryExcludeDirectory, font=fontGeneral, width=rootWidth)
+    excludeDirButton = tk.Button(frames[2], text="Browse to Exclude", command=selectExcludeDirectory, font=fontGeneral, width=rootWidth)
     excludeScrollbar = tk.Scrollbar(frames[2], orient=tk.HORIZONTAL)
     excludeListbox = tk.Listbox(frames[2], exportselection=0, width=rootWidth, height=0, xscrollcommand=excludeScrollbar.set)
     excludeScrollbar.config(command=excludeListbox.xview)
@@ -380,8 +376,8 @@ pause')
     addRecommendationsCheckbutton = tk.Checkbutton(frames[6], text="Add Recommendations~", variable=addRecommendationsState, font=fontGeneral)
     addRecommendationsCheckbutton.pack(side=tk.LEFT)
     if isAdmin:
-        allowModifyCheckbutton = tk.Checkbutton(frames[6], text="Enable Modifications", variable=allowModifyState, font=fontGeneral)
-        allowModifyCheckbutton.pack(padx=(0, 0), side=tk.LEFT)  # , padx=(0, 50)
+        enableModificationsCheckbutton = tk.Checkbutton(frames[6], text="Enable Modifications", variable=enableModificationsState, font=fontGeneral)
+        enableModificationsCheckbutton.pack(padx=(0, 0), side=tk.LEFT)  # , padx=(0, 50)
     else:
         readMeButton = tk.Button(frames[6], text="README", command=openReadMe, font=fontGeneral)
         readMeButton.pack(side=tk.LEFT)
@@ -406,43 +402,46 @@ pause')
         frames[8].pack(pady=0)
     
     if isAdmin:
-        executeButton = tk.Button(frames[9], text="Execute", command=launchControllerFromView, width=rootWidth, font=fontGeneral)
+        executeButton = tk.Button(frames[9], text="Execute", command=confirmEnableModificationsAndInitiateControllerThread, width=rootWidth, font=fontGeneral)
         executeButton.pack()
         frames[9].pack(expand=True)
     else:
-        executeButton = tk.Button(frames[9], text="Execute", command=launchControllerFromView, width=characterHalfRootWidth, font=fontGeneral)
+        executeButton = tk.Button(frames[9], text="Execute", command=confirmEnableModificationsAndInitiateControllerThread, width=characterHalfRootWidth, font=fontGeneral)
         resultsButton = tk.Button(frames[9], text="Results", command=openResultsDirectory, width=characterHalfRootWidth, font=fontGeneral)
         executeButton.pack(padx=(0, 20), side=tk.LEFT)
         resultsButton.pack(side=tk.LEFT)
     
 
     # tool tips
-    Hovertip(browseButton, "Browse to select a directory.", hover_delay=tooltipHoverDelay) # browseTip
-    Hovertip(dirHeaderLabel, "Currently selected directory.", hover_delay=tooltipHoverDelay) # dirHeaderTip
-    Hovertip(excludeDirButton, "Browse to exclude subdirectories of currently selected directory.", hover_delay=tooltipHoverDelay) # excludeTip
-    Hovertip(findLabel, "Run a Find procedure.", hover_delay=tooltipHoverDelay) # findTip
-    Hovertip(readMeButton, "Open README file.", hover_delay=tooltipHoverDelay) # readMeTip
-    Hovertip(addRecommendationsCheckbutton, "~ -> has recommendation option.\nAdd recommendations to some procedures.", hover_delay=tooltipHoverDelay) # addRecommendationsTip
-    Hovertip(executeButton, "Execute program.", hover_delay=tooltipHoverDelay) # executeTip
-    Hovertip(resultsButton, "Open results folder.", hover_delay=tooltipHoverDelay) # resultsTip
-    if isAdmin: 
-        Hovertip(fixLabel, "Run a Fix procedure.", hover_delay=tooltipHoverDelay) # fixTip
-        Hovertip(parameterLabel, "# -> requires argument input.\nInput a number, string, etc. Required for some procedures.", hover_delay=tooltipHoverDelay) # parameterTip
-        Hovertip(allowModifyCheckbutton, "Unless you understand the consequences of this option, leave this off.", hover_delay=tooltipHoverDelay) # allowModifyTip
-        Hovertip(advancedOptionsButton, "Access advanced options.", hover_delay=tooltipHoverDelay) # advancedOptionsTip
-        Hovertip(saveSettingsButton, "Save settings into a JSON file.", hover_delay=tooltipHoverDelay) # saveSettingsTip
-        Hovertip(loadSettingsButton, "Load settings from a JSON file.", hover_delay=tooltipHoverDelay) # loadSettingsTip
-
+    hoverTipDictionary = {
+        browseButton: "Browse to select a directory.",
+        dirHeaderLabel: "Currently selected directory.",
+        excludeDirButton: "Browse to exclude subdirectories of currently selected directory.",
+        findLabel: "Run a Find procedure.",
+        readMeButton: "Open README file.",
+        addRecommendationsCheckbutton: "~ -> has recommendation option.\nAdd recommendations to some procedures.",
+        executeButton: "Execute program.",
+        resultsButton: "Open results folder."
+    }
+    if isAdmin:
+        hoverTipDictionary.update({
+            fixLabel: "Run a Fix procedure.",
+            parameterLabel: "# -> requires argument input.\nInput a number, string, etc. Required for some procedures.",
+            enableModificationsCheckbutton: "Unless you understand the consequences of this option, leave this off.",
+            advancedOptionsButton: "Access advanced options.",
+            saveSettingsButton: "Save settings into a JSON file.",
+            loadSettingsButton: "Load settings from a JSON file.",
+        }) 
 
     # bindings
     excludeListbox.bind("<Double-Button-1>", lambda _: removeExcludedDirectory()) # double left click
     excludeListbox.bind("<Button-3>", lambda _: removeExcludedDirectory()) # right click
     if isAdmin: fixListbox.bind("<<ListboxSelect>>", onSelectFixlistbox)
-    # root.bind('<Control-Key-q>', lambda _: openAddOnWindow())
-    # root.bind('<Control-Key-Q>', lambda _: openAddOnWindow())
 
+    # guiController stuff
     guiC = guiController.GUIController(root)
     guiC.standardInitialize()
+    guiC.createHoverTips(hoverTipDictionary)
 
 
     root.mainloop()

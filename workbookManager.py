@@ -65,7 +65,7 @@ class WorkbookManager:
         return self.procedureSheets
 
 
-    def addProcedure(self, procedureObject, allowModify, addRecommendations, arg) -> bool:
+    def addProcedure(self, procedureObject, enableModifications, addRecommendations, arg) -> bool:
         # Initialize procedure's corresponding worksheet
         tmpWsVar = self.wb.add_worksheet(procedureObject.name)
         self.summarySheet.write(self.sheetRows[self.summarySheet] +len(self.getAllProcedureSheets()), 0, procedureObject.name + " count", self.headerFormat)
@@ -76,7 +76,7 @@ class WorkbookManager:
         self.sheetRows[tmpWsVar] = 0
         self.summaryCounts[tmpWsVar] = 0
 
-        self.procedureObjectFunctions[procedureObject] = procedureObject.getMainFunction(allowModify, addRecommendations)
+        self.procedureObjectFunctions[procedureObject] = procedureObject.getMainFunction(enableModifications, addRecommendations)
 
         # Add to either fileProcedures or folderProcedures lists
         if procedureObject.getIsFileProcedure():
@@ -325,7 +325,7 @@ class WorkbookManager:
             self.sheetLocks[ws] = Lock()
 
 
-    def initiateCrawl(self, baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs, excludedExtensions):
+    def initiateCrawl(self, baseDirAbsolute, includeSubdirectories, enableModifications, includeHiddenFiles, addRecommendations, excludedDirs, excludedExtensions):
         def addLongPathPrefix(dirAbsolute):
             if dirAbsolute.startswith('\\\\'):
                 return '\\\\?\\UNC' + dirAbsolute[1:]
@@ -354,7 +354,7 @@ class WorkbookManager:
             self.hiddenFileCheck = lambda longFileAbsolute: self.excludeHiddenFilesCheck(longFileAbsolute)
         
         
-        self.styleSummarySheet(baseDirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations)
+        self.styleSummarySheet(baseDirAbsolute, includeSubdirectories, enableModifications, includeHiddenFiles, addRecommendations)
         
 
         if self.doFileProceduresExist():
@@ -639,7 +639,7 @@ class WorkbookManager:
             self.summaryCounts[ws] += amount
 
 
-    def styleSummarySheet(self, dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations):
+    def styleSummarySheet(self, dirAbsolute, includeSubdirectories, enableModifications, includeHiddenFiles, addRecommendations):
         self.summarySheet.set_column(0, 0, 34)
         self.summarySheet.set_column(1, 1, 15)
         
@@ -661,13 +661,13 @@ class WorkbookManager:
         if self.excludedExtensions:
             self.summarySheet.write(2, 1, str(self.excludedExtensions), self.summaryValueFormat)
         self.summarySheet.write(3, 1, str(includeSubdirectories), self.summaryValueFormat)
-        self.summarySheet.write(4, 1, str(allowModify), self.summaryValueFormat)
+        self.summarySheet.write(4, 1, str(enableModifications), self.summaryValueFormat)
         self.summarySheet.write(5, 1, str(includeHiddenFiles), self.summaryValueFormat)
         self.summarySheet.write(6, 1, str(addRecommendations), self.summaryValueFormat)
 
         # HARD CODED atip stuff
         # which is okay because the code can't get here without this being agreed upon. Therefore, don't need a separate variable.
-        if allowModify:
+        if enableModifications:
             self.summarySheet.write(8, 0, "NO LIT-HOLD / ATIP", self.headerFormat)
             self.summarySheet.write(8, 1, str(True))
 

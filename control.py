@@ -8,7 +8,7 @@ import traceback
 import re
 
 
-def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str], excludedExtensionsUnprocessed:str):
+def launchController(dirAbsolute:str, includeSubdirectories:bool, enableModifications:bool, includeHiddenFiles:bool, addRecommendations:bool, selectedFindProcedures:list[str], selectedFixProcedures:list[str], argUnprocessed:str, excludedDirs:set[str], excludedExtensionsUnprocessed:str):
     # If dirAbsolute value was not selected (empty string)
     if (not dirAbsolute): return (-2, None)
 
@@ -19,13 +19,13 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
     if len(selectedFindProcedures + selectedFixProcedures) == 0:
         return (-8, None)
 
-    # If multiple fix procedures are selected and allowModify is checked, exit
-    if allowModify and len(selectedFixProcedures) > 1:
+    # If multiple fix procedures are selected and enableModifications is checked, exit
+    if enableModifications and len(selectedFixProcedures) > 1:
         return (-5, None)
     
-    # If allowModify and addRecommendations are both turned on, even if it would be of no consequence, exit
-    # If allowModify and includeHiddenFiles are both turned on, exit
-    if allowModify and (addRecommendations or includeHiddenFiles):
+    # If enableModifications and addRecommendations are both turned on, even if it would be of no consequence, exit
+    # If enableModifications and includeHiddenFiles are both turned on, exit
+    if enableModifications and (addRecommendations or includeHiddenFiles):
         return (-7, None)
     
     # make it all backslashes, not forward slashes. This is to make it homogenous with os.walk() output
@@ -109,18 +109,18 @@ def launchController(dirAbsolute:str, includeSubdirectories:bool, allowModify:bo
                 arg = argsList[currentArg]
                 currentArg += 1
             
-            if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], allowModify, addRecommendations, arg)):
+            if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], enableModifications, addRecommendations, arg)):
                 return (-3, None)
     else:
         for procedureName in selectedFindProcedures + selectedFixProcedures:
 
             # This procs if a procedure doesn't *have* a default value
             # For find procedures, since they're all available in Lite, this really shouldn't ever proc
-            if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], allowModify, addRecommendations, None)):
+            if (not wbm.addProcedure(ALL_PROCEDURES[procedureName], enableModifications, addRecommendations, None)):
                 return (-3, None)
 
     try:
-        wbm.initiateCrawl(dirAbsolute, includeSubdirectories, allowModify, includeHiddenFiles, addRecommendations, excludedDirs, excludedExtensions)
+        wbm.initiateCrawl(dirAbsolute, includeSubdirectories, enableModifications, includeHiddenFiles, addRecommendations, excludedDirs, excludedExtensions)
         wbm.close()
         os.startfile(workbookPathName)
     except:

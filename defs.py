@@ -4,8 +4,8 @@ from FileNinjaSuite.Shared.sharedDefs import *
 
 # TODO: Partition this file into multiple defs.
 
-FILE_NINJA = "File-Ninja"
-RESULTS_DIRECTORY = FILE_NINJA + "-Results"
+TITLE = "File-Ninja"
+RESULTS_DIRECTORY = TITLE + "-Results"
 README_ADMIN = "README-Admin.docx"
 README_LITE = "README-Lite.docx"
 SHARED_UTILS_PATH = "..\\shared\\"
