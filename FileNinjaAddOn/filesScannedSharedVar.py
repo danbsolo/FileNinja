@@ -1,1 +1,0 @@
-FILES_SCANNED = 0
