@@ -1,5 +1,5 @@
-from FileNinjaSuite.FileChop.procedureFunctions import *
-from FileNinjaSuite.FileChop.procedureClass import *
+from FileNinjaSuite.FileNinjaAddOn.procedureFunctions import *
+from FileNinjaSuite.FileNinjaAddOn.procedureClass import *
 from FileNinjaSuite.Shared.sharedDefs import *
 
 

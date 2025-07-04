@@ -1,55 +1,25 @@
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 from tkinter import ttk
-from FileNinjaSuite.FileChop import control
+from FileNinjaSuite.FileNinjaAddOn import control
 import openpyxl as opxl
-from FileNinjaSuite.FileChop.defs import *
+from FileNinjaSuite.FileNinjaAddOn.defs import *
 from FileNinjaSuite.Shared import guiController
-from FileNinjaSuite.Shared import sharedCommon
-import threading
+
 
 def launchView():
-    def launchControllerWorker():
-        guiC.setStatusRunning()
-        currentStatusPair = control.launchController(
-            excelPathVar.get(),
-            wb,
-            worksheetCombobox.get(),
-            procedureCombobox.get(),
-            inputColEntryVar.get(),
-            outputColEntryVar.get(),
-            firstRowVar.get(),
-            lastRowVar.get()
-        )
-        guiC.setCurrentStatus(currentStatusPair[0], currentStatusPair[1])
-        
-        
-    def launchControllerFromView():
-        root.title(TITLE + ": RUNNING...")
-        executeButton.config(text="RUNNING....", state="disabled")
-
-        executionThread = threading.Thread(target=launchControllerWorker)
-        executionThread.daemon = True  # When the main thread closes, this daemon thread will also close alongside it
-        executionThread.start()
-
-        scheduleCheckIfDone(executionThread)
-
-    def scheduleCheckIfDone(t):
-        root.after(500, checkIfDone, t)
-
-    def checkIfDone(t):
-        # If the thread has finished
-        if not t.is_alive():
-            root.title(TITLE)
-            executeButton.config(text="Execute", state="normal")
-
-            exitCode, _ = guiC.getCurrentStatus()
-            if exitCode == STATUS_SUCCESSFUL:
-                return          
-            tk.messagebox.showerror(f"Error: {exitCode}", sharedCommon.interpretError(guiC.getCurrentStatus()))
-            guiC.setStatusIdle()
-        else:
-            scheduleCheckIfDone(t)
+    def initiateControllerThread():
+        guiC.setThreadVars(executeButton)
+        guiC.initiateControllerThread(lambda:
+                                        control.launchController(
+                                        excelPathVar.get(),
+                                        wb,
+                                        worksheetCombobox.get(),
+                                        procedureCombobox.get(),
+                                        inputColEntryVar.get(),
+                                        outputColEntryVar.get(),
+                                        firstRowVar.get(),
+                                        lastRowVar.get()))
 
 
     def selectExcel():
@@ -148,7 +118,7 @@ def launchView():
     lastRowEntry.pack(side=tk.LEFT)
 
     #
-    executeButton = tk.Button(frames[6], text="Execute", command=launchControllerFromView, font=fontGeneral)
+    executeButton = tk.Button(frames[6], text="Execute", command=initiateControllerThread, font=fontGeneral)
     executeButton.pack()
 
     # Bindings
@@ -156,7 +126,7 @@ def launchView():
     procedureCombobox.bind("<<ComboboxSelected>>", lambda _: updateColumns())
 
     # color mode change
-    guiC = guiController.GUIController(root)
+    guiC = guiController.GUIController(root, TITLE)
     guiC.standardInitialize()
 
 

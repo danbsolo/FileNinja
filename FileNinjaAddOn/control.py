@@ -1,7 +1,7 @@
 from openpyxl.utils import column_index_from_string
 import os
-from FileNinjaSuite.FileChop.defs import *
-from FileNinjaSuite.FileChop.aiScript import queryAI
+from FileNinjaSuite.FileNinjaAddOn.defs import *
+from FileNinjaSuite.FileNinjaAddOn.aiScript import queryAI
 import traceback
 
 

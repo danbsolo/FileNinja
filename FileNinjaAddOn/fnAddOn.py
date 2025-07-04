@@ -1,4 +1,4 @@
-from FileNinjaSuite.FileChop import view
+from FileNinjaSuite.FileNinjaAddOn import view
 
 
 def launchApplication():
